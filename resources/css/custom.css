@@ -1,0 +1,65 @@
+@layer components {
+  .animate-gradient-background {
+    background: linear-gradient(-45deg, #F43F5E, #EC4899, #9333EA, #7C3AED);
+    background-size: 400% 400%;
+    animation: gradient 8s ease infinite;
+  }
+  
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  /* Auth page animations */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  @keyframes float-slow {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(50px, 20px) scale(1.05);
+    }
+    100% {
+      transform: translate(-30px, -20px) scale(0.95);
+    }
+  }
+  
+  @keyframes float {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(30px, -20px) scale(1.05);
+    }
+    100% {
+      transform: translate(-20px, 10px) scale(0.98);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+  
+  .animate-float {
+    animation: float 35s infinite alternate-reverse ease-in-out;
+  }
+  
+  .animate-float-slow {
+    animation: float-slow 45s infinite alternate ease-in-out;
+  }
+}
