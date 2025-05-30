@@ -16,16 +16,6 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->timestamps();
         });
-
-        Schema::create('portofolio_tag', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('portofolio_id')->constrained()->onDelete('cascade');
-            $table->foreignId('tag_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
-            
-            // Sebuah portofolio hanya bisa memiliki satu entry untuk setiap tag
-            $table->unique(['portofolio_id', 'tag_id']);
-        });
     }
 
     /**
@@ -33,7 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('portofolio_tag');
         Schema::dropIfExists('tags');
     }
 };

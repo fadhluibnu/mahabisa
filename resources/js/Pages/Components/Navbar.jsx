@@ -35,7 +35,9 @@ const Navbar = () => {
   return (
     <nav className='border-b border-gray-200/30 fixed z-50 w-full bg-white/70 backdrop-blur-lg backdrop-filter'>
       <div className='px-4 sm:px-6 lg:px-0 max-w-7xl mx-auto'>
-        <div className='flex justify-between h-16'>          <div className='flex items-center justify-start'>
+        <div className='flex justify-between h-16'>
+          {' '}
+          <div className='flex items-center justify-start'>
             <a
               href='/'
               className='text-xl font-bold text-gray-900 flex items-center'
@@ -144,7 +146,8 @@ const Navbar = () => {
             >
               Tentang Kami
             </a>
-          </div>          {/* Desktop Auth Buttons */}
+          </div>{' '}
+          {/* Desktop Auth Buttons */}
           <div className='hidden md:flex items-center gap-4'>
             <a
               href='/auth?form=login'
@@ -159,7 +162,6 @@ const Navbar = () => {
               Daftar
             </a>
           </div>
-
           {/* Mobile Menu Button */}
           <div className='flex items-center md:hidden'>
             <button
@@ -257,7 +259,8 @@ const Navbar = () => {
             >
               Tentang Kami
             </a>
-          </div>          <div className='px-4 py-3 border-t border-gray-200 flex flex-col space-y-3'>
+          </div>{' '}
+          <div className='px-4 py-3 border-t border-gray-200 flex flex-col space-y-3'>
             <a
               href='/auth?form=login'
               className='block w-full px-4 py-2 text-center text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-all'

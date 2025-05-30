@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('freelancers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('category_id')->constrained()->onDelete('set null')->nullable();
+            $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
             $table->double('hourly_rate')->default(0.0);
             $table->string('availability')->default('available');
             $table->double('rating')->default(0.0);

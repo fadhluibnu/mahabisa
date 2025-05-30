@@ -18,6 +18,26 @@ class Category extends Model
         'is_active'
     ];
     
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($category) {
+            if (!$category->slug) {
+                $category->slug = \Illuminate\Support\Str::slug($category->name);
+            }
+        });
+        
+        static::updating(function ($category) {
+            if ($category->isDirty('name') && !$category->isDirty('slug')) {
+                $category->slug = \Illuminate\Support\Str::slug($category->name);
+            }
+        });
+    }
+    
     protected $casts = [
         'is_active' => 'boolean'
     ];

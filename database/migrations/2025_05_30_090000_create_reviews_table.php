@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps(); // Termasuk created_at sebagai date
 
             // Memastikan tiap order hanya memiliki satu review
-            $table->unique('order_id');
+            $table->unique('order_id', 'order_review_unique');
         });
     }
 

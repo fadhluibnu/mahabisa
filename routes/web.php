@@ -23,8 +23,16 @@ Route::get('/talenta', function () {
     return Inertia::render('Talenta/Talenta');
 });
 
-Route::get('/auth', function () {
-    return Inertia::render('Auth/Auth', [
-        'formType' => request()->query('form', 'login')
-    ]);
+// Dashboard Route (Protected)
+Route::get('/dashboard', 'App\Http\Controllers\DashboardController@index')
+    ->name('dashboard')
+    ->middleware(['auth']);
+
+// Authentication Routes
+Route::group(['prefix' => 'auth', 'namespace' => 'App\Http\Controllers\Auth'], function () {
+    Route::get('/', 'AuthController@showAuth')->name('auth.show');
+    Route::post('/register', 'AuthController@register')->name('auth.register');
+    Route::post('/login', 'AuthController@login')->name('auth.login');
+    Route::post('/logout', 'AuthController@logout')->name('auth.logout')->middleware('auth');
+    Route::get('/registration-success', 'AuthController@registrationSuccess')->name('auth.registration.success')->middleware('auth');
 });

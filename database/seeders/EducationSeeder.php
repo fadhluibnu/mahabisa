@@ -17,13 +17,13 @@ class EducationSeeder extends Seeder
     {
         // Seeder untuk Education Levels
         $educationLevels = [
-            ['name' => 'D1', 'description' => 'Diploma 1'],
-            ['name' => 'D2', 'description' => 'Diploma 2'],
-            ['name' => 'D3', 'description' => 'Diploma 3'],
-            ['name' => 'D4', 'description' => 'Diploma 4'],
-            ['name' => 'S1', 'description' => 'Sarjana/Strata 1'],
-            ['name' => 'S2', 'description' => 'Magister/Strata 2'],
-            ['name' => 'S3', 'description' => 'Doktor/Strata 3'],
+            ['name' => 'D1', 'code' => 'D1', 'description' => 'Diploma 1', 'is_active' => true],
+            ['name' => 'D2', 'code' => 'D2', 'description' => 'Diploma 2', 'is_active' => true],
+            ['name' => 'D3', 'code' => 'D3', 'description' => 'Diploma 3', 'is_active' => true],
+            ['name' => 'D4', 'code' => 'D4', 'description' => 'Diploma 4', 'is_active' => true],
+            ['name' => 'S1', 'code' => 'S1', 'description' => 'Sarjana/Strata 1', 'is_active' => true],
+            ['name' => 'S2', 'code' => 'S2', 'description' => 'Magister/Strata 2', 'is_active' => true],
+            ['name' => 'S3', 'code' => 'S3', 'description' => 'Doktor/Strata 3', 'is_active' => true],
         ];
         
         DB::table('education_levels')->insert($educationLevels);
@@ -32,83 +32,103 @@ class EducationSeeder extends Seeder
         $educationalInstitutions = [
             [
                 'name' => 'Universitas Indonesia',
-                'type' => 'Universitas',
-                'city' => 'Depok',
-                'province' => 'Jawa Barat',
+                'short_name' => 'UI',
+                'location' => 'Depok, Jawa Barat',
+                'address' => 'Jl. Margonda Raya, Depok, Jawa Barat',
                 'website' => 'https://www.ui.ac.id',
-                'is_verified' => true
+                'logo' => 'ui-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Institut Teknologi Bandung',
-                'type' => 'Institut',
-                'city' => 'Bandung',
-                'province' => 'Jawa Barat',
+                'short_name' => 'ITB',
+                'location' => 'Bandung, Jawa Barat',
+                'address' => 'Jl. Ganesa No.10, Bandung, Jawa Barat',
                 'website' => 'https://www.itb.ac.id',
-                'is_verified' => true
+                'logo' => 'itb-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Universitas Gadjah Mada',
-                'type' => 'Universitas',
-                'city' => 'Yogyakarta',
-                'province' => 'DI Yogyakarta',
+                'short_name' => 'UGM',
+                'location' => 'Yogyakarta, DI Yogyakarta',
+                'address' => 'Jl. Bulaksumur, Yogyakarta',
                 'website' => 'https://www.ugm.ac.id',
-                'is_verified' => true
+                'logo' => 'ugm-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Institut Pertanian Bogor',
-                'type' => 'Institut',
-                'city' => 'Bogor',
-                'province' => 'Jawa Barat',
+                'short_name' => 'IPB',
+                'location' => 'Bogor, Jawa Barat',
+                'address' => 'Jl. Raya Dramaga, Bogor, Jawa Barat',
                 'website' => 'https://www.ipb.ac.id',
-                'is_verified' => true
+                'logo' => 'ipb-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Institut Teknologi Sepuluh Nopember',
-                'type' => 'Institut',
-                'city' => 'Surabaya',
-                'province' => 'Jawa Timur',
+                'short_name' => 'ITS',
+                'location' => 'Surabaya, Jawa Timur',
+                'address' => 'Jl. Teknik Kimia, Surabaya, Jawa Timur',
                 'website' => 'https://www.its.ac.id',
-                'is_verified' => true
+                'logo' => 'its-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Universitas Diponegoro',
-                'type' => 'Universitas',
-                'city' => 'Semarang',
-                'province' => 'Jawa Tengah',
+                'short_name' => 'UNDIP',
+                'location' => 'Semarang, Jawa Tengah',
+                'address' => 'Jl. Prof. Soedarto, Tembalang, Semarang',
                 'website' => 'https://www.undip.ac.id',
-                'is_verified' => true
+                'logo' => 'undip-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Universitas Brawijaya',
-                'type' => 'Universitas',
-                'city' => 'Malang',
-                'province' => 'Jawa Timur',
+                'short_name' => 'UB',
+                'location' => 'Malang, Jawa Timur',
+                'address' => 'Jl. Veteran, Malang, Jawa Timur',
                 'website' => 'https://www.ub.ac.id',
-                'is_verified' => true
+                'logo' => 'ub-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Universitas Padjadjaran',
-                'type' => 'Universitas',
-                'city' => 'Bandung',
-                'province' => 'Jawa Barat',
+                'short_name' => 'UNPAD',
+                'location' => 'Bandung, Jawa Barat',
+                'address' => 'Jl. Raya Bandung Sumedang KM.21, Jatinangor, Jawa Barat',
                 'website' => 'https://www.unpad.ac.id',
-                'is_verified' => true
+                'logo' => 'unpad-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Universitas Airlangga',
-                'type' => 'Universitas',
-                'city' => 'Surabaya',
-                'province' => 'Jawa Timur',
+                'short_name' => 'UNAIR',
+                'location' => 'Surabaya, Jawa Timur',
+                'address' => 'Jl. Airlangga No.4, Surabaya, Jawa Timur',
                 'website' => 'https://www.unair.ac.id',
-                'is_verified' => true
+                'logo' => 'unair-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
             [
                 'name' => 'Universitas Hasanuddin',
-                'type' => 'Universitas',
-                'city' => 'Makassar',
-                'province' => 'Sulawesi Selatan',
+                'short_name' => 'UNHAS',
+                'location' => 'Makassar, Sulawesi Selatan',
+                'address' => 'Jl. Perintis Kemerdekaan KM.10, Makassar, Sulawesi Selatan',
                 'website' => 'https://www.unhas.ac.id',
-                'is_verified' => true
+                'logo' => 'unhas-logo.png',
+                'is_verified' => true,
+                'is_active' => true
             ],
         ];
         

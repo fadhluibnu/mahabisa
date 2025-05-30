@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
             
             // Ensure each freelancer can only submit one proposal per project
-            $table->unique(['freelancer_id', 'project_id']);
+            $table->unique(['freelancer_id', 'project_id'], 'freelancer_project_unique');
         });
     }
 

@@ -22,6 +22,7 @@ class BankSeeder extends Seeder
                 'swift_code' => 'CENAIDJA',
                 'logo' => 'bca.png',
                 'account_number_format' => '[0-9]{10}',
+                'branches' => json_encode(['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Makassar']),
                 'is_active' => true
             ],
             [
@@ -31,6 +32,7 @@ class BankSeeder extends Seeder
                 'swift_code' => 'BRINIDJA',
                 'logo' => 'bri.png',
                 'account_number_format' => '[0-9]{15}',
+                'branches' => json_encode(['Jakarta', 'Surabaya', 'Bandung', 'Semarang', 'Yogyakarta']),
                 'is_active' => true
             ],
             [
@@ -40,6 +42,7 @@ class BankSeeder extends Seeder
                 'swift_code' => 'BMRIIDJA',
                 'logo' => 'mandiri.png',
                 'account_number_format' => '[0-9]{13}',
+                'branches' => json_encode(['Jakarta', 'Bandung', 'Surabaya', 'Denpasar', 'Palembang']),
                 'is_active' => true
             ],
             [
@@ -49,6 +52,7 @@ class BankSeeder extends Seeder
                 'swift_code' => 'BNINIDJA',
                 'logo' => 'bni.png',
                 'account_number_format' => '[0-9]{10}',
+                'branches' => json_encode(['Jakarta', 'Makassar', 'Medan', 'Surabaya', 'Balikpapan']),
                 'is_active' => true
             ],
             [

@@ -2,7 +2,7 @@ import React from 'react';
 
 const FormSwitcher = ({ activeForm, onFormSwitch }) => {
   return (
-    <div className="flex bg-slate-100 rounded-full p-1 mb-8">
+    <div className='flex bg-slate-100 rounded-full p-1 mb-8'>
       <button
         className={`flex-1 py-2 px-4 text-center font-semibold rounded-full transition-all ${
           activeForm === 'login'

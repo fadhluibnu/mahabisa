@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
             
             // Ensure each freelancer can only have one account per bank
-            $table->unique(['freelancer_id', 'bank_id', 'account_number']);
+            $table->unique(['freelancer_id', 'bank_id', 'account_number'], 'fr_bank_account_unique');
         });
     }
 

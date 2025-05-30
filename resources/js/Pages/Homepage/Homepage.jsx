@@ -12,7 +12,7 @@ import CallToActionSection from './Components/CallToActionSection';
 
 const Homepage = () => {
   const [searchValue, setSearchValue] = useState('');
-  
+
   const handlePopularClick = value => {
     setSearchValue(value);
   };
@@ -136,10 +136,10 @@ const Homepage = () => {
       <Navbar />
       <div className='max-w-7xl px-4 md:px-5 lg:px-0 mx-auto pt-16'>
         <HeroSection />
-        <SearchSection 
-          searchValue={searchValue} 
-          setSearchValue={setSearchValue} 
-          handlePopularClick={handlePopularClick} 
+        <SearchSection
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+          handlePopularClick={handlePopularClick}
         />
         <CategorySection />
         <CallToActionSection />

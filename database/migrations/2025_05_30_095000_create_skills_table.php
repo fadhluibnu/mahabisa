@@ -18,17 +18,6 @@ return new class extends Migration
             $table->boolean('is_verified')->default(false); // Untuk skills yang diverifikasi admin
             $table->timestamps();
         });
-
-        Schema::create('freelancer_skill', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('freelancer_id')->constrained()->onDelete('cascade');
-            $table->foreignId('skill_id')->constrained()->onDelete('cascade');
-            $table->integer('proficiency_level')->default(1); // Level keahlian (1-5)
-            $table->timestamps();
-            
-            // Seorang freelancer hanya bisa memiliki satu entry untuk setiap skill
-            $table->unique(['freelancer_id', 'skill_id']);
-        });
     }
 
     /**
@@ -36,7 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('freelancer_skill');
         Schema::dropIfExists('skills');
     }
 };

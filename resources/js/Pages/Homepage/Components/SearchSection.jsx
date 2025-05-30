@@ -8,13 +8,13 @@ const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 640);
     };
-    
+
     // Initial check
     checkIfMobile();
-    
+
     // Add event listener for window resize
     window.addEventListener('resize', checkIfMobile);
-    
+
     // Cleanup
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
@@ -22,7 +22,10 @@ const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
   return (
     <section className='py-4 md:py-8'>
       <div className='bg-white shadow-md rounded-lg p-4 md:p-6'>
-        <form action='' className='flex flex-col sm:flex-row items-center gap-3 md:gap-4'>
+        <form
+          action=''
+          className='flex flex-col sm:flex-row items-center gap-3 md:gap-4'
+        >
           <input
             type='text'
             className='border-1 border-gray-300 rounded-lg w-full h-11 p-2 bg-slate-100'
@@ -30,7 +33,7 @@ const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
           />
-          <button className='flex gap-2 items-center justify-center text-lg py-2 px-5 bg-slate-200 rounded-lg hover:bg-slate-300 transition-all duration-200 ease-in-out w-full sm:w-auto'> 
+          <button className='flex gap-2 items-center justify-center text-lg py-2 px-5 bg-slate-200 rounded-lg hover:bg-slate-300 transition-all duration-200 ease-in-out w-full sm:w-auto'>
             <svg
               width='20'
               height='18'

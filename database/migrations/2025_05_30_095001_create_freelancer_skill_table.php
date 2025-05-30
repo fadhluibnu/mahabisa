@@ -15,11 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('freelancer_id')->constrained()->onDelete('cascade');
             $table->foreignId('skill_id')->constrained()->onDelete('cascade');
-            $table->integer('proficiency_level')->default(1); // 1-5 scale
+            $table->integer('proficiency_level')->default(1); // Level keahlian (1-5)
             $table->timestamps();
-
-            // Prevent duplicate entries
-            $table->unique(['freelancer_id', 'skill_id']);
+              // Seorang freelancer hanya bisa memiliki satu entry untuk setiap skill
+            $table->unique(['freelancer_id', 'skill_id'], 'freelancer_skill_unique');
         });
     }
 

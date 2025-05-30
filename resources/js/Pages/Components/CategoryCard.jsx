@@ -6,11 +6,13 @@ const CategoryCard = ({ category }) => {
           <img
             src={category.image}
             alt={category.name}
-            className='w-10 h-10 md:w-12 md:h-12 rounded-full object-cover' 
+            className='w-10 h-10 md:w-12 md:h-12 rounded-full object-cover'
           />
           <div>
             <h3 className='font-bold text-lg md:text-xl'>{category.name}</h3>
-            <span className='text-xs md:text-sm text-slate-500'>{category.jasa}</span>
+            <span className='text-xs md:text-sm text-slate-500'>
+              {category.jasa}
+            </span>
           </div>
         </div>
         <svg
@@ -32,6 +34,6 @@ const CategoryCard = ({ category }) => {
       </div>
     </a>
   );
-}
+};
 
 export default CategoryCard;

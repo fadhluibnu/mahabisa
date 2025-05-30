@@ -16,9 +16,8 @@ return new class extends Migration
             $table->foreignId('portofolio_id')->constrained()->onDelete('cascade');
             $table->foreignId('tag_id')->constrained()->onDelete('cascade');
             $table->timestamps();
-            
-            // Prevent duplicate entries
-            $table->unique(['portofolio_id', 'tag_id']);
+              // Sebuah portofolio hanya bisa memiliki satu entry untuk setiap tag
+            $table->unique(['portofolio_id', 'tag_id'], 'portofolio_tag_unique');
         });
     }
 
