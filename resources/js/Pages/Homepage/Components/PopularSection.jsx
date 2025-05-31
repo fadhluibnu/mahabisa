@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import PopulerCard from '../../Components/PopulerCard';
+import PopulerCard from '@/Components/PopulerCard';
 
 const PopularSection = ({ populerCards }) => {
   const scrollRef = useRef(null);

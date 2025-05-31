@@ -1,0 +1,201 @@
+import React from 'react';
+import FreelancerLayout from './Components/FreelancerLayout';
+import ReviewsCard from './Components/ReviewsCard';
+
+const Reviews = () => {
+  // Dummy data for reviews
+  const reviews = [
+    {
+      id: 1,
+      client: {
+        name: 'Budi Santoso',
+        company: 'PT Maju Bersama',
+        image: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=6366f1&color=fff',
+      },
+      project: 'Redesain Website E-commerce',
+      rating: 5,
+      comment: 'Sangat puas dengan hasil kerjanya. Desain website sangat menarik dan sesuai dengan kebutuhan kami. Komunikasi lancar dan selalu responsif terhadap feedback yang diberikan.',
+      date: '15 Jun 2023',
+    },
+    {
+      id: 2,
+      client: {
+        name: 'Diana Putri',
+        company: 'StartUp Inovasi',
+        image: 'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
+      },
+      project: 'Pengembangan Aplikasi Mobile',
+      rating: 4,
+      comment: 'Aplikasi yang dikembangkan berfungsi dengan baik dan sesuai dengan kebutuhan. Ada beberapa perbaikan kecil yang diperlukan, tapi secara keseluruhan sangat baik.',
+      date: '10 Jun 2023',
+    },
+    {
+      id: 3,
+      client: {
+        name: 'Ahmad Rizal',
+        company: 'Toko Online Sejahtera',
+        image: 'https://ui-avatars.com/api/?name=Ahmad+Rizal&background=8b5cf6&color=fff',
+      },
+      project: 'Integrasi Payment Gateway',
+      rating: 5,
+      comment: 'Integrasi payment gateway berjalan dengan lancar dan tidak ada masalah. Sangat profesional dan cepat dalam menyelesaikan pekerjaan.',
+      date: '5 Jun 2023',
+    },
+    {
+      id: 4,
+      client: {
+        name: 'Siti Nuraini',
+        company: 'CV Digital Kreatif',
+        image: 'https://ui-avatars.com/api/?name=Siti+Nuraini&background=10b981&color=fff',
+      },
+      project: 'Landing Page untuk Peluncuran Produk',
+      rating: 5,
+      comment: 'Landing page yang dibuat sangat menarik dan efektif. Konversi pengunjung meningkat secara signifikan setelah menggunakan landing page baru.',
+      date: '1 Jun 2023',
+    },
+    {
+      id: 5,
+      client: {
+        name: 'Rudi Setiawan',
+        company: 'PT Solusi Teknologi',
+        image: 'https://ui-avatars.com/api/?name=Rudi+Setiawan&background=f59e0b&color=fff',
+      },
+      project: 'Pembuatan Dashboard Admin',
+      rating: 4,
+      comment: 'Dashboard admin yang dibuat sangat membantu dalam pengelolaan data. Fitur-fiturnya lengkap dan mudah digunakan. Hanya perlu sedikit penyesuaian pada tampilan mobile.',
+      date: '25 Mei 2023',
+    },
+  ];
+
+  // Calculate average rating
+  const averageRating =
+    reviews.reduce((total, review) => total + review.rating, 0) / reviews.length;
+  
+  // Count ratings by star
+  const ratingCounts = [0, 0, 0, 0, 0]; // For 1-5 stars
+  reviews.forEach((review) => {
+    ratingCounts[review.rating - 1]++;
+  });
+
+  return (
+    <FreelancerLayout
+      title="Ulasan"
+      subtitle="Lihat ulasan dari klien tentang pekerjaan Anda"
+    >
+      {/* Rating Overview */}
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Average Rating */}
+          <div className="flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-200 pb-6 md:pb-0">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Rata-rata Rating</h3>
+            <div className="text-4xl font-bold text-gray-800 mb-2">
+              {averageRating.toFixed(1)}
+            </div>
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <svg
+                  key={i}
+                  className={`w-5 h-5 ${
+                    i < Math.round(averageRating)
+                      ? 'text-yellow-400'
+                      : 'text-gray-300'
+                  }`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+              <span className="ml-2 text-sm text-gray-500">
+                ({reviews.length} ulasan)
+              </span>
+            </div>
+          </div>
+
+          {/* Rating Breakdown */}
+          <div className="col-span-2 grid grid-cols-1 gap-2">
+            {[5, 4, 3, 2, 1].map((star) => (
+              <div key={star} className="flex items-center">
+                <div className="flex items-center w-20">
+                  <span className="text-sm font-medium text-gray-600 mr-2">
+                    {star}
+                  </span>
+                  <svg
+                    className="w-4 h-4 text-yellow-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </div>
+                <div className="flex-1 h-4 mx-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-yellow-400"
+                    style={{
+                      width: `${(ratingCounts[star - 1] / reviews.length) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="text-sm font-medium text-gray-600 w-10 text-right">
+                  {ratingCounts[star - 1]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Reviews List */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-gray-800">Semua Ulasan</h2>
+          <div>
+            <select className="border border-gray-300 rounded-md text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+              <option>Terbaru</option>
+              <option>Rating Tertinggi</option>
+              <option>Rating Terendah</option>
+            </select>
+          </div>
+        </div>
+          {reviews.map((review) => (
+          <div key={review.id} className="p-4 sm:p-6 border-b border-gray-100">
+            <div className="flex items-start">
+              <img
+                src={review.client.image}
+                alt={review.client.name}
+                className="h-10 w-10 rounded-full mr-4"
+              />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-gray-900">{review.client.name}</h4>
+                  <span className="text-xs text-gray-500">{review.date}</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      className={`h-4 w-4 ${
+                        star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                      }`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="ml-2 text-xs text-gray-500">{review.project}</span>
+                </div>
+                <p className="mt-2 text-sm text-gray-600">{review.comment}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </FreelancerLayout>
+  );
+};
+
+export default Reviews;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
+import Navbar from '@/Components/Navbar';
+import Footer from '@/Components/Footer';
 
 // Import komponen-komponen yang sudah direfaktor
 import AboutHero from './Components/AboutHero';

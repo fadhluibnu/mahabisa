@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
+import Navbar from '@/Components/Navbar';
+import Footer from '@/Components/Footer';
 import ExploreHero from './Components/ExploreHero';
 import FilterSection from './Components/FilterSection';
 import CategoryPillsSection from './Components/CategoryPillsSection';

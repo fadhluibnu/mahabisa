@@ -1,5 +1,5 @@
 import React from 'react';
-import TalentCard from '../../Components/TalentCard';
+import TalentCard from '@/Components/TalentCard';
 
 const TalentSection = () => {
   // Talent data

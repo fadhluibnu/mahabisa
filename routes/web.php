@@ -7,10 +7,6 @@ use Inertia\Inertia;
 //     return view('welcome');
 // });
 
-Route::get('/test', function () {
-    return Inertia::render('Test/Test');
-});
-
 Route::get('/', function () {
     return Inertia::render('Homepage/Homepage');
 });
@@ -61,5 +57,96 @@ Route::prefix('admin')->group(function () {
     
     Route::get('/settings', function () {
         return Inertia::render('Admin/Settings');
+    });
+});
+
+// Freelancer Routes
+Route::prefix('freelancer')->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('Freelancer/Dashboard');
+    });
+    
+    Route::get('/dashboard', function () {
+        return Inertia::render('Freelancer/Dashboard');
+    });
+    
+    Route::get('/projects', function () {
+        return Inertia::render('Freelancer/Projects');
+    });
+    
+    Route::get('/projects/create', function () {
+        return Inertia::render('Freelancer/ProjectCreate');
+    });
+    
+    Route::get('/projects/{id}', function ($id) {
+        return Inertia::render('Freelancer/ProjectDetail', ['id' => $id]);
+    });
+    
+    Route::get('/projects/{id}/edit', function ($id) {
+        return Inertia::render('Freelancer/ProjectCreate', ['id' => $id, 'isEditing' => true]);
+    });
+    
+    Route::get('/schedule', function () {
+        return Inertia::render('Freelancer/Schedule');
+    });
+    
+    Route::get('/earnings', function () {
+        return Inertia::render('Freelancer/Earnings');
+    });
+    
+    Route::get('/earnings/{id}', function ($id) {
+        return Inertia::render('Freelancer/EarningsDetail', ['id' => $id]);
+    });
+    
+    Route::get('/messages', function () {
+        return Inertia::render('Freelancer/Messages');
+    });
+    
+    Route::get('/messages/{id}', function ($id) {
+        return Inertia::render('Freelancer/MessageDetail', ['id' => $id]);
+    });
+    
+    Route::get('/reviews', function () {
+        return Inertia::render('Freelancer/Reviews');
+    });
+    
+    Route::get('/reviews/{id}', function ($id) {
+        return Inertia::render('Freelancer/ReviewDetail', ['id' => $id]);
+    });
+    
+    Route::get('/profile', function () {
+        return Inertia::render('Freelancer/Profile');
+    });
+    
+    Route::get('/skills', function () {
+        return Inertia::render('Freelancer/Skills');
+    });
+    
+    Route::get('/services', function () {
+        return Inertia::render('Freelancer/Services');
+    });
+    
+    Route::get('/services/create', function () {
+        return Inertia::render('Freelancer/ServiceCreate');
+    });
+    
+    Route::get('/services/{id}', function ($id) {
+        return Inertia::render('Freelancer/ServiceDetail', ['id' => $id]);
+    });
+    
+    Route::get('/services/{id}/edit', function ($id) {
+        return Inertia::render('Freelancer/ServiceCreate', ['id' => $id, 'isEditing' => true]);
+    });
+    
+    Route::get('/offers', function () {
+        return Inertia::render('Freelancer/Offers');
+    });
+    
+    Route::get('/payments', function () {
+        return Inertia::render('Freelancer/Payments');
+    });
+    
+    Route::get('/settings', function () {
+        return Inertia::render('Freelancer/Settings');
     });
 });

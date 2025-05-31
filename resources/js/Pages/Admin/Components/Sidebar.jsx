@@ -71,8 +71,8 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
                 </span>
                 {/* <span className="font-heading font-bold text-indigo-600 text-lg">Bisa</span> */}
               </div>
-              <div className='bg-indigo-100 text-indigo-600 text-xs px-2 py-0.5 rounded-sm uppercase tracking-wider font-medium mt-0.5'>
-                Admin Panel
+              <div className='text-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-semibold text-sm'>
+                Admin
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
+import Navbar from '@/Components/Navbar';
+import Footer from '@/Components/Footer';
 import ProyekHero from './Components/ProyekHero';
 import FilterSection from './Components/FilterSection';
 import ProjectsGrid from './Components/ProjectsGrid';

@@ -1,5 +1,5 @@
 import React from 'react';
-import CategoryCard from '../../Components/CategoryCard';
+import CategoryCard from '@/Components/CategoryCard';
 
 const CategorySection = () => {
   return (
