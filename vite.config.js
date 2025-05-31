@@ -12,4 +12,14 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  server: {
+    host: '0.0.0.0', // Memungkinkan akses dari jaringan
+    hmr: {
+      host: '192.168.1.13', // Gunakan IP address komputer Anda
+      protocol: 'ws',
+    },
+    watch: {
+      usePolling: true,
+    },
+  },
 });

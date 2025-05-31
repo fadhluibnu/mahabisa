@@ -11,4 +11,8 @@ createInertiaApp({
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />);
   },
+  // Tambahkan ini untuk menangani URL eksternal dengan lebih baik
+  progress: {
+    color: '#4B5563',
+  },
 });

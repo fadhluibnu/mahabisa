@@ -206,8 +206,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className='md:hidden bg-white shadow-lg border-t border-gray-200'>
-          <div className='px-4 pt-2 pb-4 space-y-1'>
-            <a
+          <div className='px-4 pt-2 pb-4 space-y-1'>            <a
               href='/'
               className={`block py-2 px-3 text-base font-medium rounded-md ${
                 isActive('/')
@@ -215,17 +214,17 @@ const Navbar = () => {
                   : 'text-gray-800 hover:bg-gray-100 hover:text-[#7C3AED]'
               }`}
             >
-              Home
+              Beranda
             </a>
             <a
-              href='/explore'
+              href='/eksplorasi'
               className={`block py-2 px-3 text-base font-medium rounded-md ${
-                isActive('/explore')
+                isActive('/eksplorasi')
                   ? 'text-[#7C3AED] bg-purple-50'
                   : 'text-gray-800 hover:bg-gray-100 hover:text-[#7C3AED]'
               }`}
             >
-              Explore
+              Eksplorasi
             </a>
             <a
               href='/talenta'
@@ -246,11 +245,10 @@ const Navbar = () => {
               }`}
             >
               Proyek
-            </a>
-            <a
-              href='/lainnya'
+            </a>            <a
+              href='/tentang-kami'
               className={`block py-2 px-3 text-base font-medium rounded-md ${
-                isActive('/lainnya')
+                isActive('/tentang-kami')
                   ? 'text-[#7C3AED] bg-purple-50'
                   : 'text-gray-800 hover:bg-gray-100 hover:text-[#7C3AED]'
               }`}

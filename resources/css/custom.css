@@ -17,6 +17,27 @@
     }
   }
   
+  /* Slow floating animations for decorative blobs */
+  .animate-float-slow {
+    animation: float 45s infinite alternate ease-in-out;
+  }
+  
+  .animate-float-slow-reverse {
+    animation: float 35s infinite alternate-reverse ease-in-out;
+  }
+  
+  @keyframes float {
+    0% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate(50px, -30px) rotate(10deg);
+    }
+    100% {
+      transform: translate(-30px, 40px) rotate(-10deg);
+    }
+  }
+  
   /* Auth page animations */
   @keyframes shimmer {
     0% {
