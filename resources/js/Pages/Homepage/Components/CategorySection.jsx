@@ -4,7 +4,9 @@ import CategoryCard from '../../Components/CategoryCard';
 const CategorySection = () => {
   return (
     <section className='pt-8 pb-12 md:pb-16 lg:pb-20'>
-      <h1 className='font-bold text-3xl md:text-4xl text-center'>Jelajahi Kategori</h1>
+      <h1 className='font-bold text-3xl md:text-4xl text-center'>
+        Jelajahi Kategori
+      </h1>
       <p className='text-md font-normal text-slate-400 text-center mt-3 px-4 md:px-0'>
         Temukan jasa yang kamu butuhkan dari berbagai kategori
       </p>

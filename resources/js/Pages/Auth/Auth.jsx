@@ -10,22 +10,25 @@ const Auth = () => {
 
   useEffect(() => {
     // Check if formType is provided in URL parameters
-    if (props.formType && (props.formType === 'login' || props.formType === 'register')) {
+    if (
+      props.formType &&
+      (props.formType === 'login' || props.formType === 'register')
+    ) {
       setActiveForm(props.formType);
     }
   }, [props.formType]);
 
-  const handleFormSwitch = (formType) => {
+  const handleFormSwitch = formType => {
     setActiveForm(formType);
   };
 
   return (
     <>
-      <Head title="MahaBisa | Masuk atau Daftar" />
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
+      <Head title='MahaBisa | Masuk atau Daftar' />
+      <div className='min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden'>
         <AuthBackground />
-        
-        <div className="w-full max-w-6xl flex rounded-3xl shadow-2xl overflow-hidden bg-white relative z-10">
+
+        <div className='w-full max-w-6xl flex rounded-3xl shadow-2xl overflow-hidden bg-white relative z-10'>
           <AuthSidebar />
           <AuthForms activeForm={activeForm} onFormSwitch={handleFormSwitch} />
         </div>

@@ -14,12 +14,12 @@ const Talenta = () => {
     university: '',
     education: '',
     experience: '',
-    sort: 'recommended'
+    sort: 'recommended',
   });
   const [activeSkill, setActiveSkill] = useState('all');
 
   // Handler for search input
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     setSearchValue(e.target.value);
   };
 
@@ -27,36 +27,35 @@ const Talenta = () => {
   const handleFilterChange = (filterType, value) => {
     setFilters({
       ...filters,
-      [filterType]: value
+      [filterType]: value,
     });
   };
 
   // Handler for skill tag clicks
-  const handleSkillClick = (skill) => {
+  const handleSkillClick = skill => {
     setActiveSkill(skill);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className='min-h-screen bg-slate-50'>
       <Navbar />
-      <div className="pt-16"> {/* Add padding to account for fixed navbar */}
-        <TalentaHero 
-          searchValue={searchValue} 
-          onSearchChange={handleSearchChange} 
+      <div className='pt-16'>
+        {' '}
+        {/* Add padding to account for fixed navbar */}
+        <TalentaHero
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
         />
-        <FilterSection 
-          filters={filters} 
-          onFilterChange={handleFilterChange} 
-        />
-        <SkillTagsSection 
-          activeSkill={activeSkill} 
-          onSkillClick={handleSkillClick} 
+        <FilterSection filters={filters} onFilterChange={handleFilterChange} />
+        <SkillTagsSection
+          activeSkill={activeSkill}
+          onSkillClick={handleSkillClick}
         />
         <FeaturedTalents />
-        <TalentsGrid 
-          filters={filters} 
-          searchValue={searchValue} 
-          activeSkill={activeSkill} 
+        <TalentsGrid
+          filters={filters}
+          searchValue={searchValue}
+          activeSkill={activeSkill}
         />
         <CtaSection />
       </div>

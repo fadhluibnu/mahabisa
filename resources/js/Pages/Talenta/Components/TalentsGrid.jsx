@@ -16,7 +16,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 38,
       education: 's1',
       experienceLevel: 'expert',
-      mainSkill: 'design'
+      mainSkill: 'design',
     },
     {
       id: 2,
@@ -30,7 +30,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 42,
       education: 's1',
       experienceLevel: 'expert',
-      mainSkill: 'video'
+      mainSkill: 'video',
     },
     {
       id: 3,
@@ -44,7 +44,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 24,
       education: 's1',
       experienceLevel: 'intermediate',
-      mainSkill: 'web'
+      mainSkill: 'web',
     },
     {
       id: 4,
@@ -58,7 +58,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 31,
       education: 's2',
       experienceLevel: 'intermediate',
-      mainSkill: 'writing'
+      mainSkill: 'writing',
     },
     {
       id: 5,
@@ -72,7 +72,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 27,
       education: 's1',
       experienceLevel: 'expert',
-      mainSkill: 'mobile'
+      mainSkill: 'mobile',
     },
     {
       id: 6,
@@ -86,7 +86,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 19,
       education: 's1',
       experienceLevel: 'beginner',
-      mainSkill: 'marketing'
+      mainSkill: 'marketing',
     },
     {
       id: 7,
@@ -100,7 +100,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 16,
       education: 's2',
       experienceLevel: 'intermediate',
-      mainSkill: 'data'
+      mainSkill: 'data',
     },
     {
       id: 8,
@@ -114,8 +114,8 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
       projects: 23,
       education: 'd3',
       experienceLevel: 'expert',
-      mainSkill: 'music'
-    }
+      mainSkill: 'music',
+    },
   ];
 
   // Filter talents based on active filters and search
@@ -124,47 +124,51 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
     if (activeSkill !== 'all' && talent.mainSkill !== activeSkill) {
       return false;
     }
-      // Filter by university
+    // Filter by university
     if (filters.university) {
       const universityMap = {
-        'ui': 'Universitas Indonesia',
-        'ugm': 'Universitas Gadjah Mada',
-        'itb': 'Institut Teknologi Bandung',
-        'unpad': 'Universitas Padjadjaran',
-        'undip': 'Universitas Diponegoro',
-        'unair': 'Universitas Airlangga',
+        ui: 'Universitas Indonesia',
+        ugm: 'Universitas Gadjah Mada',
+        itb: 'Institut Teknologi Bandung',
+        unpad: 'Universitas Padjadjaran',
+        undip: 'Universitas Diponegoro',
+        unair: 'Universitas Airlangga',
       };
       if (talent.university !== universityMap[filters.university]) {
         return false;
       }
     }
-    
+
     // Filter by education
     if (filters.education && talent.education !== filters.education) {
       return false;
     }
-    
+
     // Filter by experience level
     if (filters.experience && talent.experienceLevel !== filters.experience) {
       return false;
     }
-    
+
     // Filter by search term
     if (searchValue) {
       const searchLower = searchValue.toLowerCase();
       const nameMatch = talent.name.toLowerCase().includes(searchLower);
       const titleMatch = talent.title.toLowerCase().includes(searchLower);
-      const universityMatch = talent.university.toLowerCase().includes(searchLower);
-      const skillsMatch = talent.skills.some(skill => skill.toLowerCase().includes(searchLower));
-      
+      const universityMatch = talent.university
+        .toLowerCase()
+        .includes(searchLower);
+      const skillsMatch = talent.skills.some(skill =>
+        skill.toLowerCase().includes(searchLower)
+      );
+
       if (!(nameMatch || titleMatch || universityMatch || skillsMatch)) {
         return false;
       }
     }
-    
+
     return true;
   });
-  
+
   // Sort talents based on selected sort option
   const sortedTalents = [...filteredTalents].sort((a, b) => {
     if (filters.sort === 'rating') {
@@ -174,7 +178,7 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
     } else if (filters.sort === 'newest') {
       return b.id - a.id; // Using ID as a proxy for newest
     }
-    
+
     // Default: recommended (no specific sort)
     return 0;
   });
@@ -182,13 +186,16 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const talentsPerPage = 6;
-  
+
   // Calculate pagination
   const indexOfLastTalent = currentPage * talentsPerPage;
   const indexOfFirstTalent = indexOfLastTalent - talentsPerPage;
-  const currentTalents = sortedTalents.slice(indexOfFirstTalent, indexOfLastTalent);
+  const currentTalents = sortedTalents.slice(
+    indexOfFirstTalent,
+    indexOfLastTalent
+  );
   const totalPages = Math.ceil(sortedTalents.length / talentsPerPage);
-  
+
   // Generate page numbers
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
@@ -196,31 +203,35 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
   }
 
   return (
-    <section className="py-8 mb-16">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-lg font-medium text-slate-900 mb-6">
+    <section className='py-8 mb-16'>
+      <div className='container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+        <h2 className='text-lg font-medium text-slate-900 mb-6'>
           {sortedTalents.length} talenta ditemukan
         </h2>
-        
+
         {/* Talents Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12'>
           {currentTalents.map(talent => (
             <TalentCard key={talent.id} talent={talent} />
           ))}
         </div>
-        
+
         {/* Empty State */}
         {currentTalents.length === 0 && (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-slate-800 mb-2">Tidak ada talenta yang ditemukan</h3>
-            <p className="text-slate-500">Coba mengubah filter atau kata kunci pencarian</p>
+          <div className='text-center py-12'>
+            <h3 className='text-lg font-medium text-slate-800 mb-2'>
+              Tidak ada talenta yang ditemukan
+            </h3>
+            <p className='text-slate-500'>
+              Coba mengubah filter atau kata kunci pencarian
+            </p>
           </div>
         )}
-        
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center">
-            <div className="flex space-x-2">
+          <div className='flex justify-center'>
+            <div className='flex space-x-2'>
               {pageNumbers.map(number => (
                 <button
                   key={number}
@@ -234,15 +245,25 @@ const TalentsGrid = ({ filters, searchValue, activeSkill }) => {
                   {number}
                 </button>
               ))}
-              
+
               {currentPage < totalPages && (
                 <button
                   onClick={() => setCurrentPage(currentPage + 1)}
-                  className="flex items-center justify-center px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
+                  className='flex items-center justify-center px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all'
                 >
-                  <span className="mr-1">Next</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <span className='mr-1'>Next</span>
+                  <svg
+                    className='w-4 h-4'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 5l7 7-7 7'
+                    />
                   </svg>
                 </button>
               )}

@@ -13,21 +13,22 @@ import BackgroundElements from './Components/BackgroundElements';
 const About = () => {
   return (
     <>
-      <Head title="MahaBisa | Tentang Kami" />
-      
-      <div className="min-h-screen flex flex-col">
+      <Head title='MahaBisa | Tentang Kami' />
+
+      <div className='min-h-screen flex flex-col'>
         <Navbar />
-          <div className="pt-16 flex-grow"> {/* Add padding to account for fixed navbar */}
+        <div className='pt-16 flex-grow'>
+          {' '}
+          {/* Add padding to account for fixed navbar */}
           {/* Komponen Background Elements yang responsif */}
           <BackgroundElements />
-          
           {/* Komponen-komponen yang sudah direfaktor */}
           <AboutHero />
           <Stats />
           <Mission />
           <CallToAction />
         </div>
-        
+
         <Footer />
       </div>
     </>

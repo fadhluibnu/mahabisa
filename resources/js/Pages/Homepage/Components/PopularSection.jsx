@@ -5,14 +5,17 @@ const PopularSection = ({ populerCards }) => {
   const scrollRef = useRef(null);
   const [activePage, setActivePage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);
-  const [totalPages, setTotalPages] = useState(Math.ceil(populerCards.length / itemsPerPage));  const [cardWidth, setCardWidth] = useState('calc(25% - 15px)'); // Default card width
-  
+  const [totalPages, setTotalPages] = useState(
+    Math.ceil(populerCards.length / itemsPerPage)
+  );
+  const [cardWidth, setCardWidth] = useState('calc(25% - 15px)'); // Default card width
+
   // Update itemsPerPage and card width based on screen size
   useEffect(() => {
     const handleResize = () => {
       let newItemsPerPage = 4; // Default for large screens
       let newCardWidth = 'calc(25% - 12px)';
-      
+
       if (window.innerWidth < 640) {
         newItemsPerPage = 1; // Mobile
         newCardWidth = '100%';
@@ -23,11 +26,11 @@ const PopularSection = ({ populerCards }) => {
         newItemsPerPage = 3; // Small desktop
         newCardWidth = 'calc(33.333% - 10px)';
       }
-      
+
       setCardWidth(newCardWidth);
       setItemsPerPage(newItemsPerPage);
       setTotalPages(Math.ceil(populerCards.length / newItemsPerPage));
-      
+
       // Reset to first page when layout changes
       if (activePage >= Math.ceil(populerCards.length / newItemsPerPage)) {
         setActivePage(0);
@@ -82,7 +85,9 @@ const PopularSection = ({ populerCards }) => {
     <section className='pt-12 md:pt-16 lg:pt-20 pb-8 px-4 md:px-6 lg:px-0'>
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 gap-4'>
         <div>
-          <h1 className='font-bold text-2xl sm:text-3xl md:text-4xl'>Jasa Populer</h1>
+          <h1 className='font-bold text-2xl sm:text-3xl md:text-4xl'>
+            Jasa Populer
+          </h1>
           <p className='text-sm md:text-md font-normal text-slate-400 mt-2 md:mt-3'>
             Jasa dengan rating tinggi yang banyak dibutuhkan
           </p>
@@ -120,11 +125,9 @@ const PopularSection = ({ populerCards }) => {
               key={`page-${pageIndex}`}
               className='flex justify-start flex-shrink-0 w-full'
               style={{ gap: '16px' }}
-            >{populerCards
-                .slice(
-                  pageIndex * itemsPerPage,
-                  (pageIndex + 1) * itemsPerPage
-                )
+            >
+              {populerCards
+                .slice(pageIndex * itemsPerPage, (pageIndex + 1) * itemsPerPage)
                 .map((card, cardIdx) => (
                   <div
                     key={card.title + cardIdx}
@@ -145,7 +148,8 @@ const PopularSection = ({ populerCards }) => {
                       onBookmarkClick={() => {}}
                     />
                   </div>
-                ))}            </div>
+                ))}{' '}
+            </div>
           ))}
         </div>
         <div className='flex flex-col items-center justify-center gap-3 mt-6 md:mt-8'>
@@ -156,7 +160,13 @@ const PopularSection = ({ populerCards }) => {
               className='rounded-full p-1.5 md:p-2 border border-slate-300 hover:bg-slate-100 bg-white shadow transition disabled:opacity-50 disabled:cursor-not-allowed'
               disabled={activePage === 0}
             >
-              <svg width='20' height='20' fill='none' viewBox='0 0 24 24' className="md:w-6 md:h-6">
+              <svg
+                width='20'
+                height='20'
+                fill='none'
+                viewBox='0 0 24 24'
+                className='md:w-6 md:h-6'
+              >
                 <path
                   d='M15 19l-7-7 7-7'
                   stroke='#7C3AED'
@@ -187,7 +197,13 @@ const PopularSection = ({ populerCards }) => {
               className='rounded-full p-1.5 md:p-2 border border-slate-300 hover:bg-slate-100 bg-white shadow transition disabled:opacity-50 disabled:cursor-not-allowed'
               disabled={activePage === totalPages - 1}
             >
-              <svg width='20' height='20' fill='none' viewBox='0 0 24 24' className="md:w-6 md:h-6">
+              <svg
+                width='20'
+                height='20'
+                fill='none'
+                viewBox='0 0 24 24'
+                className='md:w-6 md:h-6'
+              >
                 <path
                   d='M9 5l7 7-7 7'
                   stroke='#7C3AED'

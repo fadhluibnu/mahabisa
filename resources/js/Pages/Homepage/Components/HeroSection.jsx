@@ -48,9 +48,9 @@ const HeroSection = () => {
         </div>
       </div>
       <div className='w-full md:w-1/2 flex justify-center md:justify-end'>
-        <img 
-          src='assets/hero.png' 
-          alt='Hero Image' 
+        <img
+          src='assets/hero.png'
+          alt='Hero Image'
           className='w-full max-w-md md:max-w-full object-cover'
         />
       </div>

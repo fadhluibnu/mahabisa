@@ -12,21 +12,21 @@ const Explore = () => {
     category: '',
     budget: '',
     rating: '',
-    sort: 'recommended'
+    sort: 'recommended',
   });
   const [activeCategory, setActiveCategory] = useState('all');
 
   // Handler for search input
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     setSearchValue(e.target.value);
   };
   // Handler for filter changes
   const handleFilterChange = (filterType, value) => {
     setFilters({
       ...filters,
-      [filterType]: value
+      [filterType]: value,
     });
-    
+
     // Sync activeCategory when category filter changes
     if (filterType === 'category') {
       setActiveCategory(value || 'all');
@@ -34,36 +34,35 @@ const Explore = () => {
   };
 
   // Handler for category pill clicks
-  const handleCategoryClick = (category) => {
+  const handleCategoryClick = category => {
     setActiveCategory(category);
-    
+
     // Sync category filter when pill is clicked
     setFilters({
       ...filters,
-      category: category === 'all' ? '' : category
+      category: category === 'all' ? '' : category,
     });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className='min-h-screen bg-slate-50'>
       <Navbar />
-      <div className="pt-16"> {/* Add padding to account for fixed navbar */}
-        <ExploreHero 
-          searchValue={searchValue} 
-          onSearchChange={handleSearchChange} 
+      <div className='pt-16'>
+        {' '}
+        {/* Add padding to account for fixed navbar */}
+        <ExploreHero
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
         />
-        <FilterSection 
-          filters={filters} 
-          onFilterChange={handleFilterChange} 
+        <FilterSection filters={filters} onFilterChange={handleFilterChange} />
+        <CategoryPillsSection
+          activeCategory={activeCategory}
+          onCategoryClick={handleCategoryClick}
         />
-        <CategoryPillsSection 
-          activeCategory={activeCategory} 
-          onCategoryClick={handleCategoryClick} 
-        />
-        <ServicesGrid 
-          filters={filters} 
-          searchValue={searchValue} 
-          activeCategory={activeCategory} 
+        <ServicesGrid
+          filters={filters}
+          searchValue={searchValue}
+          activeCategory={activeCategory}
         />
       </div>
       <Footer />
