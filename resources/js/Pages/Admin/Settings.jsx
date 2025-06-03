@@ -4,6 +4,44 @@ import AdminLayout from './Components/AdminLayout';
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  
+  // General settings toggle states
+  const [allowRegistration, setAllowRegistration] = useState(true);
+  const [requireEmailVerification, setRequireEmailVerification] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  
+  // Fee settings toggle state
+  const [automaticWithdrawal, setAutomaticWithdrawal] = useState(true);
+  
+  // Security settings toggle states
+  const [requireLettersNumbers, setRequireLettersNumbers] = useState(true);
+  const [requireSpecialChars, setRequireSpecialChars] = useState(false);
+  
+  // Payment settings toggle states
+  const [enableMidtrans, setEnableMidtrans] = useState(true);
+  const [midtransSandbox, setMidtransSandbox] = useState(true);
+  const [enableQRIS, setEnableQRIS] = useState(true);
+  
+  // Function to handle toggle click
+  const handleToggle = (stateSetter, currentValue) => {
+    stateSetter(!currentValue);
+  };
+
+  // Toggle UI component to reuse with enhanced animations
+  const ToggleSwitch = ({ enabled, onChange }) => (
+    <button 
+      type="button"
+      onClick={onChange}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${enabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+      aria-pressed={enabled}
+      aria-label="Toggle setting"
+    >
+      <span className="sr-only">{enabled ? 'Enabled' : 'Disabled'}</span>
+      <span 
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-all duration-300 ease-in-out ${enabled ? 'translate-x-5' : 'translate-x-0'}`} 
+      />
+    </button>
+  );
 
   return (
     <AdminLayout
@@ -46,7 +84,7 @@ const Settings = () => {
             >
               Keamanan
             </button>
-            <button
+            {/* <button
               onClick={() => setActiveTab('email')}
               className={`py-3 sm:py-4 px-4 sm:px-6 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'email'
@@ -55,7 +93,7 @@ const Settings = () => {
               }`}
             >
               Email
-            </button>
+            </button> */}
             <button
               onClick={() => setActiveTab('payment')}
               className={`py-3 sm:py-4 px-4 sm:px-6 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
@@ -66,7 +104,7 @@ const Settings = () => {
             >
               Pembayaran
             </button>
-            <button
+            {/* <button
               onClick={() => setActiveTab('integrations')}
               className={`py-3 sm:py-4 px-4 sm:px-6 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === 'integrations'
@@ -75,7 +113,7 @@ const Settings = () => {
               }`}
             >
               Integrasi
-            </button>
+            </button> */}
           </nav>
         </div>
 
@@ -93,7 +131,7 @@ const Settings = () => {
               </div>
 
               <div className='md:col-span-2'>
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
+                {/* <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
                   <div className='p-6 space-y-6'>
                     <div>
                       <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -157,7 +195,7 @@ const Settings = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
                   <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
@@ -177,13 +215,14 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={allowRegistration} 
+                          onChange={() => handleToggle(setAllowRegistration, allowRegistration)} 
+                        />
                       </div>
                     </div>
 
-                    <div className='flex items-center justify-between'>
+                    {/* <div className='flex items-center justify-between'>
                       <div>
                         <h4 className='text-sm font-medium text-gray-900'>
                           Verifikasi Email
@@ -193,11 +232,12 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={requireEmailVerification} 
+                          onChange={() => handleToggle(setRequireEmailVerification, requireEmailVerification)} 
+                        />
                       </div>
-                    </div>
+                    </div> */}
 
                     <div className='flex items-center justify-between'>
                       <div>
@@ -209,9 +249,10 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={maintenanceMode} 
+                          onChange={() => handleToggle(setMaintenanceMode, maintenanceMode)} 
+                        />
                       </div>
                     </div>
                   </div>
@@ -334,9 +375,10 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={automaticWithdrawal} 
+                          onChange={() => handleToggle(setAutomaticWithdrawal, automaticWithdrawal)} 
+                        />
                       </div>
                     </div>
                   </div>
@@ -367,7 +409,7 @@ const Settings = () => {
               </div>
 
               <div className='md:col-span-2'>
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
+                {/* <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
                   <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
                     <h3 className='text-sm font-medium text-gray-900'>
                       Autentikasi
@@ -421,7 +463,7 @@ const Settings = () => {
                       </p>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
                   <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
@@ -452,9 +494,10 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={requireLettersNumbers} 
+                          onChange={() => handleToggle(setRequireLettersNumbers, requireLettersNumbers)} 
+                        />
                       </div>
                     </div>
 
@@ -468,9 +511,10 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={requireSpecialChars} 
+                          onChange={() => handleToggle(setRequireSpecialChars, requireSpecialChars)} 
+                        />
                       </div>
                     </div>
 
@@ -505,7 +549,7 @@ const Settings = () => {
         )}
 
         {/* Email Settings Tab Content */}
-        {activeTab === 'email' && (
+        {/* {activeTab === 'email' && (
           <div className='p-6'>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
               <div className='md:col-span-1'>
@@ -701,7 +745,7 @@ const Settings = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Payment Settings Tab Content */}
         {activeTab === 'payment' && (
@@ -742,9 +786,10 @@ const Settings = () => {
                         </div>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={enableMidtrans} 
+                          onChange={() => handleToggle(setEnableMidtrans, enableMidtrans)} 
+                        />
                       </div>
                     </div>
 
@@ -780,9 +825,10 @@ const Settings = () => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={midtransSandbox} 
+                          onChange={() => handleToggle(setMidtransSandbox, midtransSandbox)} 
+                        />
                       </div>
                     </div>
 
@@ -807,9 +853,10 @@ const Settings = () => {
                         </div>
                       </div>
                       <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
+                        <ToggleSwitch 
+                          enabled={enableQRIS} 
+                          onChange={() => handleToggle(setEnableQRIS, enableQRIS)} 
+                        />
                       </div>
                     </div>
                   </div>
@@ -934,7 +981,7 @@ const Settings = () => {
         )}
 
         {/* Integrations Tab Content */}
-        {activeTab === 'integrations' && (
+        {/* {activeTab === 'integrations' && (
           <div className='p-6'>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
               <div className='md:col-span-1'>
@@ -1124,7 +1171,7 @@ const Settings = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Save Changes Modal */}

@@ -1,9 +1,160 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import AdminLayout from './Components/AdminLayout';
 import StatCard from './Components/StatCard';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const Dashboard = () => {
+  const [timeRange, setTimeRange] = useState('Bulanan');
+  
+  // Chart data for different time ranges
+  const chartData = {
+    'Bulanan': {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep'],
+      totalVisitors: [8000, 9500, 10200, 9000, 11500, 15000, 13500, 16000, 18000],
+      newVisitors: [5000, 6200, 6800, 6000, 7500, 9000, 8200, 9500, 10500]
+    },
+    'Mingguan': {
+      labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
+      totalVisitors: [3800, 4200, 4500, 5000],
+      newVisitors: [2200, 2500, 2800, 3100]
+    },
+    'Harian': {
+      labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+      totalVisitors: [520, 680, 750, 620, 700, 800, 550],
+      newVisitors: [320, 420, 460, 380, 430, 480, 340]
+    }
+  };
+  
+  // Chart options and data structure
+  const data = {
+    labels: chartData[timeRange].labels,
+    datasets: [
+      {
+        label: 'Total Pengunjung',
+        data: chartData[timeRange].totalVisitors,
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointBackgroundColor: '#4f46e5'
+      },
+      {
+        label: 'Pengunjung Baru',
+        data: chartData[timeRange].newVisitors,
+        borderColor: '#10b981',
+        borderDash: [5, 5],
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#10b981'
+      }
+    ]
+  };
+  
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          boxWidth: 6,
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#1f2937',
+        bodyColor: '#4b5563',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        padding: 10,
+        boxPadding: 4,
+        bodyFont: {
+          size: 12
+        },
+        titleFont: {
+          size: 14,
+          weight: 'bold'
+        },
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          color: '#9ca3af'
+        }
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(243, 244, 246, 1)'
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          color: '#9ca3af',
+          callback: function(value) {
+            if (value >= 1000) {
+              return value / 1000 + 'k';
+            }
+            return value;
+          }
+        }
+      }
+    }
+  };
+  
+  // Handle time range change
+  const handleTimeRangeChange = (e) => {
+    setTimeRange(e.target.value);
+  };
+
   return (
     <AdminLayout
       title='Dashboard Admin'
@@ -264,28 +415,61 @@ const Dashboard = () => {
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
             <div className='flex justify-between items-center mb-6'>
               <h3 className='font-bold text-lg text-gray-900'>
-                Statistik Platform
+                Traffic Pengunjung
               </h3>
-              <select className='text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-1'>
+              <select 
+                className='text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-1'
+                value={timeRange}
+                onChange={handleTimeRangeChange}
+              >
                 <option>Bulanan</option>
                 <option>Mingguan</option>
                 <option>Harian</option>
               </select>
             </div>
 
-            <div className='h-64 w-full flex items-center justify-center bg-gray-50 rounded-lg'>
-              <p className='text-gray-500'>Chart akan ditampilkan di sini</p>
+            <div className='space-y-6'>
+              <div className='h-64 w-full bg-white rounded-lg'>
+                <Line data={data} options={options} />
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Total Pengunjung</p>
+                  <p className="font-bold text-lg text-blue-600">12,845</p>
+                </div>
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Pengunjung Baru</p>
+                  <p className="font-bold text-lg text-green-600">5,372</p>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Rata-rata Waktu</p>
+                  <p className="font-bold text-lg text-purple-600">3:24</p>
+                </div>
+                <div className="bg-amber-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Bounce Rate</p>
+                  <p className="font-bold text-lg text-amber-600">32%</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Sidebar content */}
         <div className='space-y-6 md:space-y-8'>
-          {/* User Activity */}
+          {/* Combined Notifications & Activities */}
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
-            <h3 className='font-bold text-lg text-gray-900 mb-4'>
-              Aktivitas Terbaru
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className='font-bold text-lg text-gray-900'>
+                Aktivitas & Notifikasi
+              </h3>
+              <div className="flex space-x-2">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                  <span className="w-2 h-2 bg-indigo-600 rounded-full mr-1"></span>
+                  Baru
+                </span>
+              </div>
+            </div>
 
             <div className='space-y-5'>
               <div className='flex items-start'>
@@ -364,14 +548,40 @@ const Dashboard = () => {
                   <p className='text-xs text-gray-500 mt-1'>Kemarin, 09:27</p>
                 </div>
               </div>
+              
+              <div className='flex items-start'>
+                <div className='flex-shrink-0 mr-3'>
+                  <div className='w-8 h-8 rounded-full overflow-hidden'>
+                    <img
+                      src='https://randomuser.me/api/portraits/women/45.jpg'
+                      alt='User'
+                      className='w-full h-full object-cover'
+                    />
+                  </div>
+                </div>
+                <div>
+                  <p className='text-sm text-gray-900'>
+                    <Link href='/admin/users/5' className='font-medium hover:text-indigo-600'>Maya Sari</Link>{' '}
+                    membuat proyek baru{' '}
+                    <Link href='/admin/projects/15' className='font-medium hover:text-indigo-600'>Brand Identity Design</Link>
+                  </p>
+                  <p className='text-xs text-gray-500 mt-1'>2 hari yang lalu</p>
+                </div>
+              </div>
             </div>
 
-            <Link 
-              href='/admin/activities'
-              className='block w-full mt-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 text-center'
-            >
-              Lihat Semua Aktivitas
-            </Link>
+            <div className="flex justify-between mt-4 pt-4 border-t border-gray-100">
+              <Link 
+                href='/admin/activities'
+                className='py-2 px-4 text-sm font-medium text-indigo-600 hover:text-indigo-800 text-center'
+              >
+                Lihat Semua Aktivitas
+              </Link>
+              
+              <button className="text-sm text-gray-500 hover:text-gray-700">
+                Tandai Semua Dibaca
+              </button>
+            </div>
           </div>
 
           {/* Popular Categories */}

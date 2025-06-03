@@ -195,6 +195,14 @@ Route::prefix('admin')->group(function () {
         ]);
     });
     
+    Route::get('/activities', function () {
+        // Get admin user for testing
+        $dummyUser = getDummyUser('admin');
+        return Inertia::render('Admin/Activities', [
+            'user' => $dummyUser
+        ]);
+    });
+    
     Route::get('/payments', function () {
         // Get admin user for testing
         $dummyUser = getDummyUser('admin');
