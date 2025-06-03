@@ -7,6 +7,7 @@ import Footer from '@/Components/Footer';
 import AboutHero from './Components/AboutHero';
 import Stats from './Components/Stats';
 import Mission from './Components/Mission';
+import OwnerSection from './Components/OwnerSection';
 import CallToAction from './Components/CallToAction';
 import BackgroundElements from './Components/BackgroundElements';
 
@@ -28,6 +29,7 @@ const About = () => {
           <AboutHero />
           <Stats />
           <Mission />
+          <OwnerSection />
           <CallToAction />
         </div>
 
