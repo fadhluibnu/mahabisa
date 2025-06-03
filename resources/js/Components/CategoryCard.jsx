@@ -1,6 +1,9 @@
 const CategoryCard = ({ category }) => {
   return (
-    <a className='w-full cursor-pointer shadow-lg rounded-lg py-6 md:py-8 bg-white hover:shadow-xl transition-all duration-200 ease-in-out'>
+    <a 
+      href={`/eksplorasi?kategori=${encodeURIComponent(category.name)}`}
+      className='w-full cursor-pointer shadow-lg rounded-lg py-6 md:py-8 bg-white hover:shadow-xl transition-all duration-200 ease-in-out'
+    >
       <div className='flex items-center justify-between gap-3 md:gap-4 px-4 md:px-6'>
         <div className='flex items-center gap-3 md:gap-4'>
           <img

@@ -65,15 +65,12 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
               </svg>
             </div>
             <div className='ml-3'>
-              <div className='flex items-center'>
-                <span className='font-heading font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-transparent bg-clip-text text-lg'>
-                  MahaBisa
-                </span>
-                {/* <span className="font-heading font-bold text-indigo-600 text-lg">Bisa</span> */}
-              </div>
-              <div className='text-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-semibold text-sm'>
+              <h1 className='text-lg font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-transparent bg-clip-text'>
+                MahaBisa
+              </h1>
+              <span className='text-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-semibold text-sm'>
                 Admin
-              </div>
+              </span>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@ const AdminLayout = ({ children, title, subtitle }) => {
         {/* Mobile menu button */}
         <button
           type='button'
-          className='md:hidden fixed top-4 left-4 z-40 p-2 rounded-md bg-indigo-600 text-white'
+          className='md:hidden fixed top-4 right-4 z-40 p-2 rounded-md bg-indigo-600 text-white'
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <svg

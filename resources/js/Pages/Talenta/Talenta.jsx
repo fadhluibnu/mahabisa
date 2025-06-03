@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import TalentaHero from './Components/TalentaHero';
@@ -17,6 +18,7 @@ const Talenta = () => {
     sort: 'recommended',
   });
   const [activeSkill, setActiveSkill] = useState('all');
+  const { auth } = usePage().props;
 
   // Handler for search input
   const handleSearchChange = e => {
@@ -38,7 +40,8 @@ const Talenta = () => {
 
   return (
     <div className='min-h-screen bg-slate-50'>
-      <Navbar />
+      <Head title="MahaBisa | Talenta" />
+      <Navbar user={auth.user} />
       <div className='pt-16'>
         {' '}
         {/* Add padding to account for fixed navbar */}

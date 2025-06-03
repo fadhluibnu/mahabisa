@@ -1,6 +1,8 @@
 import React from 'react';
+import { Link } from '@inertiajs/react';
 
 const TalentCard = ({
+  id,
   image,
   name,
   profession,
@@ -92,12 +94,12 @@ const TalentCard = ({
         </div>
       </div>
 
-      <a
-        href='#'
+      <Link
+        href={`/talenta/${id || 1}`}
         className='block w-full py-2.5 text-center border border-[#7C3AED] text-[#7C3AED] rounded-lg font-medium hover:bg-[#7C3AED] hover:text-white transition-colors duration-200'
       >
         Lihat Profil
-      </a>
+      </Link>
     </div>
   );
 };

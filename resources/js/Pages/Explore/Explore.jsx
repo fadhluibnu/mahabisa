@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import ExploreHero from './Components/ExploreHero';
@@ -15,6 +16,7 @@ const Explore = () => {
     sort: 'recommended',
   });
   const [activeCategory, setActiveCategory] = useState('all');
+  const { auth } = usePage().props;
 
   // Handler for search input
   const handleSearchChange = e => {
@@ -46,7 +48,8 @@ const Explore = () => {
 
   return (
     <div className='min-h-screen bg-slate-50'>
-      <Navbar />
+      <Head title="MahaBisa | Eksplorasi Jasa" />
+      <Navbar user={auth.user} />
       <div className='pt-16'>
         {' '}
         {/* Add padding to account for fixed navbar */}

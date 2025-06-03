@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@inertiajs/react';
 import AdminLayout from './Components/AdminLayout';
 import StatCard from './Components/StatCard';
 
@@ -116,9 +117,12 @@ const Dashboard = () => {
               <h3 className='font-bold text-lg text-gray-900'>
                 Proyek Terbaru
               </h3>
-              <button className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'>
+              <Link 
+                href='/admin/orders' 
+                className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'
+              >
                 Lihat Semua
-              </button>
+              </Link>
             </div>
 
             {/* Project list */}
@@ -141,7 +145,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50'>
+                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/1'}>
                     <td className='py-3 font-medium text-gray-900'>
                       Website Dashboard
                     </td>
@@ -168,7 +172,7 @@ const Dashboard = () => {
                       Rp 4.500.000
                     </td>
                   </tr>
-                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50'>
+                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/2'}>
                     <td className='py-3 font-medium text-gray-900'>
                       Logo Design
                     </td>
@@ -197,7 +201,7 @@ const Dashboard = () => {
                       Rp 1.200.000
                     </td>
                   </tr>
-                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50'>
+                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/3'}>
                     <td className='py-3 font-medium text-gray-900'>
                       Mobile App
                     </td>
@@ -226,7 +230,7 @@ const Dashboard = () => {
                       Rp 8.750.000
                     </td>
                   </tr>
-                  <tr className='text-sm hover:bg-gray-50'>
+                  <tr className='text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/4'}>
                     <td className='py-3 font-medium text-gray-900'>
                       Content Writing
                     </td>
@@ -296,9 +300,9 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className='text-sm text-gray-900'>
-                    <span className='font-medium'>Dewi Susanti</span>{' '}
+                    <Link href='/admin/users/1' className='font-medium hover:text-indigo-600'>Dewi Susanti</Link>{' '}
                     menyelesaikan proyek{' '}
-                    <span className='font-medium'>Website E-commerce</span>
+                    <Link href='/admin/projects/5' className='font-medium hover:text-indigo-600'>Website E-commerce</Link>
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>2 jam yang lalu</p>
                 </div>
@@ -316,7 +320,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className='text-sm text-gray-900'>
-                    <span className='font-medium'>Agus Pratama</span> bergabung
+                    <Link href='/admin/users/2' className='font-medium hover:text-indigo-600'>Agus Pratama</Link> bergabung
                     sebagai freelancer
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>5 jam yang lalu</p>
@@ -335,7 +339,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className='text-sm text-gray-900'>
-                    <span className='font-medium'>Nina Maulida</span>{' '}
+                    <Link href='/admin/users/3' className='font-medium hover:text-indigo-600'>Nina Maulida</Link>{' '}
                     menambahkan portofolio baru
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>Kemarin, 16:42</p>
@@ -354,7 +358,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className='text-sm text-gray-900'>
-                    <span className='font-medium'>Rudi Hartono</span>{' '}
+                    <Link href='/admin/users/4' className='font-medium hover:text-indigo-600'>Rudi Hartono</Link>{' '}
                     mendapatkan 5 review bintang
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>Kemarin, 09:27</p>
@@ -362,9 +366,12 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <button className='w-full mt-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800'>
+            <Link 
+              href='/admin/activities'
+              className='block w-full mt-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 text-center'
+            >
               Lihat Semua Aktivitas
-            </button>
+            </Link>
           </div>
 
           {/* Popular Categories */}

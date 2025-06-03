@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@inertiajs/react';
 
 const CtaSection = () => {
   return (
@@ -15,18 +16,18 @@ const CtaSection = () => {
               penawaran dalam 24 jam.
             </p>
             <div className='flex flex-wrap gap-4'>
-              <a
-                href='#'
+              <Link
+                href='/client/projects/create'
                 className='px-6 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-colors shadow-md'
               >
                 Buat Proyek Baru
-              </a>
-              <a
-                href='#'
+              </Link>
+              <Link
+                href='/talenta'
                 className='px-6 py-3 bg-transparent text-white border-2 border-white rounded-lg font-semibold hover:bg-white/10 transition-colors'
               >
                 Jelajahi Talenta
-              </a>
+              </Link>
             </div>
           </div>
 

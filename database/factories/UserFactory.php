@@ -27,8 +27,11 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            'role' => fake()->randomElement(['client', 'freelancer']),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'profile_photo_url' => 'https://randomuser.me/api/portraits/' . 
+                (fake()->boolean ? 'men' : 'women') . '/' . fake()->numberBetween(1, 99) . '.jpg',
         ];
     }
 

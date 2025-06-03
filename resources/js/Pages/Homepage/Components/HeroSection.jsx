@@ -19,7 +19,7 @@ const HeroSection = () => {
         </p>
         <div className='flex flex-col sm:flex-row items-center gap-4'>
           <a
-            href='#'
+            href='/auth?form=register'
             className='w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-white rounded-md hover:shadow-xl hover:bg-gradient-to-br hover:from-[#5B21B6] hover:to-[#7C3AED] transition-all duration-200 font-medium'
           >
             Mulai Sekarang{' '}
@@ -40,7 +40,7 @@ const HeroSection = () => {
             </svg>
           </a>
           <a
-            href='#'
+            href='/tentang-kami'
             className='w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-700 hover:bg-slate-50 transition-all duration-200 hover:shadow-lg hover:border-gray-300 border border-gray-200 rounded-md font-medium'
           >
             Pelajari Lebih Lanjut

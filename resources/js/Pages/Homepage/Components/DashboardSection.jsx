@@ -226,7 +226,7 @@ const DashboardSection = () => {
 
             <div className='mt-10'>
               <a
-                href='#'
+                href='/freelancer/dashboard'
                 className='inline-flex items-center px-6 py-3 bg-[#7C3AED] text-white font-medium rounded-lg hover:bg-purple-700 transition-colors'
               >
                 Jelajahi Dashboard

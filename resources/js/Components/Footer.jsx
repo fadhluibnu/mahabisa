@@ -35,7 +35,7 @@ const Footer = () => {
             </p>
             <div className='flex space-x-4 mb-8'>
               <a
-                href='#'
+                href='https://facebook.com'
                 className='bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors'
               >
                 <svg
@@ -47,7 +47,7 @@ const Footer = () => {
                 </svg>
               </a>
               <a
-                href='#'
+                href='https://instagram.com'
                 className='bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors'
               >
                 <svg
@@ -59,7 +59,7 @@ const Footer = () => {
                 </svg>
               </a>
               <a
-                href='#'
+                href='https://twitter.com'
                 className='bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors'
               >
                 <svg
@@ -84,7 +84,7 @@ const Footer = () => {
                 <ul className='space-y-3 clear-both'>
                   <li>
                     <a
-                      href='#'
+                      href='/eksplorasi'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Jelajahi Jasa
@@ -92,7 +92,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/talenta'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Cari Freelancer
@@ -100,7 +100,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/cara-kerja'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Cara Kerja
@@ -108,7 +108,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/harga'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Harga
@@ -124,7 +124,7 @@ const Footer = () => {
                 <ul className='space-y-3 clear-both'>
                   <li>
                     <a
-                      href='#'
+                      href='/auth?form=register&type=freelancer'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Mulai Freelance
@@ -132,7 +132,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/freelancer/portofolio'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Buat Portofolio
@@ -140,7 +140,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/forum'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Forum Komunitas
@@ -148,7 +148,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/resources'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Resources
@@ -164,7 +164,7 @@ const Footer = () => {
                 <ul className='space-y-3 clear-both'>
                   <li>
                     <a
-                      href='#'
+                      href='/tentang-kami'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Tentang Kami
@@ -172,7 +172,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/karir'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Karir
@@ -180,7 +180,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/blog'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Blog
@@ -188,7 +188,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <a
-                      href='#'
+                      href='/kontak'
                       className='text-gray-400 hover:text-white transition-colors'
                     >
                       Kontak
@@ -206,19 +206,19 @@ const Footer = () => {
           </div>
           <div className='flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-6 items-center md:items-start'>
             <a
-              href='#'
+              href='/kebijakan-privasi'
               className='text-gray-400 hover:text-white transition-colors'
             >
               Kebijakan Privasi
             </a>
             <a
-              href='#'
+              href='/syarat-ketentuan'
               className='text-gray-400 hover:text-white transition-colors'
             >
               Syarat & Ketentuan
             </a>
             <a
-              href='#'
+              href='/aksesibilitas'
               className='text-gray-400 hover:text-white transition-colors'
             >
               Aksesibilitas

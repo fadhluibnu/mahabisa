@@ -197,7 +197,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
             className='sr-only'
             required
           />
-          <span className='relative w-5 h-5 mt-1 border-2 border-slate-300 rounded flex items-center justify-center bg-white transition-all'>
+          <span className='relative flex-shrink-0 w-5 h-5 mt-0.5 border-2 border-slate-300 rounded flex items-center justify-center bg-white transition-all'>
             {formData.agreeTerms && (
               <span className='bg-indigo-500 absolute inset-0 rounded-sm flex items-center justify-center'>
                 <svg

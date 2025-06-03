@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from './Components/AdminLayout';
 import StatCard from './Components/StatCard';
+import { Link } from '@inertiajs/react';
 
 const Payments = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -136,9 +137,6 @@ const Payments = () => {
                 </svg>
                 Filter
               </button>
-              <button className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'>
-                Lihat Semua
-              </button>
             </div>
           </div>
 
@@ -220,7 +218,10 @@ const Payments = () => {
                   </td>
                   <td className='py-3 hidden lg:table-cell'>18 Mei 2023</td>
                   <td className='py-3 text-right'>
-                    <button className='px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100'>
+                    <button 
+                      onClick={() => setShowTransactionModal(true)}
+                      className='px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100'
+                    >
                       Detail
                     </button>
                   </td>
@@ -250,7 +251,10 @@ const Payments = () => {
                   </td>
                   <td className='py-3 hidden lg:table-cell'>15 Mei 2023</td>
                   <td className='py-3 text-right'>
-                    <button className='px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100'>
+                    <button 
+                      onClick={() => setShowTransactionModal(true)}
+                      className='px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100'
+                    >
                       Detail
                     </button>
                   </td>
@@ -518,6 +522,71 @@ const Payments = () => {
               <span className='px-3 py-1 rounded-full text-sm bg-green-100 text-green-800'>
                 Dibayar
               </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Informasi Proyek</h4>
+                <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                  <div className='flex items-center mb-3'>
+                    <div className='w-10 h-10 rounded bg-blue-100 mr-3 flex items-center justify-center text-blue-600 font-medium'>
+                      WD
+                    </div>
+                    <span className="font-medium">Website Dashboard</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Kategori:</span>
+                      <span className="font-medium">Web Development</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Freelancer:</span>
+                      <span className="font-medium">Ahmad Fadli</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Klien:</span>
+                      <span className="font-medium">PT Maju Bersama</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Informasi Pembayaran</h4>
+                <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tanggal:</span>
+                      <span className="font-medium">21 Mei 2023</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Metode:</span>
+                      <span className="font-medium">Bank Transfer</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Pembayaran:</span>
+                      <span className="font-medium">Rp 4.500.000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Komisi Platform:</span>
+                      <span className="font-medium text-green-600">Rp 900.000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Diterima Freelancer:</span>
+                      <span className="font-medium">Rp 3.600.000</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">Catatan Transaksi</h4>
+              <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  Pembayaran telah diverifikasi dan diteruskan ke akun freelancer. Proyek telah selesai dan telah memenuhi semua persyaratan yang ditetapkan oleh klien.
+                </p>
+              </div>
             </div>
 
             <div className='flex justify-end space-x-3'>

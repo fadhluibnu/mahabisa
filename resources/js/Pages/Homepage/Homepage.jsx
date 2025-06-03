@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import HeroSection from './Components/HeroSection';
@@ -10,8 +11,10 @@ import TalentSection from './Components/TalentSection';
 import TestimonialsSection from './Components/TestimonialsSection';
 import CallToActionSection from './Components/CallToActionSection';
 
-const Homepage = () => {
+const Homepage = ({ user }) => {
   const [searchValue, setSearchValue] = useState('');
+  const { auth } = usePage().props;
+  console.log('User:', user);
 
   const handlePopularClick = value => {
     setSearchValue(value);
@@ -133,7 +136,8 @@ const Homepage = () => {
 
   return (
     <div>
-      <Navbar />
+      <Head title="MahaBisa | Platform Freelance untuk Mahasiswa" />
+      <Navbar user={user} />
       <div className='max-w-7xl px-4 md:px-5 lg:px-0 mx-auto pt-16'>
         <HeroSection />
         <SearchSection

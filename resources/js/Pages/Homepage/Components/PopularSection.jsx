@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import PopulerCard from '@/Components/PopulerCard';
+import { Link } from '@inertiajs/react'; // Add this import for navigation
 
 const PopularSection = ({ populerCards }) => {
   const scrollRef = useRef(null);
@@ -93,7 +94,7 @@ const PopularSection = ({ populerCards }) => {
           </p>
         </div>
         <a
-          href=''
+          href='/eksplorasi'
           className='flex items-center hover:underline gap-2 md:gap-3 text-[#7C3AED] text-sm md:text-base'
         >
           Lihat Semua
@@ -134,19 +135,24 @@ const PopularSection = ({ populerCards }) => {
                     className='flex-shrink-0'
                     style={{ width: cardWidth }}
                   >
-                    <PopulerCard
-                      image={card.image}
-                      isBestSeller={card.isBestSeller}
-                      label={card.label}
-                      userName={card.userName}
-                      userLevel={card.userLevel}
-                      title={card.title}
-                      rating={card.rating}
-                      reviewCount={card.reviewCount}
-                      price={card.price}
-                      isBookmarked={false}
-                      onBookmarkClick={() => {}}
-                    />
+                    <Link href={`/jasa/${card.id}`} className="block">
+                      <PopulerCard
+                        image={card.image}
+                        isBestSeller={card.isBestSeller}
+                        label={card.label}
+                        userName={card.userName}
+                        userLevel={card.userLevel}
+                        title={card.title}
+                        rating={card.rating}
+                        reviewCount={card.reviewCount}
+                        price={card.price}
+                        isBookmarked={false}
+                        onBookmarkClick={(e) => {
+                          e.preventDefault(); // Prevent navigation when bookmark is clicked
+                          // Handle bookmark logic here if needed
+                        }}
+                      />
+                    </Link>
                   </div>
                 ))}{' '}
             </div>

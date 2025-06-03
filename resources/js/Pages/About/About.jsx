@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 
@@ -11,12 +11,14 @@ import CallToAction from './Components/CallToAction';
 import BackgroundElements from './Components/BackgroundElements';
 
 const About = () => {
+  const { auth } = usePage().props;
+  
   return (
     <>
       <Head title='MahaBisa | Tentang Kami' />
 
       <div className='min-h-screen flex flex-col'>
-        <Navbar />
+        <Navbar user={auth.user} />
         <div className='pt-16 flex-grow'>
           {' '}
           {/* Add padding to account for fixed navbar */}

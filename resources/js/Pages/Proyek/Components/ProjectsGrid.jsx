@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProjectCard from './ProjectCard';
+import { Link } from '@inertiajs/react';
 
 const ProjectsGrid = ({ activeTab, filters }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -385,9 +386,8 @@ const ProjectsGrid = ({ activeTab, filters }) => {
               ? 'Proyek Sedang Diproses'
               : 'Semua Proyek'}
         </h2>
-
-        <a
-          href='#'
+        <Link
+          href='/client/projects/create'
           className='inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium'
         >
           <svg
@@ -405,7 +405,7 @@ const ProjectsGrid = ({ activeTab, filters }) => {
             ></path>
           </svg>
           Buat Proyek
-        </a>
+        </Link>
       </div>{' '}
       {displayedProjects.length > 0 ? (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 auto-rows-fr'>

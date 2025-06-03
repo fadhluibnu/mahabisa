@@ -49,7 +49,7 @@ const TalentSection = () => {
             </p>
           </div>
           <a
-            href='#'
+            href='/talenta'
             className='flex items-center hover:underline gap-1 text-[#7C3AED] font-medium'
           >
             Lihat Semua
@@ -76,6 +76,7 @@ const TalentSection = () => {
           {talents.map((talent, index) => (
             <TalentCard
               key={index}
+              id={index + 1}
               image={talent.image}
               name={talent.name}
               profession={talent.profession}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from '@inertiajs/react';
 
 const ProyekHero = () => {
   return (
@@ -8,7 +9,7 @@ const ProyekHero = () => {
           Jelajahi Proyek
           <span className='absolute -bottom-3 left-0 w-28 h-1.5 bg-gradient-to-r from-violet-600 to-pink-500 rounded-full'></span>
         </h1>
-        <p className='text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mt-6'>
+        <p className='text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mt-6 mb-8'>
           Temukan proyek freelance yang sesuai dengan keahlian dan minatmu, atau
           posting proyek baru untuk menemukan talenta terbaik.
         </p>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from './Components/AdminLayout';
 import StatCard from './Components/StatCard';
+import { Link } from '@inertiajs/react';
 
 const Users = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -135,8 +136,8 @@ const Users = () => {
               Filter
             </button>
 
-            <button
-              onClick={() => setShowAddModal(true)}
+            <Link
+              href='/admin/users/create'
               className='flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700'
             >
               <svg
@@ -154,7 +155,7 @@ const Users = () => {
                 />
               </svg>
               Tambah Pengguna
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -226,7 +227,10 @@ const Users = () => {
                         />
                       </svg>
                     </button>
-                    <button className='p-1 rounded hover:bg-gray-100'>
+                    <Link
+                      href='/admin/users/1/edit'
+                      className='p-1 rounded hover:bg-gray-100'
+                    >
                       <svg
                         className='w-5 h-5 text-blue-600'
                         fill='none'
@@ -241,7 +245,7 @@ const Users = () => {
                           d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                         />
                       </svg>
-                    </button>
+                    </Link>
                     <button className='p-1 rounded hover:bg-gray-100'>
                       <svg
                         className='w-5 h-5 text-red-600'
@@ -312,7 +316,10 @@ const Users = () => {
                         />
                       </svg>
                     </button>
-                    <button className='p-1 rounded hover:bg-gray-100'>
+                    <Link
+                      href='/admin/users/1/edit'
+                      className='p-1 rounded hover:bg-gray-100'
+                    >
                       <svg
                         className='w-5 h-5 text-blue-600'
                         fill='none'
@@ -327,7 +334,7 @@ const Users = () => {
                           d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                         />
                       </svg>
-                    </button>
+                    </Link>
                     <button className='p-1 rounded hover:bg-gray-100'>
                       <svg
                         className='w-5 h-5 text-red-600'
@@ -398,7 +405,10 @@ const Users = () => {
                         />
                       </svg>
                     </button>
-                    <button className='p-1 rounded hover:bg-gray-100'>
+                    <Link
+                      href='/admin/users/1/edit'
+                      className='p-1 rounded hover:bg-gray-100'
+                    >
                       <svg
                         className='w-5 h-5 text-blue-600'
                         fill='none'
@@ -413,7 +423,7 @@ const Users = () => {
                           d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                         />
                       </svg>
-                    </button>
+                    </Link>
                     <button className='p-1 rounded hover:bg-gray-100'>
                       <svg
                         className='w-5 h-5 text-red-600'
@@ -484,7 +494,10 @@ const Users = () => {
                         />
                       </svg>
                     </button>
-                    <button className='p-1 rounded hover:bg-gray-100'>
+                    <Link
+                      href='/admin/users/1/edit'
+                      className='p-1 rounded hover:bg-gray-100'
+                    >
                       <svg
                         className='w-5 h-5 text-blue-600'
                         fill='none'
@@ -499,7 +512,7 @@ const Users = () => {
                           d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                         />
                       </svg>
-                    </button>
+                    </Link>
                     <button className='p-1 rounded hover:bg-gray-100'>
                       <svg
                         className='w-5 h-5 text-red-600'
@@ -570,7 +583,10 @@ const Users = () => {
                         />
                       </svg>
                     </button>
-                    <button className='p-1 rounded hover:bg-gray-100'>
+                    <Link
+                      href='/admin/users/1/edit'
+                      className='p-1 rounded hover:bg-gray-100'
+                    >
                       <svg
                         className='w-5 h-5 text-blue-600'
                         fill='none'
@@ -585,7 +601,7 @@ const Users = () => {
                           d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                         />
                       </svg>
-                    </button>
+                    </Link>
                     <button className='p-1 rounded hover:bg-gray-100'>
                       <svg
                         className='w-5 h-5 text-red-600'

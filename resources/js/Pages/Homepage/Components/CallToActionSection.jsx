@@ -16,13 +16,13 @@ const CallToActionSection = () => {
               </p>
               <div className='flex flex-col sm:flex-row gap-4'>
                 <a
-                  href='#'
+                  href='/talenta'
                   className='px-6 py-3 bg-white text-[#7C3AED] font-semibold rounded-lg hover:bg-purple-100 transition-colors text-center w-full sm:w-auto'
                 >
                   Cari Freelancer
                 </a>
                 <a
-                  href='#'
+                  href='/auth?form=register&type=freelancer'
                   className='px-6 py-3 bg-transparent border border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-colors text-center w-full sm:w-auto'
                 >
                   Jadi Freelancer
