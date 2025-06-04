@@ -208,9 +208,9 @@ const ServiceDetail = () => {
                   <span className="mx-2 text-gray-300">•</span>
                   <span className="text-sm text-gray-500">{service.freelancer.reviews} ulasan</span>
                 </div>
-              </div>
-              <div className="ml-auto">              <a
-                  href={`/client/freelancers/${service.freelancer.id}`}
+              </div>              <div className="ml-auto">
+                <a
+                  href={`/talenta/${service.freelancer.id}`}
                   className="inline-flex items-center px-3 py-1.5 border border-indigo-500 text-xs font-medium rounded text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Lihat Profil

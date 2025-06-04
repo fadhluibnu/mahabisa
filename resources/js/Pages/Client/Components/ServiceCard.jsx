@@ -11,7 +11,7 @@ const ServiceCard = ({ service }) => {
 
   return (
     <div className="rounded-lg bg-white shadow-md overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <Link href={`/services/${service.id}`} className="block">
+      <Link href={`/client/services/${service.id}`} className="block">
         <div className="relative pb-[60%]">
           {/* Use error handling for image */}
           <img

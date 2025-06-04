@@ -21,7 +21,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Memungkinkan akses dari jaringan
     hmr: {
-      host: '192.168.1.13', // Gunakan IP address komputer Anda
+      host: '192.168.1.24', // Gunakan IP address komputer Anda
       protocol: 'ws',
     },
     watch: {

@@ -40,7 +40,7 @@ const Header = ({ title, subtitle }) => {
       </div>
       <div className="flex mt-4 md:mt-0 md:ml-4 space-x-3 items-center">
         <div className="relative" ref={notificationRef}>
-          <button
+          {/* <button
             type="button"
             className="inline-flex items-center p-2 text-gray-500 rounded-full hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -62,7 +62,7 @@ const Header = ({ title, subtitle }) => {
               />
             </svg>
             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
-          </button>
+          </button> */}
           
           {/* Notification dropdown */}
           {showNotifications && (

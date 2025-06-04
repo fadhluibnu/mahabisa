@@ -467,6 +467,15 @@ Route::prefix('client')->group(function () {
             'user' => $dummyUser
         ]);
     });
+
+    Route::get('/projects/{id}/edit', function ($id) {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/ProjectEdit', [
+            'id' => $id,
+            'user' => $dummyUser
+        ]);
+    });
     
     Route::get('/profile', function () {
         // Get client user for testing
@@ -501,6 +510,16 @@ Route::prefix('client')->group(function () {
         ]);
     });
     
+    Route::get('/reviews/create', function () {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/ReviewCreate', [
+            'projectId' => request()->query('projectId'),
+            'freelancerId' => request()->query('freelancerId'),
+            'user' => $dummyUser
+        ]);
+    });
+    
     Route::get('/settings', function () {
         // Get client user for testing
         $dummyUser = getDummyUser('client');
@@ -513,6 +532,15 @@ Route::prefix('client')->group(function () {
         // Get client user for testing
         $dummyUser = getDummyUser('client');
         return Inertia::render('Client/FreelancerList', [
+            'user' => $dummyUser
+        ]);
+    });
+    
+    Route::get('/freelancers/{id}', function ($id) {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/FreelancerDetail', [
+            'id' => $id,
             'user' => $dummyUser
         ]);
     });
