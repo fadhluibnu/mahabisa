@@ -502,6 +502,15 @@ Route::prefix('client')->group(function () {
         ]);
     });
     
+    Route::get('/messages/{id}', function ($id) {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/MessageDetail', [
+            'id' => $id,
+            'user' => $dummyUser
+        ]);
+    });
+    
     Route::get('/reviews', function () {
         // Get client user for testing
         $dummyUser = getDummyUser('client');
@@ -569,4 +578,9 @@ Route::prefix('client')->group(function () {
             'user' => $dummyUser
         ]);
     });
+});
+
+// Catch-all route for 404 errors
+Route::fallback(function () {
+    return Inertia::render('Errors/NotFound');
 });

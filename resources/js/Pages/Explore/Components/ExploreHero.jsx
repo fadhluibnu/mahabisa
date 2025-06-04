@@ -1,6 +1,19 @@
 import React from 'react';
 
 const ExploreHero = ({ searchValue, onSearchChange }) => {
+  // Handler untuk form submit
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Update URL dengan nilai pencarian baru tanpa merefresh halaman
+    const url = new URL(window.location);
+    if (searchValue.trim()) {
+      url.searchParams.set('search', searchValue.trim());
+    } else {
+      url.searchParams.delete('search');
+    }
+    window.history.pushState({}, '', url);
+  };
+
   return (
     <section className='py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200'>
       <div className='container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
@@ -16,7 +29,7 @@ const ExploreHero = ({ searchValue, onSearchChange }) => {
           </p>
         </div>
 
-        <div className='relative max-w-2xl mx-auto'>
+        <form onSubmit={handleSubmit} className='relative max-w-2xl mx-auto'>
           <div className='absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none'>
             <svg
               className='h-5 w-5 text-slate-400'
@@ -40,7 +53,7 @@ const ExploreHero = ({ searchValue, onSearchChange }) => {
             value={searchValue}
             onChange={onSearchChange}
           />
-        </div>
+        </form>
       </div>
     </section>
   );

@@ -157,7 +157,7 @@ const Payments = () => {
             <input
               type="text"
               placeholder="Search..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -168,7 +168,7 @@ const Payments = () => {
               <FaFilter className="text-gray-500" />
               <span className="text-sm text-gray-600">Filter:</span>
               <select
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={selectedFilter}
                 onChange={(e) => setSelectedFilter(e.target.value)}
               >
@@ -319,7 +319,7 @@ const Payments = () => {
                           })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <button className="text-teal-600 hover:text-teal-800">
+                          <button className="text-purple-600 hover:text-purple-800">
                             <FaEye />
                           </button>
                         </td>
@@ -341,7 +341,7 @@ const Payments = () => {
           {activeTab === 'methods' && (
             <div className="p-6">
               <div className="flex justify-end mb-6">
-                <button className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md">
+                <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md">
                   Add Payment Method
                 </button>
               </div>
@@ -355,11 +355,11 @@ const Payments = () => {
                         <p className="text-gray-600">{method.type}</p>
                       </div>
                       {method.type === 'Credit Card' ? (
-                        <FaCreditCard className="text-2xl text-teal-600" />
+                        <FaCreditCard className="text-2xl text-indigo-600" />
                       ) : method.type === 'E-Wallet' ? (
-                        <FaHistory className="text-2xl text-teal-600" />
+                        <FaHistory className="text-2xl text-indigo-600" />
                       ) : (
-                        <FaFileInvoiceDollar className="text-2xl text-teal-600" />
+                        <FaFileInvoiceDollar className="text-2xl text-indigo-600" />
                       )}
                     </div>
                     
@@ -369,7 +369,7 @@ const Payments = () => {
                     </p>
                     
                     {method.isDefault && (
-                      <span className="inline-block bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full mb-4">
+                      <span className="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full mb-4">
                         Default
                       </span>
                     )}

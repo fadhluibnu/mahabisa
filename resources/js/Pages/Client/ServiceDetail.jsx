@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ClientLayout from './Components/ClientLayout';
+import { Link } from '@inertiajs/react';
 
 const ServiceDetail = () => {
   // State for active tab
@@ -210,7 +211,7 @@ const ServiceDetail = () => {
                 </div>
               </div>              <div className="ml-auto">
                 <a
-                  href={`/talenta/${service.freelancer.id}`}
+                  href={`/client/freelancers/${service.freelancer.id}`}
                   className="inline-flex items-center px-3 py-1.5 border border-indigo-500 text-xs font-medium rounded text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Lihat Profil
@@ -646,24 +647,23 @@ const ServiceDetail = () => {
                   Pengerjaan dalam {service.packages[selectedPackage].deliveryTime}
                 </p>
               </div>
-              
-              <div className="space-y-4">
-                <button
-                  type="button"
+                <div className="space-y-4">
+                <Link
+                  href={`/client/projects/create?serviceId=${service.id}&freelancerId=${service.freelancer.id}`}
                   className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Pesan Sekarang
-                </button>
+                </Link>
                 
-                <button
-                  type="button"
+                <Link
+                  href={`/client/messages/${service.freelancer.id}`}
                   className="w-full flex items-center justify-center px-4 py-2 border border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   Hubungi Freelancer
-                </button>
+                </Link>
               </div>
               
               <div className="mt-6">

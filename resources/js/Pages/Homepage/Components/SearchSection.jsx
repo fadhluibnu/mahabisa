@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { router } from '@inertiajs/react';
 
 const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -19,11 +20,19 @@ const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (searchValue.trim()) {
+      router.visit(`/eksplorasi?search=${encodeURIComponent(searchValue.trim())}`);
+    }
+  };
+
   return (
     <section className='py-4 md:py-8'>
       <div className='bg-white shadow-md rounded-lg p-4 md:p-6'>
         <form
-          action=''
+          onSubmit={handleSubmit}
           className='flex flex-col sm:flex-row items-center gap-3 md:gap-4'
         >
           <input
@@ -33,7 +42,9 @@ const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
           />
-          <button className='flex gap-2 items-center justify-center text-lg py-2 px-5 bg-slate-200 rounded-lg hover:bg-slate-300 transition-all duration-200 ease-in-out w-full sm:w-auto'>
+          <button 
+            type="submit"
+            className='flex gap-2 items-center justify-center text-lg py-2 px-5 bg-slate-200 rounded-lg hover:bg-slate-300 transition-all duration-200 ease-in-out w-full sm:w-auto'>
             <svg
               width='20'
               height='18'
@@ -49,7 +60,7 @@ const SearchSection = ({ searchValue, setSearchValue, handlePopularClick }) => {
                 strokeLinejoin='round'
               />
             </svg>
-            Filter
+            Cari
           </button>
         </form>
         <div className='mt-4 md:mt-6'>

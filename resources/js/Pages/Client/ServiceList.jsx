@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ClientLayout from './Components/ClientLayout';
 import ServiceCard from './Components/ServiceCard';
+import { Link } from '@inertiajs/react';
 
 const ServiceList = () => {
   // State for search and filters

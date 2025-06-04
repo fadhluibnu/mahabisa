@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
 import HeroSection from './Components/HeroSection';
@@ -18,6 +18,8 @@ const Homepage = ({ user }) => {
 
   const handlePopularClick = value => {
     setSearchValue(value);
+    // Redirect ke halaman eksplorasi dengan parameter pencarian
+    router.visit(`/eksplorasi?search=${encodeURIComponent(value)}`);
   };
 
   // Data dummy untuk carousel PopulerCard

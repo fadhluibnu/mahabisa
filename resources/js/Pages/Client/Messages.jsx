@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ClientLayout from './Components/ClientLayout';
+import { Link } from '@inertiajs/react';
 
 const Messages = () => {
   // State for active conversation and search
@@ -195,40 +196,41 @@ const Messages = () => {
                   className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
                     activeConversation === index ? 'bg-teal-50' : ''
                   }`}
-                  onClick={() => setActiveConversation(index)}
                 >
-                  <div className="flex items-center">
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={conversation.avatar}
-                        alt={conversation.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://via.placeholder.com/40?text=' + conversation.name.charAt(0);
-                        }}
-                      />
-                      {conversation.isOnline && (
-                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-400"></span>
-                      )}
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium">{conversation.name}</h3>
-                        <p className="text-xs text-gray-500">{conversation.time}</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500 truncate" style={{ maxWidth: '150px' }}>
-                          {conversation.lastMessage}
-                        </p>
-                        {conversation.unread > 0 && (
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-teal-500 text-white text-xs">
-                            {conversation.unread}
-                          </span>
+                  <Link href={`/client/messages/${conversation.id}`} className="block">
+                    <div className="flex items-center">
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={conversation.avatar}
+                          alt={conversation.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/40?text=' + conversation.name.charAt(0);
+                          }}
+                        />
+                        {conversation.isOnline && (
+                          <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-400"></span>
                         )}
                       </div>
+                      <div className="ml-3 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium">{conversation.name}</h3>
+                          <p className="text-xs text-gray-500">{conversation.time}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-500 truncate" style={{ maxWidth: '150px' }}>
+                            {conversation.lastMessage}
+                          </p>
+                          {conversation.unread > 0 && (
+                            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-teal-500 text-white text-xs">
+                              {conversation.unread}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               ))}
             </div>

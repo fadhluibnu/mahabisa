@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Footer from '@/Components/Footer';
@@ -8,7 +8,10 @@ import CategoryPillsSection from './Components/CategoryPillsSection';
 import ServicesGrid from './Components/ServicesGrid';
 
 const Explore = () => {
-  const [searchValue, setSearchValue] = useState('');
+  // Mendapatkan parameter pencarian dari URL jika ada
+  const searchParam = new URLSearchParams(window.location.search).get('search') || '';
+  
+  const [searchValue, setSearchValue] = useState(searchParam);
   const [filters, setFilters] = useState({
     category: '',
     budget: '',
@@ -22,6 +25,7 @@ const Explore = () => {
   const handleSearchChange = e => {
     setSearchValue(e.target.value);
   };
+  
   // Handler for filter changes
   const handleFilterChange = (filterType, value) => {
     setFilters({
