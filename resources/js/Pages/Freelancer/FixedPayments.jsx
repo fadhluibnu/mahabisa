@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import FreelancerLayout from './Components/FreelancerLayout';
-import { router } from '@inertiajs/react';
 
 const Payments = () => {
   const [transactions, setTransactions] = useState([
@@ -242,6 +241,14 @@ const Payments = () => {
     }
   };
 
+  // Handle withdraw button click
+  const handleWithdrawClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Tarik Dana button clicked');
+    setShowWithdrawalForm(true);
+  };
+
   return (
     <FreelancerLayout
       title="Pembayaran"
@@ -253,31 +260,32 @@ const Payments = () => {
           <h3 className="text-sm font-medium text-gray-500">Saldo Tersedia</h3>
           <div className="mt-1 flex items-baseline">
             <div className="text-2xl font-semibold text-gray-900">{formatRupiah(calculateBalance())}</div>
-          </div>          <button
-            type="button"            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              console.log('Navigating to withdrawal page');
-              router.visit('/freelancer/withdrawal');
-            }}
-            className="mt-4 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer z-10 relative"
-          >
-            <svg
-              className="h-4 w-4 mr-1"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          </div>
+          
+          {/* Tarik Dana Button - Using DIV as wrapper to ensure higher z-index */}
+          <div className="relative z-20">
+            <a
+              href="#" 
+              onClick={handleWithdrawClick}
+              className="mt-4 flex items-center justify-center w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-            Tarik Dana
-          </button>
+              <svg
+                className="h-4 w-4 mr-1"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+              Tarik Dana
+            </a>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -465,8 +473,12 @@ const Payments = () => {
           <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">Metode Pembayaran</h3>
             <button
-              onClick={() => setShowAddPaymentForm(true)}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowAddPaymentForm(true);
+              }}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
             >
               <svg
                 className="h-4 w-4 mr-1"
@@ -549,7 +561,9 @@ const Payments = () => {
                   </div>
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => {
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
                         // Set as default
                         setPaymentMethods(
                           paymentMethods.map((m) => ({
@@ -560,7 +574,7 @@ const Payments = () => {
                       }}
                       disabled={method.isDefault}
                       className={`p-2 rounded-full ${
-                        method.isDefault ? 'text-gray-400 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'
+                        method.isDefault ? 'text-gray-400 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100 cursor-pointer'
                       }`}
                     >
                       <svg
@@ -579,7 +593,9 @@ const Payments = () => {
                       </svg>
                     </button>
                     <button
-                      onClick={() => {
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
                         // Delete method
                         if (method.isDefault) {
                           alert('Tidak dapat menghapus metode pembayaran default');
@@ -587,7 +603,7 @@ const Payments = () => {
                         }
                         setPaymentMethods(paymentMethods.filter((m) => m.id !== method.id));
                       }}
-                      className="p-2 rounded-full text-red-600 hover:bg-red-50"
+                      className="p-2 rounded-full text-red-600 hover:bg-red-50 cursor-pointer"
                     >
                       <svg
                         className="h-5 w-5"
@@ -632,8 +648,11 @@ const Payments = () => {
                 <div className="mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowAddPaymentForm(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowAddPaymentForm(true);
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                   >
                     <svg
                       className="h-4 w-4 mr-1"
@@ -658,16 +677,19 @@ const Payments = () => {
         </div>
       )}
 
-      {/* Withdrawal modal */}
+      {/* Withdrawal modal - Completely revamped for better accessibility */}
       {showWithdrawalForm && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
+            {/* Modal positioning */}
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
+            {/* Modal content */}
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
@@ -676,6 +698,7 @@ const Payments = () => {
                       Tarik Dana
                     </h3>
                     <div className="mt-4">
+                      {/* Amount input */}
                       <div className="mb-4">
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
                           Jumlah (Rp)
@@ -692,6 +715,7 @@ const Payments = () => {
                           Saldo tersedia: {formatRupiah(calculateBalance())}
                         </p>
                       </div>
+                      {/* Payment method selection */}
                       <div className="mb-4">
                         <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700">
                           Metode Pembayaran
@@ -717,27 +741,34 @@ const Payments = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">                <button
-                  type="button"
+              {/* Modal action buttons */}
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                {/* Submit button */}
+                <a
+                  href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    console.log('Modal withdraw button clicked');
+                    e.stopPropagation();
+                    console.log('Withdraw form submit clicked');
                     handleWithdrawal();
                   }}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm cursor-pointer"
                 >
                   Tarik Dana
-                </button>                <button
-                  type="button"
+                </a>
+                {/* Cancel button */}
+                <a
+                  href="#"
                   onClick={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     console.log('Cancel button clicked');
                     setShowWithdrawalForm(false);
                   }}
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm cursor-pointer"
                 >
                   Batal
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -872,20 +903,28 @@ const Payments = () => {
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
-                  type="button"
-                  onClick={handleAddPaymentMethod}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddPaymentMethod();
+                  }}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm cursor-pointer"
                 >
                   Simpan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddPaymentForm(false)}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                </a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowAddPaymentForm(false);
+                  }}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm cursor-pointer"
                 >
                   Batal
-                </button>
+                </a>
               </div>
             </div>
           </div>

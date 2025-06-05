@@ -7,7 +7,7 @@ const ProjectCard = ({ title, items, viewAllLink }) => {
       <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         <div className="flex">
-          <button className="p-1 rounded-full text-gray-400 hover:text-gray-600">
+          {/* <button className="p-1 rounded-full text-gray-400 hover:text-gray-600">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -22,7 +22,7 @@ const ProjectCard = ({ title, items, viewAllLink }) => {
                 d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
               />
             </svg>
-          </button>
+          </button> */}
         </div>
       </div>
       <div className="divide-y divide-gray-100">
@@ -73,11 +73,10 @@ const ProjectCard = ({ title, items, viewAllLink }) => {
             </div>
           </div>
         ))}
-      </div>
-      {viewAllLink && (
+      </div>      {viewAllLink && (
         <div className="p-4 sm:p-5 border-t border-gray-100">
           <Link
-            href={viewAllLink}
+            href="/freelancer/projects"
             className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
           >
             Lihat Semua

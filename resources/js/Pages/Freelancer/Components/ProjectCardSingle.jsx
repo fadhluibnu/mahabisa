@@ -63,7 +63,7 @@ const ProjectCardSingle = (props) => {
         <div className="flex items-center justify-between">
           {props.status && getStatusBadge(props.status)}
           
-          <div className="flex space-x-2">
+          {/* <div className="flex space-x-2">
             <Link 
               href={`/freelancer/projects/${props.id}`}
               className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -77,7 +77,7 @@ const ProjectCardSingle = (props) => {
                 Update
               </button>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

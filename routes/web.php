@@ -356,6 +356,38 @@ Route::prefix('freelancer')->group(function () {
             'user' => $dummyUser
         ]);
     });
+
+    Route::get('/edit-profile', function () {
+        // Get freelancer user for testing
+        $dummyUser = getDummyUser('freelancer');
+        return Inertia::render('Freelancer/EditProfile', [
+            'user' => $dummyUser
+        ]);
+    });
+    
+    Route::get('/add-education', function () {
+        // Get freelancer user for testing
+        $dummyUser = getDummyUser('freelancer');
+        return Inertia::render('Freelancer/AddEducation', [
+            'user' => $dummyUser
+        ]);
+    });
+    
+    Route::get('/add-experience', function () {
+        // Get freelancer user for testing
+        $dummyUser = getDummyUser('freelancer');
+        return Inertia::render('Freelancer/AddExperience', [
+            'user' => $dummyUser
+        ]);
+    });
+    
+    Route::get('/add-portfolio', function () {
+        // Get freelancer user for testing
+        $dummyUser = getDummyUser('freelancer');
+        return Inertia::render('Freelancer/AddPortfolio', [
+            'user' => $dummyUser
+        ]);
+    });
     
     Route::get('/skills', function () {
         // Get freelancer user for testing
@@ -393,9 +425,8 @@ Route::prefix('freelancer')->group(function () {
     Route::get('/services/{id}/edit', function ($id) {
         // Get freelancer user for testing
         $dummyUser = getDummyUser('freelancer');
-        return Inertia::render('Freelancer/ServiceCreate', [
-            'id' => $id, 
-            'isEditing' => true,
+        return Inertia::render('Freelancer/ServiceEdit', [
+            'id' => $id,
             'user' => $dummyUser
         ]);
     });
@@ -416,6 +447,14 @@ Route::prefix('freelancer')->group(function () {
         ]);
     });
     
+    Route::get('/withdrawal', function () {
+        // Get freelancer user for testing
+        $dummyUser = getDummyUser('freelancer');
+        return Inertia::render('Freelancer/WithdrawalPage', [
+            'user' => $dummyUser
+        ]);
+    });
+    
     Route::get('/settings', function () {
         // Get freelancer user for testing
         $dummyUser = getDummyUser('freelancer');
@@ -423,7 +462,7 @@ Route::prefix('freelancer')->group(function () {
             'user' => $dummyUser
         ]);
     });
-});
+}); 
 
 // Client Routes
 Route::prefix('client')->group(function () {

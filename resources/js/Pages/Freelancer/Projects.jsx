@@ -141,7 +141,7 @@ const Projects = () => {
             {filteredActiveProjects.map((project) => (
               <div key={project.id} className="relative group">
                 <ProjectCardSingle {...project} />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center opacity-0 group-hover:opacity-70 rounded-lg">
                   <Link 
                     href={`/freelancer/projects/${project.id}`}
                     className="bg-white text-indigo-600 hover:bg-indigo-100 font-medium py-2 px-4 rounded-md shadow transition-all transform scale-95 group-hover:scale-100"
@@ -188,7 +188,7 @@ const Projects = () => {
             {filteredCompletedProjects.map((project) => (
               <div key={project.id} className="relative group">
                 <ProjectCardSingle {...project} />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center opacity-0 group-hover:opacity-70 rounded-lg">
                   <Link 
                     href={`/freelancer/projects/${project.id}`}
                     className="bg-white text-indigo-600 hover:bg-indigo-100 font-medium py-2 px-4 rounded-md shadow transition-all transform scale-95 group-hover:scale-100"

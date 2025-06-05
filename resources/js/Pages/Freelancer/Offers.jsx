@@ -69,14 +69,43 @@ const Offers = () => {
     deliveryTime: '',
     message: '',
   });
-
   // Filter offers based on active tab
   const filteredOffers = offers.filter((offer) => {
     if (activeTab === 'all') return true;
     return offer.status === activeTab;
   });
 
-  // Handle offering response
+  // Directly accept offer without modal
+  const handleAcceptOffer = (offer) => {
+    // Update offer status directly
+    setOffers(
+      offers.map((o) =>
+        o.id === offer.id
+          ? { ...o, status: 'accepted', isNew: false }
+          : o
+      )
+    );
+    
+    // In a real app, you would send an API request here
+    console.log(`Offer ${offer.id} accepted with default message`);
+  };
+
+  // Directly decline offer without modal
+  const handleDeclineOffer = (offer) => {
+    // Update offer status directly
+    setOffers(
+      offers.map((o) =>
+        o.id === offer.id
+          ? { ...o, status: 'declined', isNew: false }
+          : o
+      )
+    );
+    
+    // In a real app, you would send an API request here
+    console.log(`Offer ${offer.id} declined with default message`);
+  };
+
+  // Handle preparing response for acceptance (with modal) - keeping for future use
   const handlePrepareResponse = (offer) => {
     setSelectedOffer(offer);
     setResponseData({
@@ -87,7 +116,20 @@ const Offers = () => {
     setIsPreparingResponse(true);
   };
 
+  // Handle preparing response for rejection (with modal) - keeping for future use
+  const handlePrepareRejection = (offer) => {
+    setSelectedOffer(offer);
+    setResponseData({
+      price: offer.budget,
+      deliveryTime: new Date(offer.deadline).toISOString().split('T')[0],
+      message: `Terima kasih atas penawaran proyeknya. Namun, saya tidak dapat menerima proyek "${offer.projectTitle}" saat ini karena jadwal yang padat.`,
+    });
+    setIsPreparingResponse(true);
+  };
+
+  // Handle sending the final response (accept or decline)
   const handleSendResponse = (action) => {
+    // Update the offer status in the state
     setOffers(
       offers.map((o) =>
         o.id === selectedOffer.id
@@ -95,6 +137,11 @@ const Offers = () => {
           : o
       )
     );
+    
+    // In a real app, you would send an API request here
+    console.log(`Offer ${selectedOffer.id} ${action === 'accepted' ? 'accepted' : 'declined'} with message: ${responseData.message}`);
+    
+    // Close the modal and reset selection
     setIsPreparingResponse(false);
     setSelectedOffer(null);
   };
@@ -259,13 +306,15 @@ const Offers = () => {
                         <p className="text-sm font-medium text-gray-900">{formatDate(offer.date)}</p>
                       </div>
                     </div>
-                  </div>
-                  
-                  {offer.status === 'pending' && (
-                    <div className="mt-4 sm:mt-0 sm:ml-4 flex sm:flex-col sm:space-y-2 space-x-2 sm:space-x-0">
-                      <button
-                        onClick={() => handlePrepareResponse(offer)}
-                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  </div>                  {offer.status === 'pending' && (
+                    <div className="mt-4 sm:mt-0 sm:ml-4 flex sm:flex-col sm:space-y-2 space-x-2 sm:space-x-0">                      <button                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent event bubbling
+                          e.preventDefault(); // Prevent default behavior
+                          console.log('Accept button clicked for offer:', offer.id);
+                          handleAcceptOffer(offer);
+                        }}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer z-10"
+                        type="button"
                       >
                         <svg
                           className="h-4 w-4 mr-1"
@@ -282,10 +331,15 @@ const Offers = () => {
                           />
                         </svg>
                         Terima
-                      </button>
-                      <button
-                        onClick={() => handleSendResponse('declined')}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      </button>                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent event bubbling
+                          e.preventDefault(); // Prevent default behavior
+                          console.log('Decline button clicked for offer:', offer.id);
+                          handleDeclineOffer(offer);
+                        }}
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer z-10"
+                        type="button"
                       >
                         <svg
                           className="h-4 w-4 mr-1"
@@ -304,12 +358,10 @@ const Offers = () => {
                         Tolak
                       </button>
                     </div>
-                  )}
-                  
-                  {offer.status === 'accepted' && (
-                    <div className="mt-4 sm:mt-0 sm:ml-4">
-                      <button
-                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  )}                  {offer.status === 'accepted' && (
+                    <div className="mt-4 sm:mt-0 sm:ml-4">                      <a
+                        href={`/freelancer/projects/${offer.id}`}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 cursor-pointer z-10"
                       >
                         <svg
                           className="h-4 w-4 mr-1"
@@ -326,7 +378,7 @@ const Offers = () => {
                           />
                         </svg>
                         Lihat Proyek
-                      </button>
+                      </a>
                     </div>
                   )}
                 </div>
@@ -369,10 +421,9 @@ const Offers = () => {
 
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <div className="sm:flex sm:items-start">                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Tanggapi Penawaran
+                      {responseData.message.includes("tertarik") ? "Terima Penawaran" : "Tolak Penawaran"}
                     </h3>
                     <div className="mt-4">
                       <div className="mb-4">
@@ -397,6 +448,7 @@ const Offers = () => {
                           value={responseData.deliveryTime}
                           onChange={(e) => setResponseData({ ...responseData, deliveryTime: e.target.value })}
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          disabled={responseData.message.includes("tidak dapat menerima")}
                         />
                       </div>
                       <div className="mb-4">
@@ -414,14 +466,17 @@ const Offers = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              </div>              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
-                  onClick={() => handleSendResponse('accepted')}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => handleSendResponse(responseData.message.includes("tertarik") ? 'accepted' : 'declined')}
+                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 ${
+                    responseData.message.includes("tertarik") 
+                      ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500' 
+                      : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                  } text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm`}
                 >
-                  Kirim Respon
+                  {responseData.message.includes("tertarik") ? 'Terima Penawaran' : 'Tolak Penawaran'}
                 </button>
                 <button
                   type="button"

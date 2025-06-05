@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FreelancerLayout from './Components/FreelancerLayout';
 import SkillsCard from './Components/SkillsCard';
+import { Link } from '@inertiajs/react'
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('personal');
@@ -224,16 +225,15 @@ const Profile = () => {
               </div>
             </div>
             
-            <div className="p-6 border-t border-gray-200">
+            {/* <div className="p-6 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-500 mb-3">Keahlian</h3>
               <SkillsCard skills={profile.skills.slice(0, 5)} />
               <button className="mt-4 text-sm text-indigo-600 font-medium hover:text-indigo-800">
                 Lihat semua keahlian
               </button>
-            </div>
-            
-            <div className="px-6 py-4 border-t border-gray-200">
-              <button className="w-full flex items-center justify-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-sm font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            </div> */}
+              <div className="px-6 py-4 border-t border-gray-200">
+              <Link href="/freelancer/edit-profile" className="w-full flex items-center justify-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-sm font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <svg
                   className="w-4 h-4 mr-2"
                   fill="none"
@@ -249,7 +249,7 @@ const Profile = () => {
                   />
                 </svg>
                 Edit Profil
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -422,9 +422,9 @@ const Profile = () => {
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">Keahlian</h2>
-                    <button className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                      Tambah Keahlian
-                    </button>
+                    <Link href='/freelancer/skills' className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      Lihat Semua
+                    </Link>
                   </div>
                   
                   <SkillsCard skills={profile.skills} />
@@ -432,12 +432,11 @@ const Profile = () => {
               )}
               
               {activeTab === 'education' && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
+                <div>                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">Pendidikan</h2>
-                    <button className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <Link href="/freelancer/add-education" className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       Tambah Pendidikan
-                    </button>
+                    </Link>
                   </div>
                   
                   <div className="space-y-6">
@@ -474,12 +473,11 @@ const Profile = () => {
               )}
               
               {activeTab === 'experience' && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
+                <div>                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">Pengalaman</h2>
-                    <button className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <Link href="/freelancer/add-experience" className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       Tambah Pengalaman
-                    </button>
+                    </Link>
                   </div>
                   
                   <div className="space-y-6">
@@ -516,12 +514,11 @@ const Profile = () => {
               )}
               
               {activeTab === 'portfolio' && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
+                <div>                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">Portfolio</h2>
-                    <button className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                      Tambah Proyek
-                    </button>
+                    <Link href="/freelancer/add-portfolio" className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      Tambah Portfolio
+                    </Link>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
