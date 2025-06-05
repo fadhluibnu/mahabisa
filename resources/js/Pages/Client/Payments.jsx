@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ClientLayout from './Components/ClientLayout';
 import { FaFileInvoiceDollar, FaHistory, FaCreditCard, FaDownload, FaEye, FaFilter } from 'react-icons/fa';
+import { Link } from '@inertiajs/react';
 
 const Payments = () => {
   const [activeTab, setActiveTab] = useState('invoices');
@@ -77,10 +78,13 @@ const Payments = () => {
           <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Payments Management</h1>
           
           <div className="flex flex-col sm:flex-row gap-3">
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center justify-center">
+            <Link 
+              href="/client/create-invoice"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center justify-center"
+            >
               <FaFileInvoiceDollar className="mr-2" />
               Create Invoice
-            </button>
+            </Link>
             <button className="bg-white border border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-md flex items-center justify-center">
               <FaDownload className="mr-2" />
               Export Report
@@ -240,11 +244,13 @@ const Payments = () => {
                           <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(invoice.status)}`}>
                             {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-x-2">
-                          <button className="text-purple-600 hover:text-purple-800">
+                        </td>                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-x-2">
+                          <Link 
+                            href={`/client/invoice/${invoice.id}`}
+                            className="text-purple-600 hover:text-purple-800 inline-block"
+                          >
                             <FaEye />
-                          </button>
+                          </Link>
                           <button className="text-blue-600 hover:text-blue-800">
                             <FaDownload />
                           </button>
@@ -317,11 +323,13 @@ const Payments = () => {
                             month: 'short', 
                             day: 'numeric' 
                           })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <button className="text-purple-600 hover:text-purple-800">
+                        </td>                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <Link 
+                            href={`/client/invoice/${payment.id}`}
+                            className="text-purple-600 hover:text-purple-800"
+                          >
                             <FaEye />
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     ))

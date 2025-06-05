@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ClientLayout from './Components/ClientLayout';
+import { Link } from '@inertiajs/react';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('personal');
@@ -145,11 +146,13 @@ const Profile = () => {
               <h2 className="mt-4 text-xl font-semibold text-gray-900">{profile.personal.name}</h2>
               <p className="text-gray-500">{profile.personal.title}</p>
               <p className="mt-1 text-sm text-gray-500">{profile.personal.location}</p>
-              
-              <div className="mt-6 flex justify-center">
-                <button className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <div className="mt-6 flex justify-center">
+                <Link 
+                  href="/client/profile/edit" 
+                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
                   Edit Profil
-                </button>
+                </Link>
               </div>
             </div>
             
@@ -206,7 +209,7 @@ const Profile = () => {
                 >
                   Proyek
                 </button>
-                <button                  onClick={() => setActiveTab('reviews')}
+                {/* <button                  onClick={() => setActiveTab('reviews')}
                   className={`py-4 px-6 text-center border-b-2 text-sm font-medium ${
                     activeTab === 'reviews'
                       ? 'border-indigo-500 text-indigo-600'
@@ -223,7 +226,7 @@ const Profile = () => {
                   }`}
                 >
                   Pembayaran
-                </button>
+                </button> */}
               </nav>
             </div>
             
@@ -281,12 +284,15 @@ const Profile = () => {
                           <p className="text-gray-700">{profile.personal.website}</p>
                         </div>
                       </div>
-                    </div>
-                      <div className="pt-6 flex justify-end">
-                      <button className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    </div>                      
+                    {/* <div className="pt-6 flex justify-end">
+                      <Link 
+                        href="/client/profile/edit"
+                        className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
                         Edit Informasi
-                      </button>
-                    </div>
+                      </Link>
+                    </div> */}
                   </div>
                 </div>
               )}

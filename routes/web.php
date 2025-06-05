@@ -485,6 +485,14 @@ Route::prefix('client')->group(function () {
         ]);
     });
     
+    Route::get('/profile/edit', function () {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/EditProfile', [
+            'user' => $dummyUser
+        ]);
+    });
+    
     Route::get('/profile/{id}', function ($id) {
         // Get client user for testing
         $dummyUser = getDummyUser('client');
@@ -524,6 +532,17 @@ Route::prefix('client')->group(function () {
         $dummyUser = getDummyUser('client');
         return Inertia::render('Client/ReviewCreate', [
             'projectId' => request()->query('projectId'),
+            'freelancerId' => request()->query('freelancerId'),
+            'user' => $dummyUser
+        ]);
+    });
+
+    Route::get('/reviews/create/{id}', function ($id) {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/ReviewCreate', [
+            // 'projectId' => request()->query('projectId'),
+            'projectId' => $id,
             'freelancerId' => request()->query('freelancerId'),
             'user' => $dummyUser
         ]);
@@ -576,6 +595,23 @@ Route::prefix('client')->group(function () {
         $dummyUser = getDummyUser('client');
         return Inertia::render('Client/Payments', [
             'user' => $dummyUser
+        ]);
+    });
+    
+    Route::get('/create-invoice', function () {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/CreateInvoice', [
+            'user' => $dummyUser
+        ]);
+    });
+    
+    Route::get('/invoice/{id}', function ($id) {
+        // Get client user for testing
+        $dummyUser = getDummyUser('client');
+        return Inertia::render('Client/InvoiceDetail', [
+            'user' => $dummyUser,
+            'invoiceId' => $id
         ]);
     });
 });
