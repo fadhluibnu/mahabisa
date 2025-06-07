@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
-const Sidebar = ({ isOpen, closeSidebar }) => {
-  const { url } = usePage();
+const Sidebar = ({ isOpen, closeSidebar, auth }) => {
+  const { url, props } = usePage();
+  const { user } = auth || props;
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -49,18 +50,17 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           <div className="flex items-center">
             <div className="justify-center items-center flex p-3 rounded-lg animate-gradient-background">
               <svg
-                width='24'
-                height='21'
-                viewBox='0 0 24 21'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
+                width="24"
+                height="21"
+                viewBox="0 0 24 21"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                {' '}
                 <path
-                  fillRule='evenodd'
-                  clipRule='evenodd'
-                  d='M0.000147127 20.2922V0H3.55951L8.83284 6.18205L14.2303 0H18.449C20.6698 0.340231 22.5699 1.17937 23.3611 4.45978C23.5032 6.18882 23.2647 8.60575 20.6824 9.68735C22.1291 10.4426 24.277 11.9262 23.9704 15.2709C23.6589 17.4356 22.5651 19.4923 18.6661 20.3891L7.12668 20.3271V17.3182L17.5803 17.2873C19.3465 17.2118 20.5762 16.0303 20.4962 14.3093C20.4316 12.8371 19.5602 11.772 17.7975 11.3934H14.2923V8.44655C15.2332 8.45685 16.1741 8.46723 17.1151 8.4776C19.6745 7.98987 19.8648 6.56392 19.9378 5.74788C19.8267 3.82346 19.0103 3.27446 17.2056 3.00308C16.7731 2.96645 16.1737 3.15675 15.8122 3.57651L8.95686 11.1763L3.49735 5.12745L3.43534 20.3582L0 20.2923L0.000147127 20.2922Z'
-                  fill='white'
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M0.000147127 20.2922V0H3.55951L8.83284 6.18205L14.2303 0H18.449C20.6698 0.340231 22.5699 1.17937 23.3611 4.45978C23.5032 6.18882 23.2647 8.60575 20.6824 9.68735C22.1291 10.4426 24.277 11.9262 23.9704 15.2709C23.6589 17.4356 22.5651 19.4923 18.6661 20.3891L7.12668 20.3271V17.3182L17.5803 17.2873C19.3465 17.2118 20.5762 16.0303 20.4962 14.3093C20.4316 12.8371 19.5602 11.772 17.7975 11.3934H14.2923V8.44655C15.2332 8.45685 16.1741 8.46723 17.1151 8.4776C19.6745 7.98987 19.8648 6.56392 19.9378 5.74788C19.8267 3.82346 19.0103 3.27446 17.2056 3.00308C16.7731 2.96645 16.1737 3.15675 15.8122 3.57651L8.95686 11.1763L3.49735 5.12745L3.43534 20.3582L0 20.2923L0.000147127 20.2922Z"
+                  fill="white"
                 />
               </svg>
             </div>
@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
               <h1 className="text-lg font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-transparent bg-clip-text">
                 MahaBisa
               </h1>
-              <span className="text-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-semibold text-sm">
+              <span className="text-center px-2 py-1 bg-green-100 text-green-800 rounded-full font-semibold text-sm">
                 Freelancer
               </span>
             </div>
@@ -386,7 +386,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
+                      d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 001 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
                     />
                   </svg>
                   Kemampuan
@@ -430,17 +430,31 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         </nav>
 
         <div className="border-t border-gray-200 p-4">
-          <div className="flex items-center">
-            <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-              alt="Profile"
-              className="h-10 w-10 rounded-full"
-            />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-800">Aditya Pratama</p>
-              <p className="text-xs text-gray-500">Web Developer</p>
+          {!user ? (
+            <div className='flex items-center'>
+              <div className='h-10 w-10 bg-gray-200 rounded-full animate-pulse'></div>
+              <div className='ml-3'>
+                <div className='h-4 w-24 bg-gray-200 rounded animate-pulse mb-1'></div>
+                <div className='h-3 w-32 bg-gray-200 rounded animate-pulse'></div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center">
+              <img
+                src={user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Freelancer')}`}
+                alt={user?.name}
+                className="h-10 w-10 rounded-full"
+              />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-800">{user?.name || 'Freelancer'}</p>
+                {user?.profile?.bio ? (
+                  <p className="text-xs text-gray-500 truncate max-w-[120px]">{user.profile.bio}</p>
+                ) : user?.email ? (
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                ) : null}
+              </div>
+            </div>
+          )}
           
           <Link 
             href="/logout" 

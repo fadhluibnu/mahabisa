@@ -1,30 +1,44 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 
 const RegisterForm = ({ onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [role, setRole] = useState('client');
+  
+  const { data, setData, post, processing, errors } = useForm({
+    name: '',
     email: '',
     password: '',
+    password_confirmation: '',
+    role: 'client',
     university: '',
     agreeTerms: false,
   });
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setData({
+      ...data,
       [name]: type === 'checkbox' ? checked : value,
     });
+    
+    if (name === 'password_confirmation') {
+      setPasswordConfirmation(value);
+    }
   };
 
   const handleSubmit = e => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Registration form submitted:', formData);
-    // Add your Inertia.js form submission logic here
+    post('/register', {
+      onSuccess: () => {
+        // Registration successful
+        console.log('Registration successful');
+      },
+      onError: (errors) => {
+        console.error('Registration errors:', errors);
+      },
+    });
   };
 
   const togglePasswordVisibility = () => {
@@ -33,44 +47,60 @@ const RegisterForm = ({ onSwitchToLogin }) => {
 
   return (
     <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6'>
+      <div className='mb-6'>
         <div>
           <label
-            htmlFor='register-firstname'
+            htmlFor='register-name'
             className='block font-semibold text-sm mb-1 text-slate-700'
           >
-            Nama Depan
+            Nama Lengkap
           </label>
           <input
             type='text'
-            id='register-firstname'
-            name='firstName'
-            value={formData.firstName}
+            id='register-name'
+            name='name'
+            value={data.name}
             onChange={handleChange}
             className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
-            placeholder='Nama depan'
+            placeholder='Nama lengkap'
             required
           />
+          {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
         </div>
-
-        <div>
-          <label
-            htmlFor='register-lastname'
-            className='block font-semibold text-sm mb-1 text-slate-700'
-          >
-            Nama Belakang
+      </div>
+      
+      <div className='mb-6'>
+        <label
+          htmlFor='register-role'
+          className='block font-semibold text-sm mb-1 text-slate-700'
+        >
+          Daftar Sebagai
+        </label>
+        <div className='flex gap-4 mt-2'>
+          <label className='flex items-center gap-2 cursor-pointer'>
+            <input
+              type='radio'
+              name='role'
+              value='client'
+              checked={data.role === 'client'}
+              onChange={handleChange}
+              className='w-4 h-4 text-indigo-600'
+            />
+            <span>Client (Pemberi Kerja)</span>
           </label>
-          <input
-            type='text'
-            id='register-lastname'
-            name='lastName'
-            value={formData.lastName}
-            onChange={handleChange}
-            className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
-            placeholder='Nama belakang'
-            required
-          />
+          <label className='flex items-center gap-2 cursor-pointer'>
+            <input
+              type='radio'
+              name='role'
+              value='freelancer'
+              checked={data.role === 'freelancer'}
+              onChange={handleChange}
+              className='w-4 h-4 text-indigo-600'
+            />
+            <span>Freelancer (Pekerja)</span>
+          </label>
         </div>
+        {errors.role && <div className="text-red-500 text-sm mt-1">{errors.role}</div>}
       </div>
       <div className='mb-6'>
         <label
@@ -83,12 +113,13 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           type='email'
           id='register-email'
           name='email'
-          value={formData.email}
+          value={data.email}
           onChange={handleChange}
           className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
           placeholder='Masukkan email Anda'
           required
         />
+        {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
       </div>
       <div className='mb-6 relative'>
         <label
@@ -102,13 +133,14 @@ const RegisterForm = ({ onSwitchToLogin }) => {
             type={showPassword ? 'text' : 'password'}
             id='register-password'
             name='password'
-            value={formData.password}
+            value={data.password}
             onChange={handleChange}
             className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
             placeholder='Buat password (min. 8 karakter)'
             minLength='8'
             required
           />
+          {errors.password && <div className="text-red-500 text-sm mt-1">{errors.password}</div>}
           <button
             type='button'
             className='absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
@@ -169,6 +201,29 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           </button>
         </div>
       </div>
+      
+      <div className='mb-6 relative'>
+        <label
+          htmlFor='register-password-confirmation'
+          className='block font-semibold text-sm mb-1 text-slate-700'
+        >
+          Konfirmasi Password
+        </label>
+        <div className='relative'>
+          <input
+            type={showPassword ? 'text' : 'password'}
+            id='register-password-confirmation'
+            name='password_confirmation'
+            value={data.password_confirmation}
+            onChange={handleChange}
+            className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
+            placeholder='Ulangi password Anda'
+            minLength='8'
+            required
+          />
+        </div>
+      </div>
+      
       <div className='mb-6'>
         <label
           htmlFor='register-university'
@@ -180,25 +235,24 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           type='text'
           id='register-university'
           name='university'
-          value={formData.university}
+          value={data.university}
           onChange={handleChange}
           className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
           placeholder='Masukkan nama universitas'
-          required
         />
-      </div>{' '}
+      </div>
       <div className='mb-6'>
         <label className='flex items-start gap-2 cursor-pointer'>
           <input
             type='checkbox'
             name='agreeTerms'
-            checked={formData.agreeTerms}
+            checked={data.agreeTerms}
             onChange={handleChange}
             className='sr-only'
             required
           />
           <span className='relative flex-shrink-0 w-5 h-5 mt-0.5 border-2 border-slate-300 rounded flex items-center justify-center bg-white transition-all'>
-            {formData.agreeTerms && (
+            {data.agreeTerms && (
               <span className='bg-indigo-500 absolute inset-0 rounded-sm flex items-center justify-center'>
                 <svg
                   width='12'
@@ -238,9 +292,10 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       </div>
       <button
         type='submit'
-        className='w-full py-4 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden'
+        disabled={processing || !data.agreeTerms}
+        className='w-full py-4 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed'
       >
-        <span className='relative z-10'>Daftar</span>
+        <span className='relative z-10'>{processing ? 'Mendaftar...' : 'Daftar'}</span>
         <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:animate-shimmer'></span>
       </button>
       <div className='flex items-center my-6'>

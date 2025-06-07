@@ -1,30 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+// import { Inertia } from '@inertiajs/inertia';
 import AdminLayout from './Components/AdminLayout';
 
-const Settings = () => {
+const Settings = ({ settings, user }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   
-  // General settings toggle states
-  const [allowRegistration, setAllowRegistration] = useState(true);
-  const [requireEmailVerification, setRequireEmailVerification] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  
-  // Fee settings toggle state
-  const [automaticWithdrawal, setAutomaticWithdrawal] = useState(true);
-  
-  // Security settings toggle states
-  const [requireLettersNumbers, setRequireLettersNumbers] = useState(true);
-  const [requireSpecialChars, setRequireSpecialChars] = useState(false);
-  
-  // Payment settings toggle states
-  const [enableMidtrans, setEnableMidtrans] = useState(true);
-  const [midtransSandbox, setMidtransSandbox] = useState(true);
-  const [enableQRIS, setEnableQRIS] = useState(true);
+  // Initialize state from props when component mounts
+  useEffect(() => {
+    const initialData = {};
+    
+    // General settings
+    initialData.allow_registration = settings.general.allow_registration;
+    initialData.maintenance_mode = settings.general.maintenance_mode;
+    
+    // Fee settings
+    initialData.platform_fee_percentage = settings.fee.platform_fee_percentage;
+    initialData.minimum_commission = settings.fee.minimum_commission;
+    initialData.withdraw_fee = settings.fee.withdraw_fee;
+    initialData.minimum_withdraw = settings.fee.minimum_withdraw;
+    initialData.automatic_withdrawal = settings.fee.automatic_withdrawal;
+    
+    // Security settings
+    initialData.password_min_length = settings.security.password_min_length;
+    initialData.password_require_letters_numbers = settings.security.password_require_letters_numbers;
+    initialData.password_require_special_chars = settings.security.password_require_special_chars;
+    initialData.password_expiry_days = settings.security.password_expiry_days;
+    
+    // Payment settings
+    initialData.enable_midtrans = settings.payment.enable_midtrans;
+    initialData.midtrans_client_key = settings.payment.midtrans_client_key;
+    initialData.midtrans_server_key = settings.payment.midtrans_server_key;
+    initialData.midtrans_sandbox = settings.payment.midtrans_sandbox;
+    initialData.enable_qris = settings.payment.enable_qris;
+    
+    setFormData(initialData);
+  }, [settings]);
   
   // Function to handle toggle click
-  const handleToggle = (stateSetter, currentValue) => {
-    stateSetter(!currentValue);
+  const handleToggle = (field) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  // Function to handle input change
+  const handleChange = (e) => {
+    const { name, value, type } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? Number(value) : value
+    }));
+  };
+  
+  // Function to save settings
+  const saveSettings = () => {
+    setIsLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+    
+    // Send settings to the server
+    axios.post('/admin/settings', formData)
+      .then(response => {
+        setIsLoading(false);
+        setShowSaveModal(false);
+        setSuccessMessage('Pengaturan berhasil disimpan');
+        
+        // Show success message for 3 seconds
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+      })
+      .catch(error => {
+        setIsLoading(false);
+        setShowSaveModal(false);
+        setErrorMessage('Gagal menyimpan pengaturan: ' + (error.response?.data?.message || 'Terjadi kesalahan'));
+        
+        // Show error message for 5 seconds
+        setTimeout(() => {
+          setErrorMessage('');
+        }, 5000);
+      });
   };
 
   // Toggle UI component to reuse with enhanced animations
@@ -48,6 +110,20 @@ const Settings = () => {
       title='Pengaturan Sistem'
       subtitle='Konfigurasi platform MahaBisa'
     >
+      {/* Success message */}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-md">
+          {successMessage}
+        </div>
+      )}
+      
+      {/* Error message */}
+      {errorMessage && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-200 text-red-700 rounded-md">
+          {errorMessage}
+        </div>
+      )}
+      
       <div className='bg-white rounded-xl shadow-sm border border-gray-200 mb-8'>
         <div className='border-b border-gray-200'>
           <nav
@@ -84,16 +160,6 @@ const Settings = () => {
             >
               Keamanan
             </button>
-            {/* <button
-              onClick={() => setActiveTab('email')}
-              className={`py-3 sm:py-4 px-4 sm:px-6 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
-                activeTab === 'email'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Email
-            </button> */}
             <button
               onClick={() => setActiveTab('payment')}
               className={`py-3 sm:py-4 px-4 sm:px-6 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
@@ -104,16 +170,6 @@ const Settings = () => {
             >
               Pembayaran
             </button>
-            {/* <button
-              onClick={() => setActiveTab('integrations')}
-              className={`py-3 sm:py-4 px-4 sm:px-6 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap ${
-                activeTab === 'integrations'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Integrasi
-            </button> */}
           </nav>
         </div>
 
@@ -131,72 +187,6 @@ const Settings = () => {
               </div>
 
               <div className='md:col-span-2'>
-                {/* <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
-                  <div className='p-6 space-y-6'>
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Nama Platform
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='MahaBisa'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Tagline
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='Platform Freelance untuk Mahasiswa Indonesia'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Deskripsi Singkat
-                      </label>
-                      <textarea
-                        rows='3'
-                        defaultValue='MahaBisa adalah platform yang menghubungkan mahasiswa dengan skill freelance dan klien yang membutuhkan jasa mereka.'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Email Kontak
-                      </label>
-                      <input
-                        type='email'
-                        defaultValue='kontak@mahabisa.id'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Logo Platform
-                      </label>
-                      <div className='flex items-center mt-2'>
-                        <div className='w-16 h-16 rounded-lg bg-indigo-100 mr-4 flex items-center justify-center overflow-hidden'>
-                          <span className='text-indigo-600 font-bold text-2xl'>
-                            M
-                          </span>
-                        </div>
-                        <div>
-                          <button className='bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'>
-                            Ganti Logo
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div> */}
-
                 <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
                   <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
                     <h3 className='text-sm font-medium text-gray-900'>
@@ -216,28 +206,11 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={allowRegistration} 
-                          onChange={() => handleToggle(setAllowRegistration, allowRegistration)} 
+                          enabled={formData.allow_registration} 
+                          onChange={() => handleToggle('allow_registration')} 
                         />
                       </div>
                     </div>
-
-                    {/* <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Verifikasi Email
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Wajibkan verifikasi email untuk pendaftaran baru
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={requireEmailVerification} 
-                          onChange={() => handleToggle(setRequireEmailVerification, requireEmailVerification)} 
-                        />
-                      </div>
-                    </div> */}
 
                     <div className='flex items-center justify-between'>
                       <div>
@@ -250,12 +223,21 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={maintenanceMode} 
-                          onChange={() => handleToggle(setMaintenanceMode, maintenanceMode)} 
+                          enabled={formData.maintenance_mode} 
+                          onChange={() => handleToggle('maintenance_mode')} 
                         />
                       </div>
                     </div>
                   </div>
+                </div>
+                
+                <div className='mt-6'>
+                  <button
+                    onClick={() => setShowSaveModal(true)}
+                    className='bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                  >
+                    Simpan Perubahan
+                  </button>
                 </div>
               </div>
             </div>
@@ -291,7 +273,9 @@ const Settings = () => {
                       <div className='mt-1 flex rounded-md shadow-sm'>
                         <input
                           type='number'
-                          defaultValue='20'
+                          name='platform_fee_percentage'
+                          value={formData.platform_fee_percentage || ''}
+                          onChange={handleChange}
                           className='flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                         />
                         <span className='inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500'>
@@ -314,7 +298,9 @@ const Settings = () => {
                         </span>
                         <input
                           type='number'
-                          defaultValue='10000'
+                          name='minimum_commission'
+                          value={formData.minimum_commission || ''}
+                          onChange={handleChange}
                           className='flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                         />
                       </div>
@@ -343,7 +329,9 @@ const Settings = () => {
                         </span>
                         <input
                           type='number'
-                          defaultValue='5000'
+                          name='withdraw_fee'
+                          value={formData.withdraw_fee || ''}
+                          onChange={handleChange}
                           className='flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                         />
                       </div>
@@ -359,7 +347,9 @@ const Settings = () => {
                         </span>
                         <input
                           type='number'
-                          defaultValue='50000'
+                          name='minimum_withdraw'
+                          value={formData.minimum_withdraw || ''}
+                          onChange={handleChange}
                           className='flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                         />
                       </div>
@@ -376,8 +366,8 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={automaticWithdrawal} 
-                          onChange={() => handleToggle(setAutomaticWithdrawal, automaticWithdrawal)} 
+                          enabled={formData.automatic_withdrawal} 
+                          onChange={() => handleToggle('automatic_withdrawal')} 
                         />
                       </div>
                     </div>
@@ -409,62 +399,6 @@ const Settings = () => {
               </div>
 
               <div className='md:col-span-2'>
-                {/* <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
-                  <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Autentikasi
-                    </h3>
-                  </div>
-
-                  <div className='p-6 space-y-6'>
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Aktifkan 2FA
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Aktifkan Two-Factor Authentication untuk admin
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Login Social Media
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Izinkan login dengan akun sosial media
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Masa Berlaku Session (jam)
-                      </label>
-                      <input
-                        type='number'
-                        defaultValue='24'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                      <p className='mt-2 text-sm text-gray-500'>
-                        Durasi masa berlaku sesi login dalam jam
-                      </p>
-                    </div>
-                  </div>
-                </div> */}
-
                 <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
                   <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
                     <h3 className='text-sm font-medium text-gray-900'>
@@ -479,7 +413,9 @@ const Settings = () => {
                       </label>
                       <input
                         type='number'
-                        defaultValue='8'
+                        name='password_min_length'
+                        value={formData.password_min_length || ''}
+                        onChange={handleChange}
                         className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                       />
                     </div>
@@ -495,8 +431,8 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={requireLettersNumbers} 
-                          onChange={() => handleToggle(setRequireLettersNumbers, requireLettersNumbers)} 
+                          enabled={formData.password_require_letters_numbers} 
+                          onChange={() => handleToggle('password_require_letters_numbers')} 
                         />
                       </div>
                     </div>
@@ -512,8 +448,8 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={requireSpecialChars} 
-                          onChange={() => handleToggle(setRequireSpecialChars, requireSpecialChars)} 
+                          enabled={formData.password_require_special_chars} 
+                          onChange={() => handleToggle('password_require_special_chars')} 
                         />
                       </div>
                     </div>
@@ -524,7 +460,9 @@ const Settings = () => {
                       </label>
                       <input
                         type='number'
-                        defaultValue='90'
+                        name='password_expiry_days'
+                        value={formData.password_expiry_days || ''}
+                        onChange={handleChange}
                         className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                       />
                       <p className='mt-2 text-sm text-gray-500'>
@@ -547,205 +485,6 @@ const Settings = () => {
             </div>
           </div>
         )}
-
-        {/* Email Settings Tab Content */}
-        {/* {activeTab === 'email' && (
-          <div className='p-6'>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-              <div className='md:col-span-1'>
-                <h3 className='text-lg font-medium text-gray-900'>
-                  Konfigurasi Email
-                </h3>
-                <p className='mt-1 text-sm text-gray-500'>
-                  Pengaturan server SMTP dan notifikasi email
-                </p>
-              </div>
-
-              <div className='md:col-span-2'>
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
-                  <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Pengaturan SMTP
-                    </h3>
-                  </div>
-
-                  <div className='p-6 space-y-6'>
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        SMTP Server
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='smtp.mailtrap.io'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        SMTP Port
-                      </label>
-                      <input
-                        type='number'
-                        defaultValue='2525'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Username
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='mahabisa_smtp'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Password
-                      </label>
-                      <input
-                        type='password'
-                        defaultValue='********'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Email Pengirim
-                      </label>
-                      <input
-                        type='email'
-                        defaultValue='noreply@mahabisa.id'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Nama Pengirim
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='MahaBisa Platform'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Enkripsi TLS/SSL
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Gunakan koneksi aman untuk SMTP
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className='pt-3'>
-                      <button className='bg-indigo-100 text-indigo-700 border border-indigo-300 rounded-md shadow-sm py-2 px-4 text-sm font-medium hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'>
-                        Test Koneksi SMTP
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
-                  <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Notifikasi Email
-                    </h3>
-                  </div>
-
-                  <div className='p-6 space-y-6'>
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Email Verifikasi Akun
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Kirim email untuk verifikasi akun baru
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Notifikasi Proyek Baru
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Kirim email saat ada proyek baru
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Notifikasi Pembayaran
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Kirim email untuk update pembayaran
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <h4 className='text-sm font-medium text-gray-900'>
-                          Newsletter
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          Kirim newsletter ke pengguna
-                        </p>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='mt-6'>
-                  <button
-                    onClick={() => setShowSaveModal(true)}
-                    className='bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  >
-                    Simpan Perubahan
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
 
         {/* Payment Settings Tab Content */}
         {activeTab === 'payment' && (
@@ -787,8 +526,8 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={enableMidtrans} 
-                          onChange={() => handleToggle(setEnableMidtrans, enableMidtrans)} 
+                          enabled={formData.enable_midtrans} 
+                          onChange={() => handleToggle('enable_midtrans')} 
                         />
                       </div>
                     </div>
@@ -799,7 +538,9 @@ const Settings = () => {
                       </label>
                       <input
                         type='text'
-                        defaultValue='SB-Mid-client-xxxxxxxxxxxxxxxx'
+                        name='midtrans_client_key'
+                        value={formData.midtrans_client_key || ''}
+                        onChange={handleChange}
                         className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                       />
                     </div>
@@ -810,7 +551,9 @@ const Settings = () => {
                       </label>
                       <input
                         type='password'
-                        defaultValue='SB-Mid-server-xxxxxxxxxxxxxxxx'
+                        name='midtrans_server_key'
+                        value={formData.midtrans_server_key || ''}
+                        onChange={handleChange}
                         className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
                       />
                     </div>
@@ -826,8 +569,8 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={midtransSandbox} 
-                          onChange={() => handleToggle(setMidtransSandbox, midtransSandbox)} 
+                          enabled={formData.midtrans_sandbox} 
+                          onChange={() => handleToggle('midtrans_sandbox')} 
                         />
                       </div>
                     </div>
@@ -854,115 +597,10 @@ const Settings = () => {
                       </div>
                       <div className='flex items-center'>
                         <ToggleSwitch 
-                          enabled={enableQRIS} 
-                          onChange={() => handleToggle(setEnableQRIS, enableQRIS)} 
+                          enabled={formData.enable_qris} 
+                          onChange={() => handleToggle('enable_qris')} 
                         />
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
-                  <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Metode Pembayaran
-                    </h3>
-                  </div>
-
-                  <div className='p-6 space-y-4'>
-                    <div className='flex items-center'>
-                      <input
-                        id='payment-bank-transfer'
-                        name='payment-methods'
-                        type='checkbox'
-                        defaultChecked
-                        className='h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'
-                      />
-                      <label
-                        htmlFor='payment-bank-transfer'
-                        className='ml-2 block text-sm text-gray-900'
-                      >
-                        Transfer Bank (Virtual Account)
-                      </label>
-                    </div>
-
-                    <div className='flex items-center'>
-                      <input
-                        id='payment-cc'
-                        name='payment-methods'
-                        type='checkbox'
-                        defaultChecked
-                        className='h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'
-                      />
-                      <label
-                        htmlFor='payment-cc'
-                        className='ml-2 block text-sm text-gray-900'
-                      >
-                        Kartu Kredit
-                      </label>
-                    </div>
-
-                    <div className='flex items-center'>
-                      <input
-                        id='payment-ewallet'
-                        name='payment-methods'
-                        type='checkbox'
-                        defaultChecked
-                        className='h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'
-                      />
-                      <label
-                        htmlFor='payment-ewallet'
-                        className='ml-2 block text-sm text-gray-900'
-                      >
-                        E-Wallet (GoPay, OVO, DANA, LinkAja)
-                      </label>
-                    </div>
-
-                    <div className='flex items-center'>
-                      <input
-                        id='payment-qris'
-                        name='payment-methods'
-                        type='checkbox'
-                        defaultChecked
-                        className='h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'
-                      />
-                      <label
-                        htmlFor='payment-qris'
-                        className='ml-2 block text-sm text-gray-900'
-                      >
-                        QRIS
-                      </label>
-                    </div>
-
-                    <div className='flex items-center'>
-                      <input
-                        id='payment-paylater'
-                        name='payment-methods'
-                        type='checkbox'
-                        className='h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'
-                      />
-                      <label
-                        htmlFor='payment-paylater'
-                        className='ml-2 block text-sm text-gray-900'
-                      >
-                        Cicilan & Paylater (Kredivo, Akulaku)
-                      </label>
-                    </div>
-
-                    <div className='flex items-center'>
-                      <input
-                        id='payment-retail'
-                        name='payment-methods'
-                        type='checkbox'
-                        defaultChecked
-                        className='h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500'
-                      />
-                      <label
-                        htmlFor='payment-retail'
-                        className='ml-2 block text-sm text-gray-900'
-                      >
-                        Retail (Alfamart, Indomaret)
-                      </label>
                     </div>
                   </div>
                 </div>
@@ -979,199 +617,6 @@ const Settings = () => {
             </div>
           </div>
         )}
-
-        {/* Integrations Tab Content */}
-        {/* {activeTab === 'integrations' && (
-          <div className='p-6'>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-              <div className='md:col-span-1'>
-                <h3 className='text-lg font-medium text-gray-900'>Integrasi</h3>
-                <p className='mt-1 text-sm text-gray-500'>
-                  Hubungkan platform dengan berbagai layanan pihak ketiga
-                </p>
-              </div>
-
-              <div className='md:col-span-2'>
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden'>
-                  <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Analitik
-                    </h3>
-                  </div>
-
-                  <div className='p-6 space-y-6'>
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center'>
-                        <svg
-                          className='h-8 w-8 mr-4 text-blue-500'
-                          viewBox='0 0 24 24'
-                          fill='currentColor'
-                        >
-                          <path d='M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z' />
-                        </svg>
-                        <div>
-                          <h4 className='text-sm font-medium text-gray-900'>
-                            Google Analytics
-                          </h4>
-                          <p className='text-xs text-gray-500'>
-                            Pantau traffic dan aktivitas pengguna
-                          </p>
-                        </div>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Tracking ID
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='G-XXXXXXXXXX'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <hr className='my-4' />
-
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center'>
-                        <svg
-                          className='h-8 w-8 mr-4 text-green-500'
-                          viewBox='0 0 24 24'
-                          fill='currentColor'
-                        >
-                          <path d='M19.044 7.891c-.953-.382-1.972-.573-2.987-.57a7.412 7.412 0 0 0-3.056.678c-.685.313-1.277.702-1.757 1.156-.48-.453-1.073-.843-1.76-1.156A7.412 7.412 0 0 0 6.43 7.32c-1.015-.003-2.034.188-2.987.57A12.306 12.306 0 0 0 0 16.396c.01 2.822 2.311 4.79 4.539 5.082 1.748.227 3.42-.36 4.703-1.617a8.7 8.7 0 0 0 1.065-1.245c.034-.049.073-.094.103-.146.03.052.07.097.103.146.305.445.67.862 1.065 1.245 1.284 1.258 2.955 1.844 4.704 1.617 2.227-.293 4.53-2.258 4.538-5.085a12.305 12.305 0 0 0-1.776-8.507ZM7.983 17.96c-.902 0-1.651-.749-1.651-1.674 0-.925.75-1.674 1.651-1.674.905 0 1.655.749 1.655 1.674 0 .925-.747 1.673-1.655 1.673Zm5.46 0c-.905 0-1.655-.749-1.655-1.674 0-.925.75-1.674 1.655-1.674.902 0 1.651.749 1.651 1.674 0 .925-.749 1.673-1.651 1.673Z' />
-                        </svg>
-                        <div>
-                          <h4 className='text-sm font-medium text-gray-900'>
-                            Discord
-                          </h4>
-                          <p className='text-xs text-gray-500'>
-                            Webhook notifikasi ke channel Discord
-                          </p>
-                        </div>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Webhook URL
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='https://discord.com/api/webhooks/...'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className='bg-white shadow-sm rounded-lg overflow-hidden mt-6'>
-                  <div className='px-6 py-4 bg-gray-50 border-b border-gray-200'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                      Media Sosial
-                    </h3>
-                  </div>
-
-                  <div className='p-6 space-y-6'>
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center'>
-                        <svg
-                          className='h-8 w-8 mr-4 text-blue-700'
-                          viewBox='0 0 24 24'
-                          fill='currentColor'
-                        >
-                          <path d='M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.991 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.064 24 12.073z' />
-                        </svg>
-                        <div>
-                          <h4 className='text-sm font-medium text-gray-900'>
-                            Facebook
-                          </h4>
-                          <p className='text-xs text-gray-500'>
-                            Login dan berbagi ke Facebook
-                          </p>
-                        </div>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-indigo-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        App ID
-                      </label>
-                      <input
-                        type='text'
-                        defaultValue='123456789012345'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        App Secret
-                      </label>
-                      <input
-                        type='password'
-                        defaultValue='1234567890abcdef'
-                        className='w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50'
-                      />
-                    </div>
-
-                    <hr className='my-4' />
-
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center'>
-                        <svg
-                          className='h-8 w-8 mr-4 text-blue-400'
-                          viewBox='0 0 24 24'
-                          fill='currentColor'
-                        >
-                          <path d='M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z' />
-                        </svg>
-                        <div>
-                          <h4 className='text-sm font-medium text-gray-900'>
-                            Twitter
-                          </h4>
-                          <p className='text-xs text-gray-500'>
-                            Login dan berbagi ke Twitter
-                          </p>
-                        </div>
-                      </div>
-                      <div className='flex items-center'>
-                        <button className='relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>
-                          <span className='translate-x-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out' />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='mt-6'>
-                  <button
-                    onClick={() => setShowSaveModal(true)}
-                    className='bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  >
-                    Simpan Perubahan
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
       </div>
 
       {/* Save Changes Modal */}
@@ -1179,20 +624,26 @@ const Settings = () => {
         <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
           <div className='bg-white rounded-lg p-8 max-w-sm mx-auto'>
             <div className='text-center'>
-              <svg
-                className='mx-auto h-14 w-14 text-green-500 mb-4'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                />
-              </svg>
+              {isLoading ? (
+                <div className="flex justify-center items-center mb-4">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+                </div>
+              ) : (
+                <svg
+                  className='mx-auto h-14 w-14 text-green-500 mb-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                  />
+                </svg>
+              )}
               <h3 className='text-lg font-medium text-gray-900 mb-2'>
                 Simpan Perubahan
               </h3>
@@ -1203,18 +654,17 @@ const Settings = () => {
               <div className='flex justify-center'>
                 <button
                   onClick={() => setShowSaveModal(false)}
-                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md mr-3 hover:bg-gray-50'
+                  disabled={isLoading}
+                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md mr-3 hover:bg-gray-50 disabled:opacity-50'
                 >
                   Batal
                 </button>
                 <button
-                  onClick={() => {
-                    // Logic to save settings would go here
-                    setShowSaveModal(false);
-                  }}
-                  className='px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700'
+                  onClick={saveSettings}
+                  disabled={isLoading}
+                  className='px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50'
                 >
-                  Ya, Simpan
+                  {isLoading ? 'Menyimpan...' : 'Ya, Simpan'}
                 </button>
               </div>
             </div>

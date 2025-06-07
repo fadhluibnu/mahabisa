@@ -2,9 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\UserProfile;
+use App\Models\Category;
+use App\Models\Skill;
+use App\Models\Project;
+use App\Models\Service;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,37 +18,293 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create regular users
-        User::factory(5)->create([
-            'role' => 'client',
+        // Call other seeders
+        $this->call([
+            UsersSeeder::class,
+            SettingsSeeder::class,
         ]);
         
-        User::factory(5)->create([
-            'role' => 'freelancer',
+        // Create admin profile
+        UserProfile::create([
+            'user_id' => $admin->id,
+            'bio' => 'Platform administrator for MahaBisa',
+            'phone_number' => '+6281234567890',
+            'address' => 'Jl. Admin No. 1',
+            'city' => 'Jakarta',
+            'province' => 'DKI Jakarta',
+            'is_verified' => true,
         ]);
-
-        // Create admin user
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@mahabisa.com',
+        
+        // Create freelancer users
+        $freelancer1 = User::create([
+            'name' => 'Siti Rahayu',
+            'email' => 'siti@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'freelancer',
+            'profile_photo_url' => 'https://randomuser.me/api/portraits/women/44.jpg',
+        ]);
+        
+        $freelancer2 = User::create([
+            'name' => 'Joko Widodo',
+            'email' => 'joko@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'freelancer',
+            'profile_photo_url' => 'https://randomuser.me/api/portraits/men/22.jpg',
+        ]);
+        
+        // Create client users
+        $client1 = User::create([
+            'name' => 'Ahmad Santoso',
+            'email' => 'ahmad@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'client',
+            'profile_photo_url' => 'https://randomuser.me/api/portraits/men/32.jpg',
+        ]);
+        
+        $client2 = User::create([
+            'name' => 'Dewi Susanti',
+            'email' => 'dewi@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'client',
+            'profile_photo_url' => 'https://randomuser.me/api/portraits/women/29.jpg',
+        ]);
+        
+        // Create profiles
+        UserProfile::create([
+            'user_id' => $freelancer1->id,
+            'bio' => 'Web designer and developer with 5 years of experience',
+            'phone_number' => '+6287654321098',
+            'address' => 'Jl. Merdeka No. 17',
+            'city' => 'Bandung',
+            'province' => 'Jawa Barat',
+            'website' => 'https://sitirahayu.com',
+            'social_media_links' => json_encode([
+                'linkedin' => 'sitirahayu',
+                'github' => 'sitirahayu',
+                'twitter' => 'sitirahayu'
+            ]),
+            'is_verified' => true,
+        ]);
+        
+        UserProfile::create([
+            'user_id' => $freelancer2->id,
+            'bio' => 'Full-stack developer specializing in React and Laravel',
+            'phone_number' => '+6281122334455',
+            'address' => 'Jl. Pahlawan No. 45',
+            'city' => 'Surabaya',
+            'province' => 'Jawa Timur',
+            'website' => 'https://jokowidodo.com',
+            'social_media_links' => json_encode([
+                'linkedin' => 'jokowidodo',
+                'github' => 'jokowidodo'
+            ]),
+            'is_verified' => true,
+        ]);
+        
+        UserProfile::create([
+            'user_id' => $client1->id,
+            'bio' => 'Startup founder looking for talented developers',
+            'phone_number' => '+6289988776655',
+            'address' => 'Jl. Sudirman No. 123',
+            'city' => 'Jakarta',
+            'province' => 'DKI Jakarta',
+            'is_verified' => true,
+        ]);
+        
+        UserProfile::create([
+            'user_id' => $client2->id,
+            'bio' => 'Digital marketing specialist and business owner',
+            'phone_number' => '+6282233445566',
+            'address' => 'Jl. Gajah Mada No. 56',
+            'city' => 'Yogyakarta',
+            'province' => 'DI Yogyakarta',
+            'is_verified' => true,
+        ]);
+        
+        // Create categories
+        $categoryWeb = Category::create(['name' => 'Web Development']);
+        $categoryMobile = Category::create(['name' => 'Mobile App Development']);
+        $categoryDesign = Category::create(['name' => 'Design']);
+        $categoryWriting = Category::create(['name' => 'Content Writing']);
+        $categoryMarketing = Category::create(['name' => 'Digital Marketing']);
+        $categoryVideo = Category::create(['name' => 'Video & Animation']);
+        $categoryMusic = Category::create(['name' => 'Music & Audio']);
+        $categoryBusiness = Category::create(['name' => 'Business']);
+        
+        // Create skills
+        $skills = [
+            // Web Development
+            ['name' => 'HTML', 'category_id' => $categoryWeb->id],
+            ['name' => 'CSS', 'category_id' => $categoryWeb->id],
+            ['name' => 'JavaScript', 'category_id' => $categoryWeb->id],
+            ['name' => 'PHP', 'category_id' => $categoryWeb->id],
+            ['name' => 'Laravel', 'category_id' => $categoryWeb->id],
+            ['name' => 'React', 'category_id' => $categoryWeb->id],
+            ['name' => 'Vue.js', 'category_id' => $categoryWeb->id],
+            ['name' => 'Node.js', 'category_id' => $categoryWeb->id],
+            
+            // Mobile Development
+            ['name' => 'Android', 'category_id' => $categoryMobile->id],
+            ['name' => 'iOS', 'category_id' => $categoryMobile->id],
+            ['name' => 'React Native', 'category_id' => $categoryMobile->id],
+            ['name' => 'Flutter', 'category_id' => $categoryMobile->id],
+            ['name' => 'Swift', 'category_id' => $categoryMobile->id],
+            ['name' => 'Kotlin', 'category_id' => $categoryMobile->id],
+            
+            // Design
+            ['name' => 'UI Design', 'category_id' => $categoryDesign->id],
+            ['name' => 'UX Design', 'category_id' => $categoryDesign->id],
+            ['name' => 'Graphic Design', 'category_id' => $categoryDesign->id],
+            ['name' => 'Logo Design', 'category_id' => $categoryDesign->id],
+            ['name' => 'Illustration', 'category_id' => $categoryDesign->id],
+            
+            // Writing
+            ['name' => 'Content Writing', 'category_id' => $categoryWriting->id],
+            ['name' => 'Copywriting', 'category_id' => $categoryWriting->id],
+            ['name' => 'Blog Writing', 'category_id' => $categoryWriting->id],
+            ['name' => 'Technical Writing', 'category_id' => $categoryWriting->id],
+        ];
+        
+        foreach ($skills as $skill) {
+            Skill::create($skill);
+        }
+        
+        // Create projects
+        Project::create([
+            'user_id' => $client1->id,
+            'title' => 'Create a Modern E-commerce Website',
+            'description' => 'Looking for a developer to create a responsive e-commerce website using Laravel and Vue.js. The site will have product listings, shopping cart, checkout, and payment integration.',
+            'min_budget' => 2000000,
+            'max_budget' => 5000000,
+            'budget_type' => 'range',
+            'duration' => 30,
+            'category_id' => $categoryWeb->id,
+            'status' => 'open',
+            'skills_required' => json_encode(['HTML', 'CSS', 'JavaScript', 'PHP', 'Laravel', 'Vue.js']),
+        ]);
+        
+        Project::create([
+            'user_id' => $client2->id,
+            'title' => 'Mobile App for Food Delivery',
+            'description' => 'Need a mobile app developer to create a food delivery app for Android and iOS. The app should have user registration, restaurant listings, order placement, payment, and order tracking.',
+            'min_budget' => 5000000,
+            'max_budget' => 10000000,
+            'budget_type' => 'range',
+            'duration' => 60,
+            'category_id' => $categoryMobile->id,
+            'status' => 'open',
+            'skills_required' => json_encode(['Android', 'iOS', 'React Native', 'Flutter']),
+        ]);
+        
+        Project::create([
+            'user_id' => $client1->id,
+            'title' => 'Company Logo and Brand Identity',
+            'description' => 'Looking for a designer to create a logo and brand identity for a tech startup. The designer should provide logo in various formats, color palette, typography, and usage guidelines.',
+            'min_budget' => 1000000,
+            'max_budget' => 3000000,
+            'budget_type' => 'range',
+            'duration' => 15,
+            'category_id' => $categoryDesign->id,
+            'status' => 'open',
+            'skills_required' => json_encode(['UI Design', 'Graphic Design', 'Logo Design']),
+        ]);
+        
+        // Create services
+        Service::create([
+            'user_id' => $freelancer1->id,
+            'title' => 'I will develop a responsive website using Laravel',
+            'description' => 'I will create a custom, responsive website using Laravel framework. The website will be mobile-friendly, fast, and secure.',
+            'price' => 2000000,
+            'price_type' => 'fixed',
+            'delivery_time' => 10,
+            'category_id' => $categoryWeb->id,
+            'requirements' => 'Please provide your website requirements, color preferences, and any reference websites you like.',
+            'is_active' => true,
+        ]);
+        
+        Service::create([
+            'user_id' => $freelancer2->id,
+            'title' => 'I will create a mobile app for Android and iOS',
+            'description' => 'I will design and develop a mobile app for both Android and iOS platforms using React Native or Flutter. The app will be optimized for performance and user experience.',
+            'price' => 5000000,
+            'price_type' => 'fixed',
+            'delivery_time' => 20,
+            'category_id' => $categoryMobile->id,
+            'requirements' => 'Please provide your app idea, features list, and any wireframes or mockups if available.',
+            'is_active' => true,
+        ]);
+        
+        Service::create([
+            'user_id' => $freelancer1->id,
+            'title' => 'I will design a modern and professional logo',
+            'description' => 'I will create a modern, professional logo for your business or project. You will receive the logo in various formats (PNG, JPG, SVG, AI) and color variations.',
+            'price' => 1000000,
+            'price_type' => 'fixed',
+            'delivery_time' => 5,
+            'category_id' => $categoryDesign->id,
+            'requirements' => 'Please provide your business name, industry, color preferences, and any existing branding materials.',
+            'is_active' => true,
+        ]);
+        
+        // Create demo users for testing (with different emails so they don't conflict with the ones above)
+        $demoAdmin = User::factory()->create([
+            'name' => 'Admin Demo',
+            'email' => 'admin_demo@mahabisa.com',
+            'password' => Hash::make('password123'),
             'role' => 'admin',
             'profile_photo_url' => 'https://randomuser.me/api/portraits/men/1.jpg',
         ]);
         
-        // Create test client user
-        User::factory()->create([
+        $demoClient = User::factory()->create([
             'name' => 'Client Demo',
-            'email' => 'client@mahabisa.com',
+            'email' => 'client_demo@mahabisa.com',
+            'password' => Hash::make('password123'),
             'role' => 'client',
             'profile_photo_url' => 'https://randomuser.me/api/portraits/women/2.jpg',
         ]);
         
-        // Create test freelancer user
-        User::factory()->create([
+        $demoFreelancer = User::factory()->create([
             'name' => 'Freelancer Demo',
-            'email' => 'freelancer@mahabisa.com',
+            'email' => 'freelancer_demo@mahabisa.com',
+            'password' => Hash::make('password123'),
             'role' => 'freelancer',
             'profile_photo_url' => 'https://randomuser.me/api/portraits/men/3.jpg',
+        ]);
+        
+        // Create profiles for demo users
+        UserProfile::create([
+            'user_id' => $demoAdmin->id,
+            'bio' => 'Demo administrator account',
+            'phone_number' => '+628123456789',
+            'address' => 'Jl. Demo Admin No. 1',
+            'city' => 'Jakarta',
+            'province' => 'DKI Jakarta',
+            'is_verified' => true,
+        ]);
+        
+        UserProfile::create([
+            'user_id' => $demoClient->id,
+            'bio' => 'Demo client account for testing purposes',
+            'phone_number' => '+628234567890',
+            'address' => 'Jl. Demo Client No. 2',
+            'city' => 'Bandung',
+            'province' => 'Jawa Barat',
+            'is_verified' => true,
+        ]);
+        
+        UserProfile::create([
+            'user_id' => $demoFreelancer->id,
+            'bio' => 'Demo freelancer account with various skills',
+            'phone_number' => '+628345678901',
+            'address' => 'Jl. Demo Freelancer No. 3',
+            'city' => 'Surabaya',
+            'province' => 'Jawa Timur',
+            'website' => 'https://demo-freelancer.com',
+            'social_media_links' => json_encode([
+                'linkedin' => 'demofreelancer',
+                'github' => 'demofreelancer'
+            ]),
+            'is_verified' => true,
         ]);
     }
 }

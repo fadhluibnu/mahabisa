@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, Head } from '@inertiajs/react';
 import AdminLayout from './Components/AdminLayout';
 import StatCard from './Components/StatCard';
 import { Line } from 'react-chartjs-2';
@@ -14,6 +14,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 
 // Register Chart.js components
 ChartJS.register(
@@ -27,15 +28,23 @@ ChartJS.register(
   Filler
 );
 
-const Dashboard = () => {
+const Dashboard = ({ 
+  stats, 
+  chartData: dashboardChartData, 
+  recentOrders, 
+  recentActivities, 
+  topFreelancers, 
+  recentReviews,
+  user 
+}) => {
   const [timeRange, setTimeRange] = useState('Bulanan');
   
-  // Chart data for different time ranges
-  const chartData = {
+  // Prepare chart data based on props or use default data
+  const dataForCharts = {
     'Bulanan': {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep'],
-      totalVisitors: [8000, 9500, 10200, 9000, 11500, 15000, 13500, 16000, 18000],
-      newVisitors: [5000, 6200, 6800, 6000, 7500, 9000, 8200, 9500, 10500]
+      labels: dashboardChartData?.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep'],
+      totalVisitors: dashboardChartData?.totalVisitors || [8000, 9500, 10200, 9000, 11500, 15000, 13500, 16000, 18000],
+      newVisitors: dashboardChartData?.newVisitors || [5000, 6200, 6800, 6000, 7500, 9000, 8200, 9500, 10500]
     },
     'Mingguan': {
       labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
@@ -51,11 +60,11 @@ const Dashboard = () => {
   
   // Chart options and data structure
   const data = {
-    labels: chartData[timeRange].labels,
+    labels: dataForCharts[timeRange].labels,
     datasets: [
       {
         label: 'Total Pengunjung',
-        data: chartData[timeRange].totalVisitors,
+        data: dataForCharts[timeRange].totalVisitors,
         borderColor: '#4f46e5',
         backgroundColor: 'rgba(79, 70, 229, 0.1)',
         fill: true,
@@ -66,7 +75,7 @@ const Dashboard = () => {
       },
       {
         label: 'Pengunjung Baru',
-        data: chartData[timeRange].newVisitors,
+        data: dataForCharts[timeRange].newVisitors,
         borderColor: '#10b981',
         borderDash: [5, 5],
         backgroundColor: 'transparent',
@@ -149,7 +158,7 @@ const Dashboard = () => {
       }
     }
   };
-  
+
   // Handle time range change
   const handleTimeRangeChange = (e) => {
     setTimeRange(e.target.value);
@@ -160,12 +169,13 @@ const Dashboard = () => {
       title='Dashboard Admin'
       subtitle='Selamat datang di pusat kendali MahaBisa'
     >
+      <Head title="Dashboard Admin" />
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8'>
         <StatCard
           title='Total Pengguna'
-          value='2,519'
-          percentage='12.5'
-          trend='up'
+          value={stats.users_count.toLocaleString()}
+          percentage={stats.users_growth.toString()}
+          trend={stats.users_growth >= 0 ? 'up' : 'down'}
           color='purple'
           icon={
             <svg
@@ -187,9 +197,9 @@ const Dashboard = () => {
 
         <StatCard
           title='Proyek Aktif'
-          value='128'
-          percentage='8.2'
-          trend='up'
+          value={stats.active_projects_count.toLocaleString()}
+          percentage={stats.projects_growth.toString()}
+          trend={stats.projects_growth >= 0 ? 'up' : 'down'}
           color='pink'
           icon={
             <svg
@@ -211,9 +221,9 @@ const Dashboard = () => {
 
         <StatCard
           title='Pendapatan'
-          value='Rp 37,8jt'
-          percentage='23.1'
-          trend='up'
+          value={formatCurrency(stats.revenue)}
+          percentage={stats.revenue_growth.toString()}
+          trend={stats.revenue_growth >= 0 ? 'up' : 'down'}
           color='green'
           icon={
             <svg
@@ -235,9 +245,9 @@ const Dashboard = () => {
 
         <StatCard
           title='Rating Platform'
-          value='4.8/5'
-          percentage='4.3'
-          trend='up'
+          value={`${stats.average_rating.toFixed(1)}/5`}
+          percentage={stats.rating_growth.toString()}
+          trend={stats.rating_growth >= 0 ? 'up' : 'down'}
           color='orange'
           icon={
             <svg
@@ -296,385 +306,295 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/1'}>
-                    <td className='py-3 font-medium text-gray-900'>
-                      Website Dashboard
-                    </td>
-                    <td className='py-3'>
-                      <div className='flex items-center'>
-                        <div className='w-6 h-6 rounded-full mr-2 overflow-hidden flex-shrink-0'>
+                  {recentOrders?.map((order) => (
+                    <tr key={order.id} className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' 
+                        onClick={() => window.location.href = `/admin/orders/${order.id}`}>
+                      <td className='py-3 font-medium text-gray-900'>
+                        {order.title}
+                      </td>
+                      <td className='py-3'>
+                        <div className='flex items-center'>
                           <img
-                            src='https://randomuser.me/api/portraits/women/23.jpg'
-                            alt='User'
-                            className='w-full h-full object-cover'
+                            src={order.freelancer.avatar}
+                            alt={order.freelancer.name}
+                            className='h-6 w-6 rounded-full mr-2'
                           />
+                          <span>{order.freelancer.name}</span>
                         </div>
-                        <span>Dewi S.</span>
-                      </div>
-                    </td>
-                    <td className='py-3 hidden sm:table-cell'>PT Maju Jaya</td>
-                    <td className='py-3 hidden md:table-cell'>25 Jun 2023</td>
-                    <td className='py-3 hidden xs:table-cell'>
-                      <span className='px-2 py-1 rounded-full text-xs bg-green-100 text-green-800'>
-                        Aktif
-                      </span>
-                    </td>
-                    <td className='py-3 text-right font-medium'>
-                      Rp 4.500.000
-                    </td>
-                  </tr>
-                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/2'}>
-                    <td className='py-3 font-medium text-gray-900'>
-                      Logo Design
-                    </td>
-                    <td className='py-3'>
-                      <div className='flex items-center'>
-                        <div className='w-6 h-6 rounded-full mr-2 overflow-hidden flex-shrink-0'>
+                      </td>
+                      <td className='py-3 hidden sm:table-cell'>
+                        <div className='flex items-center'>
                           <img
-                            src='https://randomuser.me/api/portraits/men/32.jpg'
-                            alt='User'
-                            className='w-full h-full object-cover'
+                            src={order.client.avatar}
+                            alt={order.client.name}
+                            className='h-6 w-6 rounded-full mr-2'
                           />
+                          <span>{order.client.name}</span>
                         </div>
-                        <span>Agus P.</span>
-                      </div>
-                    </td>
-                    <td className='py-3 hidden sm:table-cell'>
-                      Startup Kreatif
-                    </td>
-                    <td className='py-3 hidden md:table-cell'>20 Jun 2023</td>
-                    <td className='py-3 hidden xs:table-cell'>
-                      <span className='px-2 py-1 rounded-full text-xs bg-green-100 text-green-800'>
-                        Aktif
-                      </span>
-                    </td>
-                    <td className='py-3 text-right font-medium'>
-                      Rp 1.200.000
-                    </td>
-                  </tr>
-                  <tr className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/3'}>
-                    <td className='py-3 font-medium text-gray-900'>
-                      Mobile App
-                    </td>
-                    <td className='py-3'>
-                      <div className='flex items-center'>
-                        <div className='w-6 h-6 rounded-full mr-2 overflow-hidden flex-shrink-0'>
-                          <img
-                            src='https://randomuser.me/api/portraits/women/67.jpg'
-                            alt='User'
-                            className='w-full h-full object-cover'
-                          />
-                        </div>
-                        <span>Nina M.</span>
-                      </div>
-                    </td>
-                    <td className='py-3 hidden sm:table-cell'>
-                      Tech Solutions
-                    </td>
-                    <td className='py-3 hidden md:table-cell'>15 Jul 2023</td>
-                    <td className='py-3 hidden xs:table-cell'>
-                      <span className='px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800'>
-                        Review
-                      </span>
-                    </td>
-                    <td className='py-3 text-right font-medium'>
-                      Rp 8.750.000
-                    </td>
-                  </tr>
-                  <tr className='text-sm hover:bg-gray-50 cursor-pointer' onClick={() => window.location.href = '/admin/projects/4'}>
-                    <td className='py-3 font-medium text-gray-900'>
-                      Content Writing
-                    </td>
-                    <td className='py-3'>
-                      <div className='flex items-center'>
-                        <div className='w-6 h-6 rounded-full mr-2 overflow-hidden flex-shrink-0'>
-                          <img
-                            src='https://randomuser.me/api/portraits/men/54.jpg'
-                            alt='User'
-                            className='w-full h-full object-cover'
-                          />
-                        </div>
-                        <span>Rudi H.</span>
-                      </div>
-                    </td>
-                    <td className='py-3 hidden sm:table-cell'>BlogMedia</td>
-                    <td className='py-3 hidden md:table-cell'>10 Jun 2023</td>
-                    <td className='py-3 hidden xs:table-cell'>
-                      <span className='px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800'>
-                        Selesai
-                      </span>
-                    </td>
-                    <td className='py-3 text-right font-medium'>Rp 850.000</td>
-                  </tr>
+                      </td>
+                      <td className='py-3 hidden md:table-cell text-gray-500'>
+                        {order.deadline ? formatDate(order.deadline) : 'Tidak ada'}
+                      </td>
+                      <td className='py-3 hidden xs:table-cell'>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            ${
+                              order.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : order.status === 'in-progress'
+                                ? 'bg-blue-100 text-blue-800'
+                                : order.status === 'revision'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                        >
+                          {order.status === 'completed'
+                            ? 'Selesai'
+                            : order.status === 'in-progress'
+                            ? 'Proses'
+                            : order.status === 'revision'
+                            ? 'Revisi'
+                            : 'Pending'}
+                        </span>
+                      </td>
+                      <td className='py-3 text-right font-medium'>
+                        {formatCurrency(order.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                  
+                  {(!recentOrders || recentOrders.length === 0) && (
+                    <tr>
+                      <td colSpan="6" className="py-4 text-center text-gray-500">
+                        Tidak ada proyek terbaru
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Platform Stats */}
+          {/* Main Chart Section */}
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
-            <div className='flex justify-between items-center mb-6'>
-              <h3 className='font-bold text-lg text-gray-900'>
-                Traffic Pengunjung
-              </h3>
-              <select 
-                className='text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-1'
-                value={timeRange}
-                onChange={handleTimeRangeChange}
-              >
-                <option>Bulanan</option>
-                <option>Mingguan</option>
-                <option>Harian</option>
-              </select>
+            <div className='flex flex-wrap justify-between items-center mb-6'>
+              <div>
+                <h3 className='font-bold text-lg text-gray-900'>
+                  Statistik Pengunjung
+                </h3>
+                <p className='text-gray-500 text-sm'>
+                  Tren pengunjung platform MahaBisa
+                </p>
+              </div>
+              <div className='mt-2 sm:mt-0'>
+                <select
+                  value={timeRange}
+                  onChange={handleTimeRangeChange}
+                  className='form-select rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-sm'
+                >
+                  <option>Bulanan</option>
+                  <option>Mingguan</option>
+                  <option>Harian</option>
+                </select>
+              </div>
             </div>
 
-            <div className='space-y-6'>
-              <div className='h-64 w-full bg-white rounded-lg'>
-                <Line data={data} options={options} />
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Total Pengunjung</p>
-                  <p className="font-bold text-lg text-blue-600">12,845</p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Pengunjung Baru</p>
-                  <p className="font-bold text-lg text-green-600">5,372</p>
-                </div>
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Rata-rata Waktu</p>
-                  <p className="font-bold text-lg text-purple-600">3:24</p>
-                </div>
-                <div className="bg-amber-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Bounce Rate</p>
-                  <p className="font-bold text-lg text-amber-600">32%</p>
-                </div>
-              </div>
+            <div className='h-64 md:h-80'>
+              <Line data={data} options={options} />
             </div>
           </div>
         </div>
 
         {/* Sidebar content */}
         <div className='space-y-6 md:space-y-8'>
-          {/* Combined Notifications & Activities */}
+          {/* Top Freelancers Section */}
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
-            <div className="flex justify-between items-center mb-4">
+            <div className='flex justify-between items-center mb-4'>
               <h3 className='font-bold text-lg text-gray-900'>
-                Aktivitas & Notifikasi
+                Freelancer Top
               </h3>
-              <div className="flex space-x-2">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                  <span className="w-2 h-2 bg-indigo-600 rounded-full mr-1"></span>
-                  Baru
-                </span>
-              </div>
-            </div>
-
-            <div className='space-y-5'>
-              <div className='flex items-start'>
-                <div className='flex-shrink-0 mr-3'>
-                  <div className='w-8 h-8 rounded-full overflow-hidden'>
-                    <img
-                      src='https://randomuser.me/api/portraits/women/23.jpg'
-                      alt='User'
-                      className='w-full h-full object-cover'
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className='text-sm text-gray-900'>
-                    <Link href='/admin/users/1' className='font-medium hover:text-indigo-600'>Dewi Susanti</Link>{' '}
-                    menyelesaikan proyek{' '}
-                    <Link href='/admin/projects/5' className='font-medium hover:text-indigo-600'>Website E-commerce</Link>
-                  </p>
-                  <p className='text-xs text-gray-500 mt-1'>2 jam yang lalu</p>
-                </div>
-              </div>
-
-              <div className='flex items-start'>
-                <div className='flex-shrink-0 mr-3'>
-                  <div className='w-8 h-8 rounded-full overflow-hidden'>
-                    <img
-                      src='https://randomuser.me/api/portraits/men/32.jpg'
-                      alt='User'
-                      className='w-full h-full object-cover'
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className='text-sm text-gray-900'>
-                    <Link href='/admin/users/2' className='font-medium hover:text-indigo-600'>Agus Pratama</Link> bergabung
-                    sebagai freelancer
-                  </p>
-                  <p className='text-xs text-gray-500 mt-1'>5 jam yang lalu</p>
-                </div>
-              </div>
-
-              <div className='flex items-start'>
-                <div className='flex-shrink-0 mr-3'>
-                  <div className='w-8 h-8 rounded-full overflow-hidden'>
-                    <img
-                      src='https://randomuser.me/api/portraits/women/67.jpg'
-                      alt='User'
-                      className='w-full h-full object-cover'
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className='text-sm text-gray-900'>
-                    <Link href='/admin/users/3' className='font-medium hover:text-indigo-600'>Nina Maulida</Link>{' '}
-                    menambahkan portofolio baru
-                  </p>
-                  <p className='text-xs text-gray-500 mt-1'>Kemarin, 16:42</p>
-                </div>
-              </div>
-
-              <div className='flex items-start'>
-                <div className='flex-shrink-0 mr-3'>
-                  <div className='w-8 h-8 rounded-full overflow-hidden'>
-                    <img
-                      src='https://randomuser.me/api/portraits/men/54.jpg'
-                      alt='User'
-                      className='w-full h-full object-cover'
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className='text-sm text-gray-900'>
-                    <Link href='/admin/users/4' className='font-medium hover:text-indigo-600'>Rudi Hartono</Link>{' '}
-                    mendapatkan 5 review bintang
-                  </p>
-                  <p className='text-xs text-gray-500 mt-1'>Kemarin, 09:27</p>
-                </div>
-              </div>
-              
-              <div className='flex items-start'>
-                <div className='flex-shrink-0 mr-3'>
-                  <div className='w-8 h-8 rounded-full overflow-hidden'>
-                    <img
-                      src='https://randomuser.me/api/portraits/women/45.jpg'
-                      alt='User'
-                      className='w-full h-full object-cover'
-                    />
-                  </div>
-                </div>
-                <div>
-                  <p className='text-sm text-gray-900'>
-                    <Link href='/admin/users/5' className='font-medium hover:text-indigo-600'>Maya Sari</Link>{' '}
-                    membuat proyek baru{' '}
-                    <Link href='/admin/projects/15' className='font-medium hover:text-indigo-600'>Brand Identity Design</Link>
-                  </p>
-                  <p className='text-xs text-gray-500 mt-1'>2 hari yang lalu</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between mt-4 pt-4 border-t border-gray-100">
-              <Link 
-                href='/admin/activities'
-                className='py-2 px-4 text-sm font-medium text-indigo-600 hover:text-indigo-800 text-center'
+              <Link
+                href='/admin/freelancers'
+                className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'
               >
-                Lihat Semua Aktivitas
+                Lihat Semua
               </Link>
+            </div>
+
+            <div className='space-y-4'>
+              {topFreelancers?.map((freelancer) => (
+                <div key={freelancer.id} className='flex items-center'>
+                  <img
+                    src={freelancer.avatar}
+                    alt={freelancer.name}
+                    className='h-10 w-10 rounded-full'
+                  />
+                  <div className='ml-3 flex-1'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <h4 className='text-sm font-medium text-gray-900'>
+                          {freelancer.name}
+                        </h4>
+                        <div className='flex items-center mt-1'>
+                          <div className='flex text-yellow-400'>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`w-3 h-3 ${
+                                  star <= Math.round(freelancer.average_rating)
+                                    ? 'text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                                fill='currentColor'
+                                viewBox='0 0 20 20'
+                                xmlns='http://www.w3.org/2000/svg'
+                              >
+                                <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className='text-xs text-gray-500 ml-1'>
+                            ({freelancer.average_rating.toFixed(1)})
+                          </span>
+                        </div>
+                      </div>
+                      <div className='text-right'>
+                        <span className='text-sm font-medium text-gray-900'>
+                          {formatCurrency(freelancer.total_earnings)}
+                        </span>
+                        <p className='text-xs text-gray-500 mt-1'>
+                          {freelancer.orders_count} proyek
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
               
-              <button className="text-sm text-gray-500 hover:text-gray-700">
-                Tandai Semua Dibaca
-              </button>
+              {(!topFreelancers || topFreelancers.length === 0) && (
+                <div className="py-4 text-center text-gray-500">
+                  Belum ada data freelancer
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Popular Categories */}
+          {/* Recent Activities */}
           <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
-            <h3 className='font-bold text-lg text-gray-900 mb-4'>
-              Kategori Populer
-            </h3>
+            <div className='flex justify-between items-center mb-4'>
+              <h3 className='font-bold text-lg text-gray-900'>
+                Aktivitas Terbaru
+              </h3>
+            </div>
+
+            <div className='space-y-4 max-h-96 overflow-y-auto'>
+              {recentActivities?.map((activity) => (
+                <div key={activity.id} className='flex'>
+                  <div className='flex-shrink-0 mr-3'>
+                    <div className='relative'>
+                      <img
+                        className='h-8 w-8 rounded-full border-2 border-white'
+                        src={activity.user.avatar}
+                        alt={activity.user.name}
+                      />
+                      <span
+                        className={`absolute bottom-0 right-0 block h-2 w-2 rounded-full ring-1 ring-white ${
+                          activity.user.role === 'admin'
+                            ? 'bg-green-400'
+                            : activity.user.role === 'freelancer'
+                            ? 'bg-blue-400'
+                            : 'bg-purple-400'
+                        }`}
+                      ></span>
+                    </div>
+                  </div>
+                  <div className='flex-1 min-w-0'>
+                    <p className='text-sm text-gray-800'>
+                      <span className='font-medium'>{activity.user.name}</span>{' '}
+                      {activity.description}
+                    </p>
+                    <p className='text-xs text-gray-500 mt-0.5'>
+                      {formatDate(activity.created_at, { timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              {(!recentActivities || recentActivities.length === 0) && (
+                <div className="py-4 text-center text-gray-500">
+                  Tidak ada aktivitas terbaru
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Reviews Section */}
+          <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
+            <div className='flex justify-between items-center mb-4'>
+              <h3 className='font-bold text-lg text-gray-900'>
+                Ulasan Terbaru
+              </h3>
+              <Link
+                href='/admin/reviews'
+                className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'
+              >
+                Lihat Semua
+              </Link>
+            </div>
 
             <div className='space-y-4'>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    Web Development
-                  </span>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    35%
-                  </span>
+              {recentReviews?.map((review) => (
+                <div key={review.id} className='pb-4 border-b border-gray-100 last:border-0 last:pb-0'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center'>
+                      <img
+                        src={review.client.avatar}
+                        alt={review.client.name}
+                        className='h-8 w-8 rounded-full mr-2'
+                      />
+                      <div>
+                        <p className='text-sm font-medium text-gray-900'>
+                          {review.client.name}
+                        </p>
+                        <div className='flex items-center mt-0.5'>
+                          <div className='flex text-yellow-400'>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`w-3 h-3 ${
+                                  star <= review.rating
+                                    ? 'text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                                fill='currentColor'
+                                viewBox='0 0 20 20'
+                                xmlns='http://www.w3.org/2000/svg'
+                              >
+                                <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className='text-xs text-gray-500 ml-1'>
+                            {formatDate(review.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className='text-xs text-gray-500'>
+                      {review.order.title}
+                    </div>
+                  </div>
+                  <p className='mt-2 text-sm text-gray-600 line-clamp-2'>
+                    {review.comment}
+                  </p>
                 </div>
-                <div className='w-full bg-gray-200 rounded-full h-1.5 sm:h-2'>
-                  <div
-                    className='bg-indigo-600 h-1.5 sm:h-2 rounded-full'
-                    style={{ width: '35%' }}
-                  ></div>
+              ))}
+              
+              {(!recentReviews || recentReviews.length === 0) && (
+                <div className="py-4 text-center text-gray-500">
+                  Belum ada ulasan dari pengguna
                 </div>
-              </div>
-
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    Design Grafis
-                  </span>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    28%
-                  </span>
-                </div>
-                <div className='w-full bg-gray-200 rounded-full h-1.5 sm:h-2'>
-                  <div
-                    className='bg-pink-500 h-1.5 sm:h-2 rounded-full'
-                    style={{ width: '28%' }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    Mobile Development
-                  </span>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    18%
-                  </span>
-                </div>
-                <div className='w-full bg-gray-200 rounded-full h-1.5 sm:h-2'>
-                  <div
-                    className='bg-green-500 h-1.5 sm:h-2 rounded-full'
-                    style={{ width: '18%' }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    Digital Marketing
-                  </span>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    12%
-                  </span>
-                </div>
-                <div className='w-full bg-gray-200 rounded-full h-1.5 sm:h-2'>
-                  <div
-                    className='bg-purple-500 h-1.5 sm:h-2 rounded-full'
-                    style={{ width: '12%' }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    Writing
-                  </span>
-                  <span className='text-xs sm:text-sm font-medium text-gray-700'>
-                    10%
-                  </span>
-                </div>
-                <div className='w-full bg-gray-200 rounded-full h-1.5 sm:h-2'>
-                  <div
-                    className='bg-orange-500 h-1.5 sm:h-2 rounded-full'
-                    style={{ width: '10%' }}
-                  ></div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

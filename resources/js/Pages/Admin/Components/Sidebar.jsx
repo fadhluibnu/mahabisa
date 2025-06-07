@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
-const Sidebar = ({ isOpen, closeSidebar }) => {
-  const { url } = usePage();
+const Sidebar = ({ isOpen, closeSidebar, auth }) => {
+  const { url, props } = usePage();
+  const { user } = auth || props;
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -55,7 +56,6 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
                 fill='none'
                 xmlns='http://www.w3.org/2000/svg'
               >
-                {' '}
                 <path
                   fillRule='evenodd'
                   clipRule='evenodd'
@@ -68,14 +68,14 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
               <h1 className='text-lg font-bold bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-transparent bg-clip-text'>
                 MahaBisa
               </h1>
-              <span className='text-center px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-semibold text-sm'>
+              <span className='text-center px-2 py-1 bg-red-100 text-red-800 rounded-full font-semibold text-sm'>
                 Admin
               </span>
             </div>
           </div>
         </div>
 
-        <nav className='py-4'>
+        <nav className='p-4'>
           <div className='mb-4'>
             <p className='px-6 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider'>
               Dashboard
@@ -245,43 +245,61 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
             </ul>
           </div>
         </nav>
-        <div className='p-4 mt-auto border-t border-gray-200'>
-          <div className='flex items-center'>
-            <div className='w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden'>
-              <img
-                src='https://randomuser.me/api/portraits/men/32.jpg'
-                alt='Admin'
-                className='w-full h-full object-cover'
-              />
-            </div>
-            <div className='ml-3'>
-              <p className='font-medium text-gray-800 text-sm'>Andi Prasetyo</p>
-              <p className='text-gray-500 text-xs'>Super Admin</p>
-            </div>
-          </div>
 
-          <Link
-            href='/logout'
-            method='post'
-            as='button'
-            className='w-full mt-4 flex items-center justify-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
-          >
-            <svg
-              className='w-4 h-4 mr-2'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-              xmlns='http://www.w3.org/2000/svg'
+        <div className='px-4 pb-4'>
+          <div className='border-t border-gray-200 pt-4'>
+            {!user ? (
+              <div className='flex items-center'>
+                <div className='h-10 w-10 bg-gray-200 rounded-full animate-pulse'></div>
+                <div className='ml-3'>
+                  <div className='h-4 w-24 bg-gray-200 rounded animate-pulse mb-1'></div>
+                  <div className='h-3 w-32 bg-gray-200 rounded animate-pulse'></div>
+                </div>
+              </div>
+            ) : (
+              <div className='flex items-center'>
+                <img
+                  src={
+                    user?.profile_photo_url ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user?.name || 'Admin'
+                    )}`
+                  }
+                  alt={user?.name || 'Admin'}
+                  className='h-10 w-10 rounded-full object-cover'
+                />
+                <div className='ml-3'>
+                  <p className='text-sm font-medium text-gray-800'>
+                    {user?.name || 'Administrator'}
+                  </p>
+                  <p className='text-xs text-gray-500'>Super Admin</p>
+                </div>
+              </div>
+            )}
+
+            <Link
+              href='/logout'
+              method='post'
+              as='button'
+              className='w-full mt-4 flex items-center justify-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
-              />
-            </svg>
-            Logout
-          </Link>
+              <svg
+                className='w-4 h-4 mr-2'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                />
+              </svg>
+              Logout
+            </Link>
+          </div>
         </div>
       </aside>
     </>

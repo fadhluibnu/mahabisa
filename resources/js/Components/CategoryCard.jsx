@@ -1,7 +1,14 @@
+import React from 'react';
+import { router } from '@inertiajs/react';
+
 const CategoryCard = ({ category }) => {
+  const handleClick = () => {
+    router.visit(`/eksplorasi?kategori=${encodeURIComponent(category.name)}`);
+  };
+  
   return (
-    <a 
-      href={`/eksplorasi?kategori=${encodeURIComponent(category.name)}`}
+    <div 
+      onClick={handleClick}
       className='w-full cursor-pointer shadow-lg rounded-lg py-6 md:py-8 bg-white hover:shadow-xl transition-all duration-200 ease-in-out'
     >
       <div className='flex items-center justify-between gap-3 md:gap-4 px-4 md:px-6'>
@@ -35,7 +42,10 @@ const CategoryCard = ({ category }) => {
           />
         </svg>
       </div>
-    </a>
+      {category.description && (
+        <p className="px-4 md:px-6 mt-3 text-sm text-gray-600 line-clamp-2">{category.description}</p>
+      )}
+    </div>
   );
 };
 

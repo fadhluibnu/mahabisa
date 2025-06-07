@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 
 const LoginForm = ({ onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  const { data, setData, post, processing, errors } = useForm({
     email: '',
     password: '',
     remember: false,
@@ -11,17 +12,23 @@ const LoginForm = ({ onSwitchToRegister }) => {
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setData({
+      ...data,
       [name]: type === 'checkbox' ? checked : value,
     });
   };
 
   const handleSubmit = e => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Login form submitted:', formData);
-    // Add your Inertia.js form submission logic here
+    post('/login', {
+      onSuccess: () => {
+        // Login successful - redirect will be handled by the controller
+        console.log('Login successful');
+      },
+      onError: (errors) => {
+        console.error('Login errors:', errors);
+      }
+    });
   };
 
   const togglePasswordVisibility = () => {
@@ -41,12 +48,13 @@ const LoginForm = ({ onSwitchToRegister }) => {
           type='email'
           id='login-email'
           name='email'
-          value={formData.email}
+          value={data.email}
           onChange={handleChange}
           className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
           placeholder='Masukkan email Anda'
           required
         />
+        {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
       </div>
       <div className='mb-6 relative'>
         <label
@@ -60,7 +68,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
             type={showPassword ? 'text' : 'password'}
             id='login-password'
             name='password'
-            value={formData.password}
+            value={data.password}
             onChange={handleChange}
             className='w-full p-4 border border-slate-200 rounded-lg text-base transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-slate-50 focus:bg-white'
             placeholder='Masukkan password Anda'
@@ -131,12 +139,12 @@ const LoginForm = ({ onSwitchToRegister }) => {
           <input
             type='checkbox'
             name='remember'
-            checked={formData.remember}
+            checked={data.remember}
             onChange={handleChange}
             className='sr-only'
           />
           <span className='relative w-5 h-5 border-2 border-slate-300 rounded flex items-center justify-center bg-white transition-all'>
-            {formData.remember && (
+            {data.remember && (
               <span className='bg-indigo-500 absolute inset-0 rounded-sm flex items-center justify-center'>
                 <svg
                   width='12'
@@ -168,11 +176,13 @@ const LoginForm = ({ onSwitchToRegister }) => {
       </div>
       <button
         type='submit'
-        className='w-full py-4 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden'
+        disabled={processing}
+        className='w-full py-4 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed'
       >
-        <span className='relative z-10'>Masuk</span>
+        <span className='relative z-10'>{processing ? 'Masuk...' : 'Masuk'}</span>
         <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:animate-shimmer'></span>
       </button>
+      {errors.general && <div className="text-red-500 text-sm mt-3 text-center">{errors.general}</div>}
       <div className='flex items-center my-6'>
         <div className='flex-1 h-px bg-slate-200'></div>
         <p className='px-4 text-sm text-slate-400'>atau masuk dengan</p>

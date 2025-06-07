@@ -1,4 +1,5 @@
 import React from 'react';
+import { Head } from '@inertiajs/react';
 import FreelancerLayout from './Components/FreelancerLayout';
 import StatCard from './Components/StatCard';
 import ProjectCard from './Components/ProjectCard';
@@ -8,13 +9,27 @@ import SkillsCard from './Components/SkillsCard';
 import EarningsCard from './Components/EarningsCard';
 import MessagesCard from './Components/MessagesCard';
 import ReviewsCard from './Components/ReviewsCard';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 
-const Dashboard = () => {
-  // Dummy data for stats
+const Dashboard = ({ 
+  user,
+  stats: statsData, 
+  recentOrders, 
+  activities,
+  skills: skillsData, 
+  chartData, 
+  scheduleEvents, 
+  earnings: earningsData, 
+  messages: messagesData, 
+  reviews: reviewsData, 
+  ratingData,
+  unreadMessagesCount
+}) => {
+  // Prepare the stats data with proper formatting
   const stats = [
     {
       title: 'Total Penghasilan',
-      value: 'Rp5.800.000',
+      value: formatCurrency(statsData?.total_earnings || 0),
       percentage: '12.5',
       trend: 'up',
       color: 'purple',
@@ -37,7 +52,7 @@ const Dashboard = () => {
     },
     {
       title: 'Proyek Aktif',
-      value: '3',
+      value: String(statsData?.active_orders || 0),
       percentage: '8.2',
       trend: 'up',
       color: 'pink',
@@ -59,8 +74,8 @@ const Dashboard = () => {
       ),
     },
     {
-      title: 'Penawaran Baru',
-      value: '5',
+      title: 'Penawaran Dibuat',
+      value: String(statsData?.proposals_count || 0),
       percentage: '21.8',
       trend: 'up',
       color: 'green',
@@ -83,7 +98,7 @@ const Dashboard = () => {
     },
     {
       title: 'Rating Keseluruhan',
-      value: '4.8',
+      value: (statsData?.average_rating || 0).toFixed(1),
       color: 'orange',
       icon: (
         <svg
@@ -104,175 +119,22 @@ const Dashboard = () => {
     },
   ];
 
-  // Dummy data for projects
-  const activeProjects = [
-    {
-      title: 'Website E-Commerce Toko Batik',
-      client: {
-        name: 'PT Batik Nusantara',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      status: 'active',
+  // Format active projects from orders data
+  const activeProjects = recentOrders?.map(order => ({
+    title: order.service?.title || order.project?.title || 'Unnamed Project',
+    client: {
+      name: order.client?.name || 'Unknown Client',
+      avatar: order.client?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.client?.name || 'Unknown')}`,
     },
-    {
-      title: 'Landing Page Aplikasi Kesehatan',
-      client: {
-        name: 'HealthTech Indonesia',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      status: 'active',
-    },
-    {
-      title: 'Redesign Website Universitas',
-      client: {
-        name: 'Universitas Teknologi',
-        avatar: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      status: 'pending',
-    },
-  ];
-
-  // Dummy data for schedule
-  const scheduleEvents = [
-    {
-      time: { hour: '09:00', period: 'WIB' },
-      title: 'Meeting dengan Tim HealthTech',
-      description: 'Diskusi revisi landing page dan timeline',
-      type: 'meeting',
-    },
-    {
-      time: { hour: '13:30', period: 'WIB' },
-      title: 'Deadline Wireframe E-Commerce',
-      description: 'Submit wireframe untuk halaman produk dan checkout',
-      type: 'deadline',
-    },
-    {
-      time: { hour: '16:00', period: 'WIB' },
-      title: 'Update Progress Website Universitas',
-      description: 'Persiapkan laporan progress mingguan',
-      type: 'task',
-    },
-  ];
-
-  // Dummy data for earnings chart
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
-    earnings: [1200000, 1500000, 1000000, 1800000, 1600000, 2200000],
-    projects: [2, 3, 2, 4, 3, 5],
-  };
-
-  // Dummy data for skills
-  const skills = [
-    { name: 'Web Development', level: 'Expert' },
-    { name: 'UI/UX Design', level: 'Advanced' },
-    { name: 'React', level: 'Expert' },
-    { name: 'Laravel', level: 'Intermediate' },
-    { name: 'TailwindCSS', level: 'Advanced' },
-    { name: 'Node.js', level: 'Intermediate' },
-  ];
-
-  // Dummy data for earnings
-  const earnings = [
-    {
-      project: 'Landing Page Startup',
-      amount: 2500000,
-      date: '2025-05-25',
-      status: 'completed',
-    },
-    {
-      project: 'Website E-Commerce',
-      amount: 1800000,
-      date: '2025-05-15',
-      status: 'completed',
-    },
-    {
-      project: 'Aplikasi Mobile Banking',
-      amount: 3500000,
-      date: '2025-05-05',
-      status: 'completed',
-    },
-  ];
-
-  // Dummy data for messages
-  const messages = [
-    {
-      id: 1,
-      sender: {
-        name: 'Budi Santoso',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      subject: 'Revisi Landing Page',
-      preview: 'Halo, saya ingin mendiskusikan beberapa revisi untuk landing page yang sudah...',
-      date: '2025-05-30T10:30:00',
-      read: false,
-      project: 'Landing Page Aplikasi Kesehatan',
-    },
-    {
-      id: 2,
-      sender: {
-        name: 'Siti Rahayu',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      subject: 'Konfirmasi Pembayaran',
-      preview: 'Pembayaran untuk project redesign website universitas sudah kami proses...',
-      date: '2025-05-29T14:15:00',
-      read: true,
-      project: 'Redesign Website Universitas',
-    },
-    {
-      id: 3,
-      sender: {
-        name: 'Ahmad Rizki',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      subject: 'Tawaran Project Baru',
-      preview: 'Saya memiliki project baru untuk pengembangan sistem manajemen inventaris...',
-      date: '2025-05-28T09:45:00',
-      read: false,
-    },
-  ];
-
-  // Dummy data for reviews
-  const ratingData = {
-    average: 4.8,
-    total: 26,
-    distribution: {
-      5: 20,
-      4: 5,
-      3: 1,
-      2: 0,
-      1: 0,
-    },
-  };
-
-  const reviews = [
-    {
-      reviewer: {
-        name: 'Dewi Pratiwi',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      rating: 5,
-      comment: 'Sangat profesional dan responsif. Hasil kerjanya sangat memuaskan dan sesuai dengan kebutuhan kami.',
-      date: '2025-05-20',
-      project: 'Website Company Profile',
-    },
-    {
-      reviewer: {
-        name: 'Joko Widodo',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      },
-      rating: 4,
-      comment: 'Kerjanya cepat dan hasilnya bagus. Hanya perlu sedikit revisi untuk mencapai hasil yang sempurna.',
-      date: '2025-05-15',
-      project: 'Aplikasi Mobile Banking',
-    },
-  ];
+    status: order.status,
+  })) || [];
 
   return (
     <FreelancerLayout
       title="Dashboard Freelancer"
       subtitle="Selamat datang kembali, kelola proyek dan pantau pendapatan Anda"
     >
+      <Head title="Dashboard Freelancer" />
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         {stats.map((stat, index) => (
@@ -298,29 +160,40 @@ const Dashboard = () => {
           />
         </div>
         <div className="lg:col-span-1">
-          <ScheduleCard date={new Date().toISOString()} events={scheduleEvents} />
+          <ScheduleCard date={new Date().toISOString()} events={scheduleEvents || []} />
         </div>
       </div>
 
       {/* Earnings & Overview Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="lg:col-span-2">
-          <OverviewChart data={chartData} period="month" />
+          <OverviewChart data={chartData || {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+            earnings: [0, 0, 0, 0, 0, 0],
+            projects: [0, 0, 0, 0, 0, 0]
+          }} period="month" />
         </div>
         <div className="lg:col-span-1">
-          <EarningsCard earnings={earnings} />
+          <EarningsCard earnings={earningsData || []} />
         </div>
       </div>
 
       {/* Skills & Reviews Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-        <SkillsCard skills={skills} />
-        <ReviewsCard ratingData={ratingData} reviews={reviews} />
+        <SkillsCard skills={skillsData?.map(skill => ({ 
+          name: skill.name, 
+          level: skill.pivot?.proficiency_level || 'Intermediate' 
+        })) || []} />
+        <ReviewsCard ratingData={ratingData || {
+          average: 0,
+          total: 0,
+          distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        }} reviews={reviewsData || []} />
       </div>
 
       {/* Messages Section */}
       <div className="mb-6 md:mb-8">
-        <MessagesCard messages={messages} />
+        <MessagesCard messages={messagesData || []} />
       </div>
     </FreelancerLayout>
   );

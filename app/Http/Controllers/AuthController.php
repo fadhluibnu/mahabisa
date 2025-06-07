@@ -12,7 +12,7 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
-        return Inertia::render('Auth/Login');
+        return Inertia::render('Auth/Auth');
     }
 
     public function login(Request $request)
@@ -58,21 +58,43 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:client,freelancer',
+            'university' => 'nullable|string|max:255',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-        ]);
+        // Begin a transaction to ensure both user and profile are created or none is
+        \DB::beginTransaction();
+        
+        try {
+            // Create the user
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+            ]);
 
-        Auth::login($user);
-
-        if ($user->role === 'freelancer') {
-            return redirect('/freelancer/dashboard');
-        } else {
-            return redirect('/client/dashboard');
+            // Create user profile
+            $user->profile()->create([
+                'university' => $validated['university'] ?? null,
+            ]);
+            
+            \DB::commit();
+            
+            // Login the newly registered user
+            Auth::login($user);
+            
+            // Redirect based on role
+            if ($user->role === 'freelancer') {
+                return redirect()->route('freelancer.dashboard');
+            } else {
+                return redirect()->route('client.dashboard');
+            }
+        } catch (\Exception $e) {
+            \DB::rollback();
+            
+            return back()->withErrors([
+                'general' => 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.'
+            ])->withInput();
         }
     }
 }

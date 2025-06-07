@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const ClientLayout = ({ children, title, subtitle }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { auth } = usePage().props;
 
   return (
     <>
@@ -44,6 +45,7 @@ const ClientLayout = ({ children, title, subtitle }) => {
         <Sidebar
           isOpen={sidebarOpen}
           closeSidebar={() => setSidebarOpen(false)}
+          auth={auth}
         />
 
         <div className="md:pl-64 min-h-screen">

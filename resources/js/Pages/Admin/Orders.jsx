@@ -4,7 +4,7 @@ import { Head, Link } from "@inertiajs/react";
 import AdminLayout from "./Components/AdminLayout";
 import StatCard from "./Components/StatCard";
 
-const Orders = () => {
+const Orders = ({ orderData, categories }) => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
@@ -12,80 +12,26 @@ const Orders = () => {
   const [itemsPerPage] = useState(5);
   const [selectedCategory, setSelectedCategory] = useState("Semua Kategori");
   
-  // Handle showing project details
-  const handleShowDetails = (project) => {
-    console.log("Selected project:", project); // For debugging
-    setSelectedOrderDetails(project);
+  // Handle showing order details
+  const handleShowDetails = (order) => {
+    console.log("Selected order:", order); // For debugging
+    setSelectedOrderDetails(order);
     setShowDetailsModal(true);
   };
   
-  // Sample order data template
-  const sampleOrder = {
-    id: "PRJ-8723",
-    title: "Website Dashboard Design",
-    client: {
-      name: "PT Maju Bersama",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg"
-    },
-    freelancer: {
-      name: "Rina Wijaya",
-      avatar: "https://randomuser.me/api/portraits/women/23.jpg"
-    },
-    price: "Rp 4.500.000",
-    deadline: "23 Juni 2023",
-    status: "Aktif",
-    progress: 65,
-    description: "Desain dashboard admin untuk aplikasi manajemen inventaris dengan fitur analitik dan laporan yang komprehensif.",
-    tags: ["UI/UX", "Web Design", "Dashboard"],
-    messages: 12,
-    files: 5,
-    milestones: [
-      { name: "Wireframe", status: "Selesai", date: "10 Mei 2023" },
-      { name: "Design Mockup", status: "Selesai", date: "20 Mei 2023" },
-      { name: "Design Revisi", status: "Aktif", date: "30 Mei 2023" },
-      { name: "Final Design", status: "Pending", date: "15 Juni 2023" }
-    ]
-  };
+  // If no order data or categories are provided, use default empty arrays
+  const orders = orderData || [];
+  const availableCategories = categories || [];
   
-  // Generate sample projects data for pagination
-  const generateProjects = () => {
-    const statuses = ["Aktif", "Selesai", "Revisi", "Pending"];
-    const projectTypes = [
-      { title: "Website Dashboard", short: "WD", category: "Web Design" },
-      { title: "Mobile App UI", short: "MA", category: "Mobile App" },
-      { title: "Logo Design", short: "LD", category: "Graphic Design" },
-      { title: "Content Writing", short: "CW", category: "Content Writing" },
-      { title: "SEO Optimization", short: "SO", category: "Marketing" },
-    ];
-    
-    return Array(15).fill().map((_, index) => {
-      const projectType = projectTypes[index % projectTypes.length];
-      const progress = Math.floor(Math.random() * 100);
-      
-      return {
-        ...JSON.parse(JSON.stringify(sampleOrder)), // Create deep copy to avoid reference issues
-        id: `PRJ-${8723 + index}`,
-        title: `${projectType.title} ${index + 1}`,
-        projectShort: projectType.short,
-        status: statuses[index % statuses.length],
-        progress: progress,
-        category: projectType.category,
-        tags: [...sampleOrder.tags, projectType.category]
-      };
-    });
-  };
-  
-  const allProjects = generateProjects();
-  
-  // Filter projects by category
-  const getFilteredProjects = () => {
+  // Filter orders by category
+  const getFilteredOrders = () => {
     if (selectedCategory === "Semua Kategori") {
-      return allProjects;
+      return orders;
     }
-    return allProjects.filter(project => project.category === selectedCategory);
+    return orders.filter(order => order.category === selectedCategory);
   };
   
-  const filteredProjects = getFilteredProjects();
+  const filteredOrders = getFilteredOrders();
   
   // Handle category change
   const handleCategoryChange = (e) => {
@@ -96,8 +42,8 @@ const Orders = () => {
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProjects = filteredProjects.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   
   const handlePageChange = (pageNumber) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
@@ -111,8 +57,8 @@ const Orders = () => {
     pageNumbers.push(i);
   }
   
-  // Get unique categories from projects
-  const categories = ["Semua Kategori", ...new Set(allProjects.map(project => project.category))];
+  // Add "Semua Kategori" to the list of available categories
+  const categoryOptions = ["Semua Kategori", ...availableCategories];
   
   // Clean up modal state when unmounted
   useEffect(() => {
@@ -124,17 +70,18 @@ const Orders = () => {
   
   return (
     <AdminLayout
-      title="Kelola Proyek"
-      subtitle="Manajemen proyek dan pesanan aktif"
+      title="Kelola Order"
+      subtitle="Manajemen order dan pesanan aktif"
     >
-      <Head title="Kelola Proyek - MahaBisa Admin" />
+      <Head title="Kelola Order - MahaBisa Admin" />
       
+      {/* Order Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
-          title="Total Proyek" 
-          value="128" 
-          percentage="8.2" 
-          trend="up"
+          title="Total Orders" 
+          value={orders.length.toString()} 
+          percentage=""
+          trend="neutral"
           color="pink"
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -144,10 +91,10 @@ const Orders = () => {
         />
         
         <StatCard 
-          title="Proyek Aktif" 
-          value="87" 
-          percentage="5.7" 
-          trend="up"
+          title="Orders Aktif" 
+          value={orders.filter(order => order.status === "Aktif").length.toString()} 
+          percentage=""
+          trend="neutral"
           color="green"
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -158,9 +105,9 @@ const Orders = () => {
         
         <StatCard 
           title="Menunggu Review" 
-          value="15" 
-          percentage="12.3" 
-          trend="down"
+          value={orders.filter(order => order.status === "Revisi").length.toString()} 
+          percentage=""
+          trend="neutral"
           color="orange"
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -170,10 +117,10 @@ const Orders = () => {
         />
         
         <StatCard 
-          title="Proyek Selesai" 
-          value="24" 
-          percentage="18.2" 
-          trend="up"
+          title="Orders Selesai" 
+          value={orders.filter(order => order.status === "Selesai").length.toString()} 
+          percentage=""
+          trend="neutral"
           color="purple"
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -186,7 +133,7 @@ const Orders = () => {
       {/* Project List */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-lg text-gray-900">Daftar Proyek</h3>
+          <h3 className="font-bold text-lg text-gray-900">Daftar Order</h3>
           
           <div className="flex gap-3">
             <button 
@@ -206,7 +153,7 @@ const Orders = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="text-left text-gray-500 text-sm border-b border-gray-200">
-                <th className="pb-3 font-medium">Proyek</th>
+                <th className="pb-3 font-medium">Order</th>
                 <th className="pb-3 font-medium hidden xs:table-cell">Klien</th>
                 <th className="pb-3 font-medium hidden sm:table-cell">Freelancer</th>
                 <th className="pb-3 font-medium hidden md:table-cell">Tenggat</th>
@@ -216,60 +163,62 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody>
-              {/* Project rows */}
-              {currentProjects.map((project, index) => (
+              {/* Order rows */}
+              {currentOrders.map((order, index) => (
                 <tr 
                   key={index} 
                   className="border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer" 
-                  onClick={() => handleShowDetails(project)}
+                  onClick={() => handleShowDetails(order)}
                 >
                   <td className="py-3">
                     <div className="flex items-center">
                       <div className="w-8 h-8 rounded bg-blue-100 mr-3 flex items-center justify-center text-blue-600 font-medium">
-                        {project.projectShort || "WD"}
+                        {order.projectShort || "WD"}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{project.title}</p>
-                        <p className="text-xs text-gray-500">#{project.id}</p>
+                        <p className="font-medium text-gray-900">{order.title}</p>
+                        <p className="text-xs text-gray-500">{order.id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 hidden xs:table-cell">
                     <div className="flex items-center">
                       <div className="w-6 h-6 rounded-full mr-2 overflow-hidden">
-                        <img src={project.client.avatar} alt="Client" className="w-full h-full object-cover" />
+                        <img src={order.client.avatar} alt="Client" className="w-full h-full object-cover" />
                       </div>
-                      <span>{project.client.name}</span>
+                      <span>{order.client.name}</span>
                     </div>
                   </td>
                   <td className="py-3 hidden sm:table-cell">
                     <div className="flex items-center">
                       <div className="w-6 h-6 rounded-full mr-2 overflow-hidden">
-                        <img src={project.freelancer.avatar} alt="Freelancer" className="w-full h-full object-cover" />
+                        <img src={order.freelancer.avatar} alt="Freelancer" className="w-full h-full object-cover" />
                       </div>
-                      <span>{project.freelancer.name}</span>
+                      <span>{order.freelancer.name}</span>
                     </div>
                   </td>
-                  <td className="py-3 hidden md:table-cell">{project.deadline}</td>
+                  <td className="py-3 hidden md:table-cell">{order.deadline}</td>
                   <td className="py-3 hidden md:table-cell">
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      project.status === "Aktif" 
+                      order.status === "Aktif" 
                         ? "bg-green-100 text-green-800" 
-                        : project.status === "Selesai"
+                        : order.status === "Selesai"
                           ? "bg-blue-100 text-blue-800"
-                          : project.status === "Revisi"
+                          : order.status === "Revisi"
                             ? "bg-orange-100 text-orange-800"
-                            : "bg-gray-100 text-gray-800"
+                            : order.status === "Pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                     }`}>
-                      {project.status}
+                      {order.status}
                     </span>
                   </td>
                   <td className="py-3 hidden lg:table-cell">
                     <div className="flex items-center">
                       <div className="w-full h-2 bg-gray-200 rounded-full mr-2">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${project.progress}%` }}></div>
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${order.progress}%` }}></div>
                       </div>
-                      <span className="text-xs font-medium">{project.progress}%</span>
+                      <span className="text-xs font-medium">{order.progress}%</span>
                     </div>
                   </td>
                   <td className="py-3 text-right">
@@ -277,7 +226,7 @@ const Orders = () => {
                       className="px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleShowDetails(project);
+                        handleShowDetails(order);
                       }}
                     >
                       Detail
@@ -330,7 +279,7 @@ const Orders = () => {
           <div className="fixed inset-0 bg-black opacity-50" onClick={() => setShowDetailsModal(false)}></div>
           <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 z-10 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg text-gray-900">Detail Proyek</h3>
+              <h3 className="font-bold text-lg text-gray-900">Detail Order</h3>
               <button onClick={() => setShowDetailsModal(false)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -353,7 +302,7 @@ const Orders = () => {
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500 mb-1">ID Proyek</p>
+                    <p className="text-gray-500 mb-1">ID Order</p>
                     <p className="font-medium">{selectedOrderDetails.id}</p>
                   </div>
                   <div>
@@ -366,7 +315,21 @@ const Orders = () => {
                   </div>
                   <div>
                     <p className="text-gray-500 mb-1">Status</p>
-                    <p className="font-medium">{selectedOrderDetails.status}</p>
+                    <p className="font-medium">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        selectedOrderDetails.status === "Aktif" 
+                          ? "bg-green-100 text-green-800" 
+                          : selectedOrderDetails.status === "Selesai"
+                            ? "bg-blue-100 text-blue-800"
+                            : selectedOrderDetails.status === "Revisi"
+                              ? "bg-orange-100 text-orange-800"
+                              : selectedOrderDetails.status === "Pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {selectedOrderDetails.status}
+                      </span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -437,7 +400,40 @@ const Orders = () => {
               </div>
             </div>
             
-            <div className="flex justify-end mt-8 space-x-3">
+            <div className="mt-8 border-t pt-4">
+              <h4 className="font-bold text-gray-900 mb-3">Update Status</h4>
+              <form action={`/admin/orders/${selectedOrderDetails.raw_order?.id}/status`} method="POST">
+                <input type="hidden" name="_method" value="PUT" />
+                <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]').getAttribute('content')} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <select 
+                      name="status" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      defaultValue={selectedOrderDetails.raw_order?.status}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="revision-requested">Revision Requested</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="disputed">Disputed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button 
+                      type="submit"
+                      className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+                    >
+                      Update Status
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+            
+            <div className="flex justify-end mt-4 space-x-3">
               <button 
                 onClick={() => setShowDetailsModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
@@ -455,7 +451,7 @@ const Orders = () => {
           <div className="fixed inset-0 bg-black bg-opacity-30" onClick={() => setShowFilterModal(false)}></div>
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg text-gray-900">Filter Proyek</h3>
+              <h3 className="font-bold text-lg text-gray-900">Filter Order</h3>
               <button onClick={() => setShowFilterModal(false)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -471,7 +467,7 @@ const Orders = () => {
                   onChange={handleCategoryChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  {categories.map((category, index) => (
+                  {categoryOptions.map((category, index) => (
                     <option key={index} value={category}>
                       {category}
                     </option>

@@ -4,14 +4,20 @@ import StatCard from './Components/StatCard';
 import ProjectCard from './Components/ProjectCard';
 import ServiceCard from './Components/ServiceCard';
 import ActivityCard from './Components/ActivityCard';
+import { usePage } from '@inertiajs/react';
+import { formatCurrency } from '../../utils/formatters';
 
-const Dashboard = () => {  // Dummy data for stats
+const Dashboard = () => {
+  // Get data from props with usePage() hook
+  const { stats: propStats, activities: propActivities, activeProjects: propProjects, user } = usePage().props;
+  
+  // Format stats data for display
   const stats = [
     {
       title: 'Total Proyek',
-      value: '5',
-      percentage: '20',
-      trend: 'up',
+      value: propStats?.active_projects + propStats?.completed_orders || 0,
+      percentage: null,
+      trend: 'neutral',
       color: 'indigo',
       icon: (
         <svg
@@ -30,10 +36,11 @@ const Dashboard = () => {  // Dummy data for stats
         </svg>
       ),
     },
-    {      title: 'Proyek Aktif',
-      value: '2',
-      percentage: '10',
-      trend: 'up',
+    {      
+      title: 'Proyek Aktif',
+      value: propStats?.active_projects || 0,
+      percentage: null,
+      trend: 'neutral',
       color: 'purple',
       icon: (
         <svg
@@ -54,9 +61,9 @@ const Dashboard = () => {  // Dummy data for stats
     },
     {
       title: 'Total Pengeluaran',
-      value: 'Rp7.500.000',
-      percentage: '15',
-      trend: 'up',
+      value: formatCurrency(propStats?.total_spent || 0),
+      percentage: null,
+      trend: 'neutral',
       color: 'sky',
       icon: (
         <svg
@@ -76,8 +83,8 @@ const Dashboard = () => {  // Dummy data for stats
       ),
     },
     {
-      title: 'Ulasan Diberikan',
-      value: '4',
+      title: 'Pesanan Selesai',
+      value: propStats?.completed_orders || 0,
       color: 'amber',
       icon: (
         <svg
@@ -98,101 +105,59 @@ const Dashboard = () => {  // Dummy data for stats
     },
   ];
 
-  // Dummy data for active projects
-  const activeProjects = [
-    {
-      id: 1,
-      title: 'Pengembangan Website E-commerce',
-      freelancer: 'Alex Suryanto',
-      deadline: '15 Jun 2025',
-      budget: 'Rp4.500.000',
-      status: 'ongoing',
-      image: 'https://ui-avatars.com/api/?name=Alex+Suryanto&background=8b5cf6&color=fff',
-    },
-    {
-      id: 2,
-      title: 'Desain Logo Perusahaan',
-      freelancer: 'Diana Putri',
-      deadline: '20 Jun 2025',
-      budget: 'Rp1.500.000',
-      status: 'pending',
-      image: 'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
-    },
-  ];
+  // Format active projects data from props
+  const activeProjects = propProjects?.map(project => {
+    // Find the accepted proposal (if any)
+    const acceptedProposal = project.proposals?.find(p => p.status === 'accepted');
+    
+    return {
+      id: project.id,
+      title: project.title,
+      freelancer: acceptedProposal?.user?.name || 'Belum ada freelancer',
+      deadline: new Date(project.deadline).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }),
+      budget: `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`,
+      status: project.status === 'open' ? 'pending' : project.status,
+      image: acceptedProposal?.user?.profile_photo_url || 
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(acceptedProposal?.user?.name || 'Not Assigned')}&background=8b5cf6&color=fff`,
+      proposals_count: project.proposals_count || 0
+    };
+  }) || [];
 
-  // Dummy data for recommended services
-  const recommendedServices = [
-    {
-      id: 1,
-      title: 'Website Development & Design',
-      freelancer: {
-        name: 'Alex Suryanto',
-        image: 'https://ui-avatars.com/api/?name=Alex+Suryanto&background=8b5cf6&color=fff',
-      },
-      rating: 4.9,
-      price: 4500000,
-      image: 'https://via.placeholder.com/300x200/10b981/ffffff?text=Web+Development',
-      category: 'Web Development',
-    },
-    {
-      id: 2,
-      title: 'Logo & Brand Identity Design',
-      freelancer: {
-        name: 'Diana Putri',
-        image: 'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
-      },
-      rating: 4.8,
-      price: 1500000,
-      image: 'https://via.placeholder.com/300x200/6366f1/ffffff?text=Graphic+Design',
-      category: 'Graphic Design',
-    },
-    {
-      id: 3,
-      title: 'Mobile App Development',
-      freelancer: {
-        name: 'Budi Santoso',
-        image: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=f59e0b&color=fff',
-      },
-      rating: 4.7,
-      price: 6000000,
-      image: 'https://via.placeholder.com/300x200/ef4444/ffffff?text=Mobile+App',
-      category: 'Mobile App',
-    },
-  ];
+  // We need to fetch recommended services from the backend
+  // For now, we'll use a placeholder until we update the controller
+  const recommendedServices = [];
 
-  // Dummy data for recent activities
-  const recentActivities = [
-    {
-      type: 'project',
-      title: 'Proyek Baru Dibuat',
-      description: 'Anda telah membuat proyek baru "Pengembangan Website E-commerce"',
-      datetime: '2025-06-01T14:30:00',
-    },
-    {
-      type: 'message',
-      title: 'Pesan Baru',
-      description: 'Alex Suryanto mengirim pesan tentang proyek "Pengembangan Website E-commerce"',
-      datetime: '2025-06-01T15:45:00',
-    },
-    {
-      type: 'payment',
-      title: 'Pembayaran Berhasil',
-      description: 'Pembayaran untuk "Desain Logo Perusahaan" telah dikonfirmasi',
-      datetime: '2025-05-30T10:15:00',
-    },
-    {
-      type: 'review',
-      title: 'Ulasan Diberikan',
-      description: 'Anda telah memberikan ulasan untuk "Website Portofolio Pribadi"',
-      datetime: '2025-05-28T16:20:00',
-    },
-    {
-      type: 'project',
-      title: 'Proyek Selesai',
-      description: 'Proyek "Website Portofolio Pribadi" telah selesai',
-      datetime: '2025-05-28T14:00:00',
-    },
-  ];
+  // Format activities data from props
+  const recentActivities = propActivities?.map(activity => {
+    // Map activity type to icons and colors
+    const activityTypeMap = {
+      'project_created': { type: 'project', title: 'Proyek Baru Dibuat' },
+      'project_status_updated': { type: 'project', title: 'Status Proyek Diperbarui' },
+      'proposal_accepted': { type: 'project', title: 'Proposal Diterima' },
+      'order_created': { type: 'payment', title: 'Pesanan Dibuat' },
+      'payment_processed': { type: 'payment', title: 'Pembayaran Berhasil' },
+      'review_submitted': { type: 'review', title: 'Ulasan Diberikan' },
+      'service_ordered': { type: 'service', title: 'Jasa Dipesan' },
+      'message_sent': { type: 'message', title: 'Pesan Dikirim' },
+      'message_received': { type: 'message', title: 'Pesan Baru' },
+    };
+    
+    const activityInfo = activityTypeMap[activity.activity_type] || { 
+      type: 'other', 
+      title: activity.activity_type?.replace(/_/g, ' ')?.charAt(0).toUpperCase() + activity.activity_type?.replace(/_/g, ' ')?.slice(1) || 'Aktivitas' 
+    };
+    
+    return {
+      type: activityInfo.type,
+      title: activityInfo.title,
+      description: activity.description,
+      datetime: activity.created_at,
+    };
+  }) || [];
   return (
     <ClientLayout
       title="Dashboard"

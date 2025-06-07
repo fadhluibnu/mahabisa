@@ -1,16 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminLayout from './Components/AdminLayout';
 import StatCard from './Components/StatCard';
-import { Link } from '@inertiajs/react';
+import { Link, Head, useForm } from '@inertiajs/react';
 
-const Users = () => {
+const Users = ({ users, user, stats, flash }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(users.current_page || 1);
+  const [itemsPerPage] = useState(users.per_page || 10);
+  
+  // Form for adding a new user
+  const addUserForm = useForm({
+    name: '',
+    email: '',
+    role: '',
+    password: '',
+    password_confirmation: ''
+  });
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -20,168 +29,55 @@ const Users = () => {
     endDate: ''
   });
   
-  // Sample user data
-  const users = [
-    {
-      id: 1,
-      name: 'Dewi Susanti',
-      email: 'dewisusanti@gmail.com',
-      type: 'Freelancer',
-      status: 'Aktif',
-      joinDate: '23 Mei 2023',
-      avatar: 'https://randomuser.me/api/portraits/women/23.jpg'
-    },
-    {
-      id: 2,
-      name: 'Rudi Hartono',
-      email: 'rudi.hartono@example.com',
-      type: 'Klien',
-      status: 'Aktif',
-      joinDate: '15 Mei 2023',
-      avatar: 'https://randomuser.me/api/portraits/men/54.jpg'
-    },
-    {
-      id: 3,
-      name: 'Nina Maulida',
-      email: 'nina.maulida@example.com',
-      type: 'Freelancer',
-      status: 'Pending',
-      joinDate: '10 Mei 2023',
-      avatar: 'https://randomuser.me/api/portraits/women/67.jpg'
-    },
-    {
-      id: 4,
-      name: 'Agus Pratama',
-      email: 'agus.pratama@example.com',
-      type: 'Freelancer',
-      status: 'Aktif',
-      joinDate: '5 Mei 2023',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-    },
-    {
-      id: 5,
-      name: 'Siska Wijaya',
-      email: 'siska.wijaya@example.com',
-      type: 'Klien',
-      status: 'Tidak Aktif',
-      joinDate: '1 Mei 2023',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
-    },
-    {
-      id: 6,
-      name: 'Budi Setiawan',
-      email: 'budi.setiawan@example.com',
-      type: 'Admin',
-      status: 'Aktif',
-      joinDate: '28 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/men/42.jpg'
-    },
-    {
-      id: 7,
-      name: 'Maya Putri',
-      email: 'maya.putri@example.com',
-      type: 'Freelancer',
-      status: 'Aktif',
-      joinDate: '25 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/women/35.jpg'
-    },
-    {
-      id: 8,
-      name: 'Dani Santoso',
-      email: 'dani.santoso@example.com',
-      type: 'Klien',
-      status: 'Aktif',
-      joinDate: '20 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/men/22.jpg'
-    },
-    {
-      id: 9,
-      name: 'Rini Anggraini',
-      email: 'rini.anggraini@example.com',
-      type: 'Freelancer',
-      status: 'Tidak Aktif',
-      joinDate: '15 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/women/29.jpg'
-    },
-    {
-      id: 10,
-      name: 'Joko Widodo',
-      email: 'joko.widodo@example.com',
-      type: 'Klien',
-      status: 'Aktif',
-      joinDate: '10 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/men/11.jpg'
-    },
-    {
-      id: 11,
-      name: 'Anita Sari',
-      email: 'anita.sari@example.com',
-      type: 'Freelancer',
-      status: 'Aktif',
-      joinDate: '5 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/women/14.jpg'
-    },
-    {
-      id: 12,
-      name: 'Hendra Gunawan',
-      email: 'hendra.gunawan@example.com',
-      type: 'Klien',
-      status: 'Pending',
-      joinDate: '1 April 2023',
-      avatar: 'https://randomuser.me/api/portraits/men/18.jpg'
+  // Get user role map for display
+  const getUserRoleDisplay = (role) => {
+    switch(role.toLowerCase()) {
+      case 'client': return 'Klien';
+      case 'freelancer': return 'Freelancer';
+      case 'admin': return 'Admin';
+      default: return 'Pengguna';
     }
-  ];
+  };
+
+  // Get user status for display
+  const getUserStatusDisplay = (user) => {
+    return user.email_verified_at ? 'Aktif' : 'Pending';
+  };
 
   // Apply filters to users
   const getFilteredUsers = () => {
-    return users.filter(user => {
+    return users.data.filter(user => {
       // Filter by user type
-      if (filters.userType !== 'Semua Jenis' && user.type !== filters.userType) {
+      if (filters.userType !== 'Semua Jenis' && getUserRoleDisplay(user.role) !== filters.userType) {
         return false;
       }
       
       // Filter by status
-      if (filters.status !== 'Semua Status' && user.status !== filters.status) {
+      const userStatus = getUserStatusDisplay(user);
+      if (filters.status !== 'Semua Status' && userStatus !== filters.status) {
         return false;
       }
       
-      // Filter by date range
-      if (filters.startDate && filters.endDate) {
-        // Convert string dates to Date objects for comparison
-        const userJoinDate = new Date(convertToDateFormat(user.joinDate));
+      // Filter by join date
+      if (filters.startDate) {
+        const joinDate = new Date(user.created_at);
         const startDate = new Date(filters.startDate);
+        if (joinDate < startDate) {
+          return false;
+        }
+      }
+      
+      if (filters.endDate) {
+        const joinDate = new Date(user.created_at);
         const endDate = new Date(filters.endDate);
-        
-        // Set end date to end of day for inclusive comparison
-        endDate.setHours(23, 59, 59, 999);
-        
-        if (userJoinDate < startDate || userJoinDate > endDate) {
+        endDate.setHours(23, 59, 59, 999); // Set to end of day
+        if (joinDate > endDate) {
           return false;
         }
       }
       
       return true;
     });
-  };
-  
-  // Helper function to convert display date format (e.g., "23 Mei 2023") to standard date format
-  const convertToDateFormat = (displayDate) => {
-    const months = {
-      'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04', 
-      'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08', 
-      'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
-    };
-    
-    const parts = displayDate.split(' ');
-    if (parts.length === 3) {
-      const day = parts[0].padStart(2, '0');
-      const month = months[parts[1]];
-      const year = parts[2];
-      
-      return `${year}-${month}-${day}`;
-    }
-    
-    return '2023-01-01'; // fallback date
   };
   
   // Handle filter changes
@@ -210,9 +106,12 @@ const Users = () => {
 
   const filteredUsers = getFilteredUsers();
   
-  // Pagination calculation
+  // Handle pagination either from Laravel pagination (when not filtered) or client-side (when filtered)
   const totalUsers = filteredUsers.length;
-  const totalPages = Math.ceil(totalUsers / itemsPerPage);
+  const totalPages = filters.userType !== 'Semua Jenis' || filters.status !== 'Semua Status' || 
+                    filters.startDate || filters.endDate
+                    ? Math.ceil(totalUsers / itemsPerPage)
+                    : Math.ceil(users.total / users.per_page);
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
@@ -265,35 +164,68 @@ const Users = () => {
   
   // Handle confirm delete
   const handleConfirmDelete = () => {
-    // In a real app, you would call an API to delete the user
-    // For now, we'll just close the modal
-    setShowDeleteModal(false);
-    
-    // You could show a success message here
-    alert(`User ${selectedUser.name} has been deleted successfully!`);
+    // Use Inertia for the delete request
+    window.Inertia.delete(`/admin/users/${selectedUser.id}`, {
+      onSuccess: () => {
+        setShowDeleteModal(false);
+        // The page will refresh with updated data from the backend
+      },
+      onError: (errors) => {
+        alert('Error deleting user: ' + (errors.message || 'Unknown error'));
+        setShowDeleteModal(false);
+      }
+    });
   };
 
-  // Get counts for statistics
-  const totalUserCount = users.length;
-  const freelancerCount = users.filter(user => user.type === 'Freelancer').length;
-  const clientCount = users.filter(user => user.type === 'Klien').length;
-  const recentUserCount = users.filter(user => {
-    const date = new Date(convertToDateFormat(user.joinDate));
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return date >= thirtyDaysAgo;
-  }).length;
+  // Format date to readable format
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('id-ID', options);
+  };
 
   return (
     <AdminLayout
       title='Kelola Pengguna'
       subtitle='Manajemen data pengguna MahaBisa'
     >
+      <Head title="Kelola Pengguna - MahaBisa Admin" />
+      
+      {/* Flash Messages */}
+      {flash.success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{flash.success}</span>
+          <button
+            onClick={() => window.Inertia.visit(window.location.href, { only: ['users', 'stats'] })} 
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+          >
+            <svg className="fill-current h-6 w-6 text-green-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <title>Close</title>
+              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+            </svg>
+          </button>
+        </div>
+      )}
+      
+      {flash.error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{flash.error}</span>
+          <button
+            onClick={() => window.Inertia.visit(window.location.href, { only: ['users', 'stats'] })} 
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+          >
+            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <title>Close</title>
+              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+            </svg>
+          </button>
+        </div>
+      )}
+      
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8'>
         <StatCard
           title='Total Pengguna'
-          value={totalUserCount.toString()}
-          percentage='12.5'
+          value={stats.totalUsers.toString()}
+          percentage={stats.newUsers > 0 ? ((stats.newUsers / stats.totalUsers) * 100).toFixed(1) : '0.0'}
           trend='up'
           color='purple'
           icon={
@@ -316,8 +248,8 @@ const Users = () => {
 
         <StatCard
           title='Freelancer'
-          value={freelancerCount.toString()}
-          percentage='8.2'
+          value={stats.totalFreelancers.toString()}
+          percentage={stats.totalFreelancers > 0 ? ((stats.newFreelancers / stats.totalFreelancers) * 100).toFixed(1) : '0.0'}
           trend='up'
           color='pink'
           icon={
@@ -340,8 +272,8 @@ const Users = () => {
 
         <StatCard
           title='Klien'
-          value={clientCount.toString()}
-          percentage='14.3'
+          value={stats.totalClients.toString()}
+          percentage={stats.totalClients > 0 ? ((stats.newClients / stats.totalClients) * 100).toFixed(1) : '0.0'}
           trend='up'
           color='green'
           icon={
@@ -364,9 +296,10 @@ const Users = () => {
 
         <StatCard
           title='Pengguna Baru'
-          value={recentUserCount.toString()}
-          percentage='4.3'
-          trend='down'
+          value={stats.newUsers.toString()}
+          percentage={stats.newUsers > 0 && stats.lastMonthNewUsers > 0 ? 
+            (((stats.newUsers - stats.lastMonthNewUsers) / stats.lastMonthNewUsers) * 100).toFixed(1) : '0.0'}
+          trend={stats.newUsers >= stats.lastMonthNewUsers ? 'up' : 'down'}
           color='orange'
           icon={
             <svg
@@ -462,11 +395,17 @@ const Users = () => {
                   <td className='py-3'>
                     <div className='flex items-center'>
                       <div className='w-8 h-8 rounded-full mr-3 flex items-center justify-center overflow-hidden'>
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className='w-full h-full object-cover'
-                        />
+                        {user.profile_photo_path ? (
+                          <img
+                            src={user.profile_photo_path}
+                            alt={user.name}
+                            className='w-full h-full object-cover'
+                          />
+                        ) : (
+                          <div className='w-full h-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold'>
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                       </div>
                       <span className='font-medium text-gray-900'>
                         {user.name}
@@ -476,27 +415,27 @@ const Users = () => {
                   <td className='py-3'>{user.email}</td>
                   <td className='py-3 hidden sm:table-cell'>
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      user.type === 'Freelancer' 
+                      user.role === 'freelancer' 
                         ? 'bg-purple-100 text-purple-800' 
-                        : user.type === 'Klien'
+                        : user.role === 'client'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-blue-100 text-blue-800'
                     }`}>
-                      {user.type}
+                      {getUserRoleDisplay(user.role)}
                     </span>
                   </td>
                   <td className='py-3 hidden md:table-cell'>
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      user.status === 'Aktif' 
+                      getUserStatusDisplay(user) === 'Aktif' 
                         ? 'bg-green-100 text-green-800' 
-                        : user.status === 'Pending'
+                        : getUserStatusDisplay(user) === 'Pending'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
                     }`}>
-                      {user.status}
+                      {getUserStatusDisplay(user)}
                     </span>
                   </td>
-                  <td className='py-3 hidden lg:table-cell'>{user.joinDate}</td>
+                  <td className='py-3 hidden lg:table-cell'>{formatDate(user.created_at)}</td>
                   <td className='py-3 text-right'>
                     <div className='flex justify-end space-x-2'>
                       <button 
@@ -668,22 +607,28 @@ const Users = () => {
               {/* User Avatar and Basic Info */}
               <div className='md:w-1/3 flex flex-col items-center'>
                 <div className='w-32 h-32 rounded-full overflow-hidden mb-4'>
-                  <img 
-                    src={selectedUser.avatar} 
-                    alt={selectedUser.name} 
-                    className='w-full h-full object-cover' 
-                  />
+                  {selectedUser.profile_photo_path ? (
+                    <img 
+                      src={selectedUser.profile_photo_path} 
+                      alt={selectedUser.name} 
+                      className='w-full h-full object-cover' 
+                    />
+                  ) : (
+                    <div className='w-full h-full bg-gray-200 flex items-center justify-center text-gray-600 text-4xl font-semibold'>
+                      {selectedUser.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <h4 className='text-xl font-bold text-gray-900 mb-1'>{selectedUser.name}</h4>
                 <p className='text-sm text-gray-600 mb-2'>{selectedUser.email}</p>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  selectedUser.type === 'Freelancer' 
+                  selectedUser.role === 'freelancer' 
                     ? 'bg-purple-100 text-purple-800' 
-                    : selectedUser.type === 'Klien'
+                    : selectedUser.role === 'client'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-blue-100 text-blue-800'
                 }`}>
-                  {selectedUser.type}
+                  {getUserRoleDisplay(selectedUser.role)}
                 </span>
               </div>
 
@@ -699,22 +644,22 @@ const Users = () => {
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>Status</p>
                       <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                        selectedUser.status === 'Aktif' 
+                        getUserStatusDisplay(selectedUser) === 'Aktif' 
                           ? 'bg-green-100 text-green-800' 
-                          : selectedUser.status === 'Pending'
+                          : getUserStatusDisplay(selectedUser) === 'Pending'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
                       }`}>
-                        {selectedUser.status}
+                        {getUserStatusDisplay(selectedUser)}
                       </span>
                     </div>
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>Tanggal Bergabung</p>
-                      <p className='text-sm font-medium'>{selectedUser.joinDate}</p>
+                      <p className='text-sm font-medium'>{formatDate(selectedUser.created_at)}</p>
                     </div>
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>Terakhir Login</p>
-                      <p className='text-sm font-medium'>Hari ini, 10:45</p>
+                      <p className='text-sm font-medium'>{selectedUser.last_login_at || 'Belum pernah login'}</p>
                     </div>
                   </div>
                 </div>
@@ -724,15 +669,15 @@ const Users = () => {
                   <div className='space-y-3'>
                     <div className='p-3 bg-gray-50 rounded-lg'>
                       <p className='text-sm text-gray-900'>Login ke platform</p>
-                      <p className='text-xs text-gray-500'>Hari ini, 10:45</p>
+                      <p className='text-xs text-gray-500'>{selectedUser.last_login_at || 'Belum pernah login'}</p>
                     </div>
                     <div className='p-3 bg-gray-50 rounded-lg'>
                       <p className='text-sm text-gray-900'>Memperbarui profil</p>
-                      <p className='text-xs text-gray-500'>Kemarin, 15:30</p>
+                      <p className='text-xs text-gray-500'>{selectedUser.updated_at ? formatDate(selectedUser.updated_at) : 'Belum pernah diperbarui'}</p>
                     </div>
                     <div className='p-3 bg-gray-50 rounded-lg'>
                       <p className='text-sm text-gray-900'>Mendaftar ke platform</p>
-                      <p className='text-xs text-gray-500'>{selectedUser.joinDate}</p>
+                      <p className='text-xs text-gray-500'>{formatDate(selectedUser.created_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -843,15 +788,29 @@ const Users = () => {
               </button>
             </div>
 
-            <form>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              window.Inertia.post('/admin/users/store', addUserForm.data, {
+                onSuccess: () => {
+                  setShowAddModal(false);
+                  addUserForm.reset();
+                }
+              });
+            }}>
               <div className='mb-4'>
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Nama Lengkap
                 </label>
                 <input
                   type='text'
+                  name="name"
+                  value={addUserForm.data.name || ''}
+                  onChange={e => addUserForm.setData('name', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
+                {addUserForm.errors.name && (
+                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.name}</div>
+                )}
               </div>
 
               <div className='mb-4'>
@@ -860,20 +819,34 @@ const Users = () => {
                 </label>
                 <input
                   type='email'
+                  name="email"
+                  value={addUserForm.data.email || ''}
+                  onChange={e => addUserForm.setData('email', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
+                {addUserForm.errors.email && (
+                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.email}</div>
+                )}
               </div>
 
               <div className='mb-4'>
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Jenis Pengguna
                 </label>
-                <select className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'>
-                  <option>Pilih jenis pengguna</option>
-                  <option>Freelancer</option>
-                  <option>Klien</option>
-                  <option>Admin</option>
+                <select 
+                  name="role"
+                  value={addUserForm.data.role || ''}
+                  onChange={e => addUserForm.setData('role', e.target.value)}
+                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                >
+                  <option value="">Pilih jenis pengguna</option>
+                  <option value="freelancer">Freelancer</option>
+                  <option value="client">Klien</option>
+                  <option value="admin">Admin</option>
                 </select>
+                {addUserForm.errors.role && (
+                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.role}</div>
+                )}
               </div>
 
               <div className='mb-4'>
@@ -882,8 +855,14 @@ const Users = () => {
                 </label>
                 <input
                   type='password'
+                  name="password"
+                  value={addUserForm.data.password || ''}
+                  onChange={e => addUserForm.setData('password', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
+                {addUserForm.errors.password && (
+                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.password}</div>
+                )}
               </div>
 
               <div className='mb-4'>
@@ -892,6 +871,9 @@ const Users = () => {
                 </label>
                 <input
                   type='password'
+                  name="password_confirmation"
+                  value={addUserForm.data.password_confirmation || ''}
+                  onChange={e => addUserForm.setData('password_confirmation', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
               </div>
@@ -899,16 +881,20 @@ const Users = () => {
               <div className='flex justify-end mt-6'>
                 <button
                   type='button'
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    addUserForm.reset();
+                  }}
                   className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md mr-3 hover:bg-gray-50'
                 >
                   Batal
                 </button>
                 <button
                   type='submit'
-                  className='px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700'
+                  disabled={addUserForm.processing}
+                  className='px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-75'
                 >
-                  Simpan
+                  {addUserForm.processing ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>

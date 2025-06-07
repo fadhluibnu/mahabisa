@@ -1,8 +1,23 @@
 import React, { useRef, useState, useEffect } from 'react';
 import PopulerCard from '@/Components/PopulerCard';
-import { Link } from '@inertiajs/react'; // Add this import for navigation
+import { Link, usePage } from '@inertiajs/react';
 
-const PopularSection = ({ populerCards }) => {
+const PopularSection = () => {
+  const { featuredServices } = usePage().props;
+  
+  // Transform the API data to match the PopulerCard props
+  const populerCards = featuredServices ? featuredServices.map(service => ({
+    id: service.id,
+    image: service.thumbnail || '/assets/default-service.png',
+    isBestSeller: service.view_count > 100,
+    label: service.view_count > 100 ? 'Best Seller' : (service.view_count > 50 ? 'Popular' : ''),
+    userName: service.user?.name || 'Anonymous',
+    userLevel: `Level ${Math.min(5, Math.floor((service.user?.freelancerOrders_count || 0) / 10) + 1)} Seller`,
+    title: service.title,
+    rating: service.avg_rating || 0,
+    reviewCount: service.reviews_count || 0,
+    price: service.price,
+  })) : [];
   const scrollRef = useRef(null);
   const [activePage, setActivePage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);

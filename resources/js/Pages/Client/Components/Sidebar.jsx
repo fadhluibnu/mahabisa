@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
-const Sidebar = ({ isOpen, closeSidebar }) => {
-  const { url } = usePage();
+const Sidebar = ({ isOpen, closeSidebar, auth }) => {
+  const { url, props } = usePage();
+  const { user } = auth || props;
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -390,18 +391,31 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
             </ul>
           </div>
           <div className='border-t border-gray-200 p-4'>
-            <div className='flex items-center'>
-              <img
-                src='https://images.unsplash.com/photo-1550525811-e5869dd03032?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-                alt='Profile'
-                className='h-10 w-10 rounded-full'
-              />
-              <div className='ml-3'>
-                <p className='text-sm font-medium text-gray-800'>
-                  Sinta Dewi
-                </p>
+            {!user ? (
+              <div className='flex items-center'>
+                <div className='h-10 w-10 bg-gray-200 rounded-full animate-pulse'></div>
+                <div className='ml-3'>
+                  <div className='h-4 w-24 bg-gray-200 rounded animate-pulse mb-1'></div>
+                  <div className='h-3 w-32 bg-gray-200 rounded animate-pulse'></div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className='flex items-center'>
+                <img
+                  src={user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`}
+                  alt={user?.name}
+                  className='h-10 w-10 rounded-full'
+                />
+                <div className='ml-3'>
+                  <p className='text-sm font-medium text-gray-800'>
+                    {user?.name || 'User'}
+                  </p>
+                  {user?.email && (
+                    <p className='text-xs text-gray-500'>{user.email}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <Link
               href='/logout'
