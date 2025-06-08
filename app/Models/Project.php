@@ -86,4 +86,29 @@ class Project extends Model
     {
         return $this->hasMany(Review::class);
     }
+    
+    /**
+     * Get the skills that are required for this project.
+     * This is a custom accessor method, not an Eloquent relationship.
+     * 
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function skills()
+    {
+        // If the project doesn't have skills_required defined or it's empty, return an empty collection
+        if (empty($this->skills_required)) {
+            return collect([]);
+        }
+        
+        // Make sure skills_required is properly decoded from JSON
+        $skillIds = is_array($this->skills_required) ? $this->skills_required : json_decode($this->skills_required, true);
+        
+        // Return empty collection if the decoding failed or resulted in a non-array
+        if (!is_array($skillIds)) {
+            return collect([]);
+        }
+        
+        // Retrieve skills by their IDs from the skills_required JSON field
+        return Skill::whereIn('id', $skillIds)->get();
+    }
 }

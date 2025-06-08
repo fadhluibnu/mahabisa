@@ -162,9 +162,12 @@ Route::prefix('freelancer')->middleware(['auth', 'role:freelancer'])->group(func
     Route::get('/services', [FreelancerController::class, 'services'])->name('freelancer.services');
     Route::get('/services/create', [FreelancerController::class, 'createService'])->name('freelancer.services.create');
     Route::post('/services', [FreelancerController::class, 'storeService'])->name('freelancer.services.store');
+    Route::get('/services/{id}', [FreelancerController::class, 'showService'])->name('freelancer.services.show');
     Route::get('/services/{id}/edit', [FreelancerController::class, 'editService'])->name('freelancer.services.edit');
     Route::put('/services/{id}', [FreelancerController::class, 'updateService'])->name('freelancer.services.update');
     Route::delete('/services/{id}', [FreelancerController::class, 'deleteService'])->name('freelancer.services.delete');
+    Route::put('/services/{id}/toggle-status', [FreelancerController::class, 'toggleServiceStatus'])->name('freelancer.services.toggle-status');
+    Route::get('/services/{id}/orders', [FreelancerController::class, 'serviceOrders'])->name('freelancer.services.orders');
     
     // Offers
     Route::get('/offers', [FreelancerController::class, 'offers'])->name('freelancer.offers');

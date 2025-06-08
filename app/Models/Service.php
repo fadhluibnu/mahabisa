@@ -97,4 +97,12 @@ class Service extends Model
     {
         return $this->hasMany(Review::class);
     }
+    
+    /**
+     * Get the skills associated with this service.
+     */
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'service_skill');
+    }
 }

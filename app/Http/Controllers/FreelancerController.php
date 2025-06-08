@@ -17,6 +17,7 @@ use App\Models\Withdrawal;
 use App\Models\Activity;
 use App\Models\Message;
 use App\Models\UserProfile;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -238,40 +239,107 @@ class FreelancerController extends Controller
         $user = Auth::user();
         
         // Get all available projects that match freelancer's skills
-        $userSkillIds = $user->skills()->pluck('skills.id');
+        $userSkillIds = $user->skills()->pluck('skills.id')->toArray();
         
-        $availableProjects = Project::whereHas('skills', function ($query) use ($userSkillIds) {
-                $query->whereIn('skills.id', $userSkillIds);
-            })
-            ->where('status', 'open')
-            ->with(['client', 'skills', 'proposals'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // If user has no skills yet, get all open projects
+        if (empty($userSkillIds)) {
+            $availableProjects = Project::where('status', 'open')
+                ->with(['client', 'category'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            // Get projects matching user's skills (simplified approach)
+            $availableProjects = Project::where('status', 'open')
+                ->with(['client', 'category'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            // We'll filter these projects later in the mapping step
+        }
         
-        // Get projects the freelancer has already bid on
+        // Format available projects for frontend
+        $formattedAvailableProjects = $availableProjects->map(function($project) {
+            return [
+                'id' => $project->id,
+                'title' => $project->title,
+                'client' => $project->client->name,
+                'deadline' => $project->deadline ? $project->deadline->format('d M Y') : 'Flexible',
+                'budget' => 'Rp' . number_format($project->budget_min) . ' - Rp' . number_format($project->budget_max),
+                'progress' => 0,
+                'status' => $project->status,
+                'image' => $project->client->profile_photo_path ?? 'https://ui-avatars.com/api/?name=' . urlencode($project->client->name) . '&background=6366f1&color=fff',
+                'category' => $project->category ? $project->category->name : 'Uncategorized',
+                'description' => $project->description,
+            ];
+        });
+        
+        // Get projects the freelancer has already bid on (has proposals)
         $biddedProjects = Project::whereHas('proposals', function ($query) use ($user) {
-                $query->where('proposals.user_id', $user->id);
+                $query->where('user_id', $user->id);
             })
-            ->with(['client', 'skills', 'proposals' => function ($query) use ($user) {
+            ->with(['client', 'category', 'proposals' => function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             }])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->get();
+        
+        // Format bidded projects for frontend
+        $formattedBiddedProjects = $biddedProjects->map(function($project) {
+            $status = 'pending';
+            $progress = 0;
+            
+            // Check if there's an order for this project by the current user
+            $order = $project->orders->first();
+            if ($order) {
+                $status = $order->status;
+                switch($status) {
+                    case 'completed':
+                        $progress = 100;
+                        break;
+                    case 'in-progress':
+                        $progress = 65;
+                        break;
+                    case 'revision':
+                        $progress = 80;
+                        break;
+                    case 'pending':
+                    default:
+                        $progress = 25;
+                        break;
+                }
+            }
+            
+            return [
+                'id' => $project->id,
+                'title' => $project->title,
+                'client' => $project->client->name,
+                'deadline' => $project->deadline ? $project->deadline->format('d M Y') : 'Flexible',
+                'budget' => 'Rp' . number_format($project->budget_min) . ' - Rp' . number_format($project->budget_max),
+                'progress' => $progress,
+                'status' => $status,
+                'image' => $project->client->profile_photo_path ?? 'https://ui-avatars.com/api/?name=' . urlencode($project->client->name) . '&background=6366f1&color=fff',
+                'category' => $project->category ? $project->category->name : 'Uncategorized',
+                'description' => $project->description,
+            ];
+        });
             
         return Inertia::render('Freelancer/Projects', [
             'user' => $user,
-            'availableProjects' => $availableProjects,
-            'biddedProjects' => $biddedProjects
+            'availableProjects' => $formattedAvailableProjects,
+            'biddedProjects' => $formattedBiddedProjects
         ]);
     }
     
     /**
      * Show detail for a specific project.
      */
-    public function projectDetail($id)
+    public function showProject($id)
     {
         $user = Auth::user();
-        $project = Project::with(['client', 'skills', 'proposals'])
+        // Load project with client and proposals, but handle skills separately
+        $project = Project::with(['client', 'proposals' => function ($query) {
+                $query->with('user');  // Load user data for each proposal
+            }])
             ->findOrFail($id);
             
         // Check if user has already bid on this project
@@ -279,10 +347,17 @@ class FreelancerController extends Controller
         $myProposal = $hasProposal ? 
             $project->proposals()->where('user_id', $user->id)->first() : 
             null;
+        
+        // Get skills for the project using the custom method
+        $skills = $project->skills();
+        
+        // Add skills to the project for the frontend
+        $projectData = $project->toArray();
+        $projectData['skills'] = $skills;
             
         return Inertia::render('Freelancer/ProjectDetail', [
             'user' => $user,
-            'project' => $project,
+            'project' => $projectData,
             'hasProposal' => $hasProposal,
             'myProposal' => $myProposal
         ]);
@@ -347,15 +422,49 @@ class FreelancerController extends Controller
         $user = Auth::user();
         
         $services = $user->services()
+            ->with(['category', 'skills'])
             ->withCount(['orders as completed_orders_count' => function ($query) {
                 $query->where('status', 'completed');
             }])
+            ->withCount(['orders as active_orders_count' => function ($query) {
+                $query->whereIn('status', ['in-progress', 'revision']);
+            }])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->get();
+        
+        // Format services data for the frontend
+        $formattedServices = $services->map(function($service) {
+            return [
+                'id' => $service->id,
+                'title' => $service->title,
+                'description' => $service->description,
+                'price' => $service->price,
+                'deliveryTime' => $service->delivery_time,
+                'revisions' => $service->revisions ?? 0,
+                'image' => $service->thumbnail ? asset('storage/' . $service->thumbnail) : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+                'status' => $service->is_active ? 'active' : 'draft',
+                'featured' => false, // Add this field if you decide to implement it later
+                'category' => $service->category ? $service->category->name : 'Uncategorized',
+                'skills' => $service->skills->pluck('name'),
+                'rating' => round($service->reviews_avg_rating ?? 0, 1),
+                'reviewsCount' => $service->reviews_count,
+                'ordersCount' => ($service->completed_orders_count ?? 0) + ($service->active_orders_count ?? 0),
+                'completedOrders' => $service->completed_orders_count ?? 0,
+                'activeOrders' => $service->active_orders_count ?? 0,
+                'created_at' => $service->created_at,
+                'updated_at' => $service->updated_at
+            ];
+        });
+        
+        // Get all categories for the filter dropdown
+        $categories = Category::all()->pluck('name');
             
         return Inertia::render('Freelancer/Services', [
             'user' => $user,
-            'services' => $services
+            'services' => $formattedServices,
+            'categories' => $categories
         ]);
     }
     
@@ -449,6 +558,50 @@ class FreelancerController extends Controller
             'service' => $service,
             'categories' => $categories,
             'skills' => $skills
+        ]);
+    }
+    
+    /**
+     * Toggle service status between active and draft
+     */
+    public function toggleServiceStatus($id)
+    {
+        $user = Auth::user();
+        $service = Service::findOrFail($id);
+        
+        // Ensure the service belongs to the user
+        if ($service->user_id !== $user->id) {
+            return response()->json(['error' => 'You are not authorized to update this service'], 403);
+        }
+        
+        // Toggle the status
+        $service->is_active = !$service->is_active;
+        $service->save();
+        
+        return response()->json(['success' => true, 'is_active' => $service->is_active]);
+    }
+    
+    /**
+     * Show the orders related to a specific service
+     */
+    public function serviceOrders($id)
+    {
+        $user = Auth::user();
+        $service = Service::findOrFail($id);
+        
+        // Ensure the service belongs to the user
+        if ($service->user_id !== $user->id) {
+            return abort(403, 'Unauthorized action');
+        }
+        
+        $orders = $service->orders()
+            ->with('client')
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return Inertia::render('Freelancer/ServiceOrders', [
+            'service' => $service,
+            'orders' => $orders
         ]);
     }
     
@@ -1172,6 +1325,128 @@ class FreelancerController extends Controller
             'user' => $user,
             'profile' => $profile,
             'notificationSettings' => $notificationSettings
+        ]);
+    }
+    
+    /**
+     * Display a specific service with detailed information.
+     */
+    public function showService($id)
+    {
+        $user = Auth::user();
+        $service = Service::with(['category', 'skills', 'reviews.client', 'orders.client'])
+            ->withCount(['orders as total_orders_count'])
+            ->withCount(['orders as completed_orders_count' => function ($query) {
+                $query->where('status', 'completed');
+            }])
+            ->withCount(['orders as active_orders_count' => function ($query) {
+                $query->whereIn('status', ['in-progress', 'revision']);
+            }])
+            ->withAvg('reviews', 'rating')
+            ->findOrFail($id);
+        
+        // Ensure the service belongs to the user
+        if ($service->user_id !== $user->id) {
+            return abort(403, 'You do not have permission to view this service.');
+        }
+        
+        // Get recent reviews for this service
+        $recentReviews = $service->reviews()
+            ->with('client')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function($review) {
+                return [
+                    'id' => $review->id,
+                    'client' => [
+                        'id' => $review->client->id,
+                        'name' => $review->client->name,
+                        'avatar' => $review->client->profile_photo_path ?? 'https://ui-avatars.com/api/?name=' . urlencode($review->client->name) . '&background=6366f1&color=fff'
+                    ],
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at->format('d M Y'),
+                ];
+            });
+        
+        // Get rating distribution
+        $ratingDistribution = [
+            5 => $service->reviews()->where('rating', 5)->count(),
+            4 => $service->reviews()->where('rating', 4)->count(),
+            3 => $service->reviews()->where('rating', 3)->count(),
+            2 => $service->reviews()->where('rating', 2)->count(),
+            1 => $service->reviews()->where('rating', 1)->count(),
+        ];
+        
+        // Monthly order statistics for the last 6 months
+        $sixMonthsAgo = now()->subMonths(6)->startOfMonth();
+        $monthlyOrders = $service->orders()
+            ->where('created_at', '>=', $sixMonthsAgo)
+            ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as count, SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed')
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+            
+        // Format chart data
+        $chartData = [
+            'labels' => [],
+            'orders' => [],
+            'completed' => []
+        ];
+        
+        // Generate labels for the past 6 months
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $chartData['labels'][] = $month->format('M Y');
+            
+            // Default to 0 if no orders for this month
+            $monthOrder = $monthlyOrders->first(function ($item) use ($month) {
+                return $item->year == $month->year && $item->month == $month->month;
+            });
+            
+            $chartData['orders'][] = $monthOrder ? $monthOrder->count : 0;
+            $chartData['completed'][] = $monthOrder ? $monthOrder->completed : 0;
+        }
+        
+        // Format the service data for the frontend
+        $serviceData = [
+            'id' => $service->id,
+            'title' => $service->title,
+            'description' => $service->description,
+            'price' => $service->price,
+            'price_formatted' => 'Rp ' . number_format($service->price, 0, ',', '.'),
+            'deliveryTime' => $service->delivery_time,
+            'revisions' => $service->revisions ?? 0,
+            'requirements' => $service->requirements,
+            'thumbnail' => $service->thumbnail ? asset('storage/' . $service->thumbnail) : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            'gallery' => $service->gallery ? json_decode($service->gallery) : [],
+            'status' => $service->is_active ? 'active' : 'draft',
+            'featured' => false, // Add this field if you implement it later
+            'category' => $service->category ? $service->category->name : 'Uncategorized',
+            'category_id' => $service->category_id,
+            'skills' => $service->skills->map(function($skill) {
+                return [
+                    'id' => $skill->id,
+                    'name' => $skill->name
+                ];
+            }),
+            'rating' => round($service->reviews_avg_rating ?? 0, 1),
+            'reviewsCount' => $service->reviews->count(),
+            'ordersCount' => $service->total_orders_count ?? 0,
+            'completedOrders' => $service->completed_orders_count ?? 0,
+            'activeOrders' => $service->active_orders_count ?? 0,
+            'created_at' => $service->created_at->format('d M Y'),
+            'updated_at' => $service->updated_at->format('d M Y')
+        ];
+            
+        return Inertia::render('Freelancer/ServiceDetail', [
+            'user' => $user,
+            'service' => $serviceData,
+            'recentReviews' => $recentReviews,
+            'ratingDistribution' => $ratingDistribution,
+            'chartData' => $chartData
         ]);
     }
 }

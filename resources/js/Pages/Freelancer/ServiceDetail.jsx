@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import FreelancerLayout from './Components/FreelancerLayout';
 
-const ServiceDetail = ({ id }) => {
+const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribution, chartData }) => {
+  const { auth } = usePage().props;
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
-  const [service, setService] = useState({
-    id: id || 1,
-    title: 'Web Development dengan React & Laravel',
-    description: 'Membuat website modern dengan React di frontend dan Laravel di backend. Termasuk responsive design dan optimasi kinerja.',
+  const [service, setService] = useState(initialService || {
     price: 2500000,
     deliveryTime: 14,
     revisions: 3,
@@ -136,17 +135,43 @@ const ServiceDetail = ({ id }) => {
   };
 
   const handleToggleStatus = () => {
-    setService({
-      ...service,
-      status: service.status === 'active' ? 'draft' : 'active',
-    });
+    axios.put(`/freelancer/services/${service.id}/toggle-status`)
+      .then(response => {
+        if (response.data.success) {
+          setService({
+            ...service,
+            status: service.status === 'active' ? 'draft' : 'active',
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Failed to update service status:', error);
+      });
   };
 
   const handleToggleFeatured = () => {
+    // For now, we'll continue updating the UI locally since the API endpoint doesn't exist yet
+    // But we'll structure it to be ready for when the API is implemented
     setService({
       ...service,
       featured: !service.featured,
     });
+    
+    // This would be the actual implementation once the API endpoint is created:
+    /*
+    axios.put(`/freelancer/services/${service.id}/toggle-featured`)
+      .then(response => {
+        if (response.data.success) {
+          setService({
+            ...service,
+            featured: !service.featured,
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Failed to update service featured status:', error);
+      });
+    */
   };
 
   return (
@@ -275,6 +300,16 @@ const ServiceDetail = ({ id }) => {
               onClick={() => setActiveTab('faqs')}
             >
               FAQ
+            </button>
+            <button
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === 'reviews'
+                  ? 'text-indigo-600 border-b-2 border-indigo-500'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveTab('reviews')}
+            >
+              Ulasan
             </button>
             <button
               className={`py-4 px-6 text-sm font-medium ${
@@ -428,6 +463,80 @@ const ServiceDetail = ({ id }) => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reviews' && (
+          <div className="p-6">
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Ulasan Terbaru</h3>
+              
+              {recentReviews && recentReviews.length > 0 ? (
+                <div className="space-y-6">
+                  {recentReviews.map((review, index) => (
+                    <div key={index} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mr-4">
+                          <img 
+                            src={review.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(review.name)} 
+                            alt={review.name}
+                            className="h-10 w-10 rounded-full"
+                          />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">{review.name}</h4>
+                          <div className="flex items-center mt-1">
+                            <div className="flex mr-2">
+                              {renderStars(review.rating)}
+                            </div>
+                            <span className="text-xs text-gray-500">{new Date(review.date).toLocaleDateString('id-ID')}</span>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 px-4">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-500">Belum ada ulasan untuk layanan ini.</p>
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Distribusi Rating</h3>
+              
+              {ratingDistribution && (
+                <div className="space-y-3">
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const percentage = ratingDistribution[rating] || 0;
+                    return (
+                      <div key={rating} className="flex items-center">
+                        <div className="flex items-center w-12">
+                          <span className="text-sm font-medium text-gray-900 mr-1">{rating}</span>
+                          <svg className="h-4 w-4 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 ml-4">
+                          <div className="bg-gray-200 rounded-full h-2 w-full">
+                            <div 
+                              className="bg-indigo-600 h-2 rounded-full" 
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        <span className="ml-4 text-sm text-gray-500 w-12 text-right">{percentage}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
