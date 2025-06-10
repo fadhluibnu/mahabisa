@@ -40,4 +40,12 @@ class Skill extends Model
                     ->withPivot('proficiency_level')
                     ->withTimestamps();
     }
+
+    /**
+     * Get the services that use this skill.
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'service_skill');
+    }
 }

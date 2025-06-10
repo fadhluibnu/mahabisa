@@ -7,7 +7,21 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
   const { auth } = usePage().props;
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
-  const [service, setService] = useState(initialService || {
+  
+  // Log data to help debug
+  console.log("Received service data:", initialService);
+  console.log("Service requirements data type:", typeof initialService.requirements);
+  console.log("Service requirements value:", initialService.requirements);
+  
+  // Additional debugging - this should always be an array of strings
+  if (initialService.requirements) {
+    initialService.requirements.forEach((req, index) => {
+      console.log(`Requirement ${index}:`, req, typeof req);
+    });
+  }
+  
+  // Be more defensive with the initialization
+  const defaultService = {
     price: 2500000,
     deliveryTime: 14,
     revisions: 3,
@@ -102,6 +116,30 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
     },
     createdAt: '2023-01-15',
     updatedAt: '2023-05-20',
+  };
+  
+  // Initialize service with either the passed service or the default
+  const [service, setService] = useState(() => {
+    // Ensure any initial service has all required properties
+    if (initialService) {
+      console.log("Initial service requirements:", initialService.requirements);
+      return {
+        ...defaultService,
+        ...initialService,
+        packages: initialService.packages || defaultService.packages,
+        requirements: Array.isArray(initialService.requirements) ? initialService.requirements : [],
+        faqs: initialService.faqs || defaultService.faqs,
+        stats: {
+          orders: initialService.ordersCount || 0,
+          inProgress: initialService.activeOrders || 0,
+          completed: initialService.completedOrders || 0,
+          cancelRate: 0, // We'll calculate this if needed
+          avgRating: initialService.rating || 0,
+          totalReviews: initialService.reviewsCount || 0,
+        }
+      };
+    }
+    return defaultService;
   });
 
   // Format price to Rupiah
@@ -267,7 +305,10 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                   ? 'text-indigo-600 border-b-2 border-indigo-500'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
-              onClick={() => setActiveTab('overview')}
+              onClick={() => {
+                console.log('Switching to overview tab');
+                setActiveTab('overview');
+              }}
             >
               Ringkasan
             </button>
@@ -277,7 +318,19 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                   ? 'text-indigo-600 border-b-2 border-indigo-500'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
-              onClick={() => setActiveTab('packages')}
+              onClick={() => {
+                // Before switching tabs, verify service and packages exist
+                console.log('Switching to packages tab, service:', service);
+                if (!service || !service.packages) {
+                  console.warn('Service or packages is undefined - setting defaults');
+                  // Ensure packages exists
+                  setService(prevService => ({
+                    ...prevService,
+                    packages: prevService.packages || []
+                  }));
+                }
+                setActiveTab('packages');
+              }}
             >
               Paket
             </button>
@@ -287,7 +340,18 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                   ? 'text-indigo-600 border-b-2 border-indigo-500'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
-              onClick={() => setActiveTab('requirements')}
+              onClick={() => {
+                console.log('Switching to requirements tab');
+                // Ensure requirements exists and is an array
+                if (!service || !Array.isArray(service.requirements)) {
+                  console.warn('Requirements is not an array - setting defaults');
+                  setService(prevService => ({
+                    ...prevService,
+                    requirements: Array.isArray(prevService.requirements) ? prevService.requirements : []
+                  }));
+                }
+                setActiveTab('requirements');
+              }}
             >
               Persyaratan
             </button>
@@ -297,7 +361,18 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                   ? 'text-indigo-600 border-b-2 border-indigo-500'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
-              onClick={() => setActiveTab('faqs')}
+              onClick={() => {
+                console.log('Switching to FAQs tab');
+                // Ensure faqs exists
+                if (!service || !service.faqs) {
+                  console.warn('FAQs is undefined - setting defaults');
+                  setService(prevService => ({
+                    ...prevService,
+                    faqs: prevService.faqs || []
+                  }));
+                }
+                setActiveTab('faqs');
+              }}
             >
               FAQ
             </button>
@@ -374,7 +449,7 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
             <h3 className="text-lg font-medium text-gray-900 mb-6">Paket Layanan</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {service.packages.map((pkg) => (
+              {(service.packages || []).map((pkg) => (
                 <div
                   key={pkg.id}
                   className={`border rounded-lg overflow-hidden ${
@@ -409,7 +484,7 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                     
                     <h5 className="text-sm font-medium text-gray-900 mb-3">Yang Anda dapatkan:</h5>
                     <ul className="space-y-2">
-                      {pkg.features.map((feature, index) => (
+                      {(pkg.features || []).map((feature, index) => (
                         <li key={index} className="flex items-start">
                           <svg className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -435,14 +510,18 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
               </p>
               
               <ul className="space-y-3">
-                {service.requirements.map((req, index) => (
-                  <li key={index} className="flex items-start">
-                    <svg className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm text-gray-700">{req}</span>
-                  </li>
-                ))}
+                {Array.isArray(service.requirements) && service.requirements.length > 0 ? (
+                  service.requirements.map((req, index) => (
+                    <li key={index} className="flex items-start">
+                      <svg className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm text-gray-700">{req}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-gray-500">Belum ada persyaratan yang ditentukan.</li>
+                )}
               </ul>
             </div>
           </div>
@@ -453,16 +532,25 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
             <h3 className="text-lg font-medium text-gray-900 mb-6">Pertanyaan yang Sering Diajukan (FAQ)</h3>
             
             <div className="space-y-4">
-              {service.faqs.map((faq, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="p-4 bg-gray-50 border-b border-gray-200">
-                    <h4 className="text-base font-medium text-gray-900">{faq.question}</h4>
+              {(service.faqs || []).length > 0 ? (
+                service.faqs.map((faq, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-gray-50 border-b border-gray-200">
+                      <h4 className="text-base font-medium text-gray-900">{faq.question}</h4>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm text-gray-700">{faq.answer}</p>
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <p className="text-sm text-gray-700">{faq.answer}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 px-4">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-500">Belum ada FAQ untuk layanan ini.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         )}
@@ -479,18 +567,18 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                       <div className="flex items-start">
                         <div className="flex-shrink-0 mr-4">
                           <img 
-                            src={review.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(review.name)} 
-                            alt={review.name}
+                            src={review.client?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.client?.name || 'User')}`} 
+                            alt={review.client?.name}
                             className="h-10 w-10 rounded-full"
                           />
                         </div>
                         <div>
-                          <h4 className="text-sm font-medium text-gray-900">{review.name}</h4>
+                          <h4 className="text-sm font-medium text-gray-900">{review.client?.name}</h4>
                           <div className="flex items-center mt-1">
                             <div className="flex mr-2">
                               {renderStars(review.rating)}
                             </div>
-                            <span className="text-xs text-gray-500">{new Date(review.date).toLocaleDateString('id-ID')}</span>
+                            <span className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString('id-ID')}</span>
                           </div>
                           <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
                         </div>
@@ -514,7 +602,11 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
               {ratingDistribution && (
                 <div className="space-y-3">
                   {[5, 4, 3, 2, 1].map((rating) => {
-                    const percentage = ratingDistribution[rating] || 0;
+                    // Calculate percentage
+                    const count = ratingDistribution[rating] || 0;
+                    const total = Object.values(ratingDistribution).reduce((sum, value) => sum + value, 0);
+                    const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                    
                     return (
                       <div key={rating} className="flex items-center">
                         <div className="flex items-center w-12">
@@ -531,7 +623,7 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
                             ></div>
                           </div>
                         </div>
-                        <span className="ml-4 text-sm text-gray-500 w-12 text-right">{percentage}%</span>
+                        <span className="ml-4 text-sm text-gray-500 w-12 text-right">{count} ({percentage}%)</span>
                       </div>
                     );
                   })}
@@ -545,42 +637,70 @@ const ServiceDetail = ({ service: initialService, recentReviews, ratingDistribut
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-6">Statistik Layanan</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Total Pesanan</h4>
-                <p className="text-2xl font-bold text-gray-900">{service.stats.orders}</p>
+                <p className="text-2xl font-bold text-gray-900">{service.stats?.orders || service.ordersCount || 0}</p>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Sedang Dikerjakan</h4>
-                <p className="text-2xl font-bold text-gray-900">{service.stats.inProgress}</p>
+                <p className="text-2xl font-bold text-gray-900">{service.stats?.inProgress || service.activeOrders || 0}</p>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Selesai</h4>
-                <p className="text-2xl font-bold text-gray-900">{service.stats.completed}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-500 mb-1">Tingkat Pembatalan</h4>
-                <p className="text-2xl font-bold text-gray-900">{service.stats.cancelRate}%</p>
+                <p className="text-2xl font-bold text-gray-900">{service.stats?.completed || service.completedOrders || 0}</p>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Rating Rata-rata</h4>
                 <div className="flex items-center">
-                  <p className="text-2xl font-bold text-gray-900 mr-2">{service.stats.avgRating}</p>
+                  <p className="text-2xl font-bold text-gray-900 mr-2">{service.stats?.avgRating || service.rating || 0}</p>
                   <div className="flex">
-                    {renderStars(Math.round(service.stats.avgRating))}
+                    {renderStars(Math.round(service.stats?.avgRating || service.rating || 0))}
                   </div>
                 </div>
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Jumlah Ulasan</h4>
-                <p className="text-2xl font-bold text-gray-900">{service.stats.totalReviews}</p>
+                <p className="text-2xl font-bold text-gray-900">{service.stats?.totalReviews || service.reviewsCount || 0}</p>
               </div>
             </div>
+            
+            {chartData && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-4">Pesanan Bulanan</h4>
+                <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                  <div className="grid grid-cols-7 gap-2">
+                    {chartData.labels.map((label, index) => (
+                      <div key={index} className="flex flex-col items-center">
+                        <div 
+                          className="bg-indigo-500 rounded-t-sm w-8" 
+                          style={{ height: `${Math.max(chartData.orders[index] * 10, 10)}px` }}
+                        ></div>
+                        <div 
+                          className="bg-green-500 rounded-b-sm w-8" 
+                          style={{ height: `${Math.max(chartData.completed[index] * 10, 0)}px` }}
+                        ></div>
+                        <span className="text-xs text-gray-500 mt-1">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-center mt-3 space-x-4">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-indigo-500 rounded-sm mr-1"></div>
+                      <span className="text-xs text-gray-500">Total</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-sm mr-1"></div>
+                      <span className="text-xs text-gray-500">Selesai</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

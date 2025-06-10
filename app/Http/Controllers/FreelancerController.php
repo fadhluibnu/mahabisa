@@ -20,12 +20,25 @@ use App\Models\UserProfile;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
 class FreelancerController extends Controller
 {
+    /**
+     * Helper function to check if a string is valid JSON
+     */
+    private function isJson($string) {
+        if (!is_string($string)) {
+            return false;
+        }
+        
+        json_decode($string);
+        return json_last_error() === JSON_ERROR_NONE;
+    }
+    
     /**
      * Create a new controller instance.
      */
@@ -405,10 +418,10 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'proposal_submitted',
+            'type' => 'proposal_submitted',
             'description' => "Submitted a proposal for project: {$project->title}",
-            'reference_id' => $proposal->id,
-            'reference_type' => 'proposal',
+            'subject_id' => $proposal->id,
+            'subject_type' => \App\Models\Proposal::class,
         ]);
         
         return redirect()->route('freelancer.projects')->with('success', 'Proposal submitted successfully.');
@@ -475,10 +488,12 @@ class FreelancerController extends Controller
     {
         $user = Auth::user();
         $categories = \App\Models\Category::all();
+        $skills = \App\Models\Skill::all();
         
         return Inertia::render('Freelancer/ServiceCreate', [
             'user' => $user,
-            'categories' => $categories
+            'categories' => $categories,
+            'skills' => $skills
         ]);
     }
     
@@ -489,6 +504,9 @@ class FreelancerController extends Controller
     {
         $user = Auth::user();
         
+        // Log the request data for debugging
+        \Log::info('Service creation request data:', $request->all());
+        
         $validated = $request->validate([
             'title' => 'required|string|max:100',
             'description' => 'required|string|min:50',
@@ -498,7 +516,17 @@ class FreelancerController extends Controller
             'revisions' => 'required|integer|min:0',
             'skills' => 'required|array',
             'skills.*' => 'exists:skills,id',
+            'requirements' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'packages' => 'nullable|array',
+            'packages.*.title' => 'nullable|string', 
+            'packages.*.price' => 'nullable|numeric|min:0',
+            'packages.*.delivery_time' => 'nullable|integer|min:1',
+            'packages.*.revisions' => 'nullable|integer|min:0',
+            'packages.*.features' => 'nullable',
+            'faqs' => 'nullable|array',
+            'faqs.*.question' => 'nullable|string',
+            'faqs.*.answer' => 'nullable|string',
         ]);
         
         $service = new Service([
@@ -514,8 +542,8 @@ class FreelancerController extends Controller
         
         // Handle file upload
         if ($request->hasFile('image')) {
-            // Implementation for file uploads would go here
-            // $service->image = $imagePath;
+            $imagePath = $request->file('image')->store('services', 'public');
+            $service->thumbnail = $imagePath;
         }
         
         $service->save();
@@ -525,13 +553,134 @@ class FreelancerController extends Controller
             $service->skills()->attach($validated['skills']);
         }
         
+        // Handle packages
+        if ($request->has('packages')) {
+            foreach ($request->packages as $packageData) {
+                if (!isset($packageData['title']) || !isset($packageData['price'])) {
+                    continue;
+                }
+                
+                // Process features data properly - robust handling
+                $features = null;
+                if (isset($packageData['features'])) {
+                    // Already in JSON string format
+                    if (is_string($packageData['features']) && $this->isJson($packageData['features'])) {
+                        $features = $packageData['features'];
+                    }
+                    // Standard array that needs to be encoded
+                    elseif (is_array($packageData['features'])) {
+                        // Filter out any empty features
+                        $filteredFeatures = array_filter($packageData['features'], function($feature) {
+                            return !empty(trim($feature));
+                        });
+                        
+                        // If we have features after filtering, encode those
+                        if (count($filteredFeatures) > 0) {
+                            $features = json_encode($filteredFeatures);
+                        } else {
+                            // Default if array is empty
+                            $features = json_encode(['Basic service']);
+                        }
+                    }
+                    // Single string (not JSON)
+                    elseif (is_string($packageData['features']) && !empty(trim($packageData['features']))) {
+                        $features = json_encode([$packageData['features']]);
+                    }
+                    // Any other case
+                    else {
+                        $features = json_encode(['Basic service']);
+                    }
+                } else {
+                    // Default if features not provided
+                    $features = json_encode(['Basic service']);
+                }
+                
+                // Final safety check to ensure we have valid JSON
+                if (!$this->isJson($features)) {
+                    $features = json_encode(['Basic service']);
+                }
+                
+                $package = new \App\Models\ServicePackage([
+                    'service_id' => $service->id,
+                    'title' => $packageData['title'],
+                    'price' => $packageData['price'],
+                    'delivery_time' => $packageData['delivery_time'] ?? $service->delivery_time,
+                    'revisions' => $packageData['revisions'] ?? $service->revisions,
+                    'features' => $features
+                ]);
+                
+                $package->save();
+            }
+        } else {
+            // Create a default package if none provided
+            \App\Models\ServicePackage::create([
+                'service_id' => $service->id,
+                'title' => 'Paket Dasar',
+                'price' => $validated['price'],
+                'delivery_time' => $validated['delivery_time'],
+                'revisions' => $validated['revisions'],
+                'features' => json_encode(['Layanan dasar'])
+            ]);
+        }
+        
+        // Handle requirements - more defensive approach
+        if ($request->has('requirements')) {
+            // If it's a string (could be a single requirement or multiple with newlines)
+            if (is_string($request->requirements)) {
+                $requirementsArray = explode("\n", $request->requirements);
+                foreach ($requirementsArray as $question) {
+                    if (!empty(trim($question))) {
+                        \App\Models\ServiceRequirement::create([
+                            'service_id' => $service->id,
+                            'question' => trim($question),
+                            'required' => true
+                        ]);
+                    }
+                }
+            } 
+            // If it's already an array of requirements
+            elseif (is_array($request->requirements)) {
+                foreach ($request->requirements as $reqData) {
+                    // If it's a simple string requirement
+                    if (is_string($reqData) && !empty(trim($reqData))) {
+                        \App\Models\ServiceRequirement::create([
+                            'service_id' => $service->id,
+                            'question' => trim($reqData),
+                            'required' => true
+                        ]);
+                    } 
+                    // If it's an array with 'question' property
+                    elseif (is_array($reqData) && isset($reqData['question'])) {
+                        \App\Models\ServiceRequirement::create([
+                            'service_id' => $service->id,
+                            'question' => $reqData['question'],
+                            'required' => isset($reqData['required']) ? $reqData['required'] : false
+                        ]);
+                    }
+                }
+            }
+        }
+        
+        // Handle FAQs
+        if ($request->has('faqs')) {
+            foreach ($request->faqs as $faqData) {
+                if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+                    \App\Models\ServiceFaq::create([
+                        'service_id' => $service->id,
+                        'question' => $faqData['question'],
+                        'answer' => $faqData['answer']
+                    ]);
+                }
+            }
+        }
+        
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'service_created',
+            'type' => 'service_created',
             'description' => "Created a new service: {$service->title}",
-            'reference_id' => $service->id,
-            'reference_type' => 'service',
+            'subject_id' => $service->id,
+            'subject_type' => \App\Models\Service::class,
         ]);
         
         return redirect()->route('freelancer.services')->with('success', 'Service created successfully.');
@@ -543,7 +692,7 @@ class FreelancerController extends Controller
     public function editService($id)
     {
         $user = Auth::user();
-        $service = Service::with('skills')->findOrFail($id);
+        $service = Service::with(['skills', 'packages', 'requirements', 'faqs'])->findOrFail($id);
         
         // Ensure the service belongs to the user
         if ($service->user_id !== $user->id) {
@@ -611,12 +760,15 @@ class FreelancerController extends Controller
     public function updateService(Request $request, $id)
     {
         $user = Auth::user();
-        $service = Service::findOrFail($id);
+        $service = Service::with(['packages', 'requirements', 'faqs'])->findOrFail($id);
         
         // Ensure the service belongs to the user
         if ($service->user_id !== $user->id) {
             return redirect()->route('freelancer.services')->with('error', 'You do not have permission to edit this service.');
         }
+        
+        // Log the request data for debugging
+        \Log::info('Service update request data:', $request->all());
         
         $validated = $request->validate([
             'title' => 'required|string|max:100',
@@ -629,6 +781,18 @@ class FreelancerController extends Controller
             'skills.*' => 'exists:skills,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_active' => 'boolean',
+            'requirements' => 'nullable|array',
+            'requirements.*.question' => 'required|string',
+            'requirements.*.required' => 'nullable|boolean',
+            'faqs' => 'nullable|array',
+            'faqs.*.question' => 'required|string',
+            'faqs.*.answer' => 'required|string',
+            'packages' => 'nullable|array',
+            'packages.*.title' => 'required|string',
+            'packages.*.price' => 'required|numeric|min:0',
+            'packages.*.delivery_time' => 'required|integer|min:1',
+            'packages.*.revisions' => 'required|integer|min:0',
+            'packages.*.features' => 'nullable|array',
         ]);
         
         $service->title = $validated['title'];
@@ -641,8 +805,13 @@ class FreelancerController extends Controller
         
         // Handle file upload
         if ($request->hasFile('image')) {
-            // Implementation for file uploads would go here
-            // $service->image = $imagePath;
+            // Delete the old image if it exists
+            if ($service->thumbnail) {
+                Storage::disk('public')->delete($service->thumbnail);
+            }
+            
+            $imagePath = $request->file('image')->store('services', 'public');
+            $service->thumbnail = $imagePath;
         }
         
         $service->save();
@@ -652,16 +821,108 @@ class FreelancerController extends Controller
             $service->skills()->sync($validated['skills']);
         }
         
+        // Handle packages
+        if ($request->has('packages')) {
+            // Delete old packages
+            $service->packages()->delete();
+            
+            // Create new packages
+            foreach ($request->packages as $packageData) {
+                $features = null;
+                
+                // Handle different possible formats for features
+                if (isset($packageData['features'])) {
+                    if (is_array($packageData['features'])) {
+                        $features = json_encode($packageData['features']);
+                    } elseif (is_string($packageData['features']) && $this->isJson($packageData['features'])) {
+                        $features = $packageData['features']; // Already JSON
+                    } else {
+                        $features = json_encode([$packageData['features']]); // Convert to JSON array
+                    }
+                }
+                
+                $package = new \App\Models\ServicePackage([
+                    'service_id' => $service->id,
+                    'title' => $packageData['title'],
+                    'price' => $packageData['price'],
+                    'delivery_time' => $packageData['delivery_time'],
+                    'revisions' => $packageData['revisions'],
+                    'features' => $features
+                ]);
+                
+                $package->save();
+            }
+        }
+        
+        // Handle requirements
+        if ($request->has('requirements')) {
+            // Delete old requirements
+            $service->requirements()->delete();
+            
+            // Create new requirements
+            foreach ($request->requirements as $reqData) {
+                if (is_array($reqData) && isset($reqData['question'])) {
+                    $requirement = new \App\Models\ServiceRequirement([
+                        'service_id' => $service->id,
+                        'question' => $reqData['question'],
+                        'required' => isset($reqData['required']) ? $reqData['required'] : false
+                    ]);
+                    
+                    $requirement->save();
+                } elseif (is_string($reqData) && !empty(trim($reqData))) {
+                    // Handle case where requirement is just a string
+                    $requirement = new \App\Models\ServiceRequirement([
+                        'service_id' => $service->id,
+                        'question' => trim($reqData),
+                        'required' => 1
+                    ]);
+                    
+                    $requirement->save();
+                }
+            }
+        }
+        
+        // Handle FAQs
+        if ($request->has('faqs')) {
+            // Delete old FAQs
+            $service->faqs()->delete();
+            
+            // Create new FAQs
+            foreach ($request->faqs as $faqData) {
+                if (is_array($faqData) && !empty($faqData['question']) && !empty($faqData['answer'])) {
+                    $faq = new \App\Models\ServiceFaq([
+                        'service_id' => $service->id,
+                        'question' => $faqData['question'],
+                        'answer' => $faqData['answer']
+                    ]);
+                    
+                    $faq->save();
+                } elseif (is_string($faqData) && $this->isJson($faqData)) {
+                    // Handle case where FAQ is JSON string
+                    $decodedFaq = json_decode($faqData, true);
+                    if (isset($decodedFaq['question']) && isset($decodedFaq['answer'])) {
+                        $faq = new \App\Models\ServiceFaq([
+                            'service_id' => $service->id,
+                            'question' => $decodedFaq['question'],
+                            'answer' => $decodedFaq['answer']
+                        ]);
+                        
+                        $faq->save();
+                    }
+                }
+            }
+        }
+        
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'service_updated',
+            'type' => 'service_updated',
             'description' => "Updated service: {$service->title}",
-            'reference_id' => $service->id,
-            'reference_type' => 'service',
+            'subject_id' => $service->id,
+            'subject_type' => \App\Models\Service::class,
         ]);
         
-        return redirect()->route('freelancer.services')->with('success', 'Service updated successfully.');
+        return redirect()->back()->with('success', 'Layanan berhasil diperbarui.');
     }
     
     /**
@@ -774,10 +1035,10 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'order_status_updated',
+            'type' => 'order_status_updated',
             'description' => "Updated order #{$order->id} status to {$order->status}",
-            'reference_id' => $order->id,
-            'reference_type' => 'order',
+            'subject_id' => $order->id,
+            'subject_type' => \App\Models\Order::class,
         ]);
         
         return redirect()->route('freelancer.order.detail', $order->id)->with('success', 'Order status updated successfully.');
@@ -868,10 +1129,10 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'withdrawal_requested',
+            'type' => 'withdrawal_requested',
             'description' => "Requested withdrawal of {$validated['amount']}",
-            'reference_id' => $withdrawal->id,
-            'reference_type' => 'withdrawal',
+            'subject_id' => $withdrawal->id,
+            'subject_type' => \App\Models\Withdrawal::class,
         ]);
         
         return redirect()->route('freelancer.earnings')->with('success', 'Withdrawal request submitted successfully.');
@@ -1093,10 +1354,10 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'education_added',
+            'type' => 'education_added',
             'description' => "Added education: {$education->degree} at {$education->institution}",
-            'reference_id' => $education->id,
-            'reference_type' => 'education',
+            'subject_id' => $education->id,
+            'subject_type' => \App\Models\Education::class,
         ]);
         
         return redirect()->route('freelancer.profile')->with('success', 'Education added successfully.');
@@ -1135,10 +1396,10 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'experience_added',
+            'type' => 'experience_added',
             'description' => "Added experience: {$experience->position} at {$experience->company}",
-            'reference_id' => $experience->id,
-            'reference_type' => 'experience',
+            'subject_id' => $experience->id,
+            'subject_type' => \App\Models\Experience::class,
         ]);
         
         return redirect()->route('freelancer.profile')->with('success', 'Experience added successfully.');
@@ -1180,10 +1441,10 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'portfolio_added',
+            'type' => 'portfolio_added',
             'description' => "Added portfolio item: {$portfolio->title}",
-            'reference_id' => $portfolio->id,
-            'reference_type' => 'portfolio',
+            'subject_id' => $portfolio->id,
+            'subject_type' => \App\Models\Portfolio::class,
         ]);
         
         return redirect()->route('freelancer.profile')->with('success', 'Portfolio item added successfully.');
@@ -1228,7 +1489,7 @@ class FreelancerController extends Controller
         // Record activity
         Activity::create([
             'user_id' => $user->id,
-            'activity_type' => 'skills_updated',
+            'type' => 'skills_updated',
             'description' => "Updated skills profile",
         ]);
         
@@ -1334,7 +1595,15 @@ class FreelancerController extends Controller
     public function showService($id)
     {
         $user = Auth::user();
-        $service = Service::with(['category', 'skills', 'reviews.client', 'orders.client'])
+        $service = Service::with([
+                'category', 
+                'skills', 
+                'reviews.client', 
+                'orders.client', 
+                'packages', 
+                'requirement_s', 
+                'faqs'
+            ])
             ->withCount(['orders as total_orders_count'])
             ->withCount(['orders as completed_orders_count' => function ($query) {
                 $query->where('status', 'completed');
@@ -1410,6 +1679,33 @@ class FreelancerController extends Controller
             $chartData['completed'][] = $monthOrder ? $monthOrder->completed : 0;
         }
         
+        // Process service requirements - using correct relationship name requirement_s
+        $requirementsData = [];
+        if ($service->requirement_s && $service->requirement_s->count() > 0) {
+            foreach ($service->requirement_s as $req) {
+                $requirementsData[] = [
+                    'id' => $req->id,
+                    'question' => $req->question,
+                    'required' => $req->required
+                ];
+            }
+        }
+        
+        // Extract just the questions for the frontend display
+        $requirementQuestions = [];
+        if (!empty($requirementsData)) {
+            foreach ($requirementsData as $req) {
+                $requirementQuestions[] = $req['question'];
+            }
+        }
+        
+        \Log::info('Service requirements debugging (detailed):', [
+            'requirements_count' => $service->requirement_s ? $service->requirement_s->count() : 0,
+            'service_id' => $service->id,
+            'requirements_data' => $requirementsData,
+            'requirement_questions' => $requirementQuestions
+        ]);
+        
         // Format the service data for the frontend
         $serviceData = [
             'id' => $service->id,
@@ -1419,7 +1715,7 @@ class FreelancerController extends Controller
             'price_formatted' => 'Rp ' . number_format($service->price, 0, ',', '.'),
             'deliveryTime' => $service->delivery_time,
             'revisions' => $service->revisions ?? 0,
-            'requirements' => $service->requirements,
+            'requirements' => is_array($requirementQuestions) ? $requirementQuestions : [], // Ensure it's always an array of strings
             'thumbnail' => $service->thumbnail ? asset('storage/' . $service->thumbnail) : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
             'gallery' => $service->gallery ? json_decode($service->gallery) : [],
             'status' => $service->is_active ? 'active' : 'draft',
@@ -1432,6 +1728,23 @@ class FreelancerController extends Controller
                     'name' => $skill->name
                 ];
             }),
+            'packages' => $service->packages ? $service->packages->map(function($package) {
+                return [
+                    'id' => $package->id,
+                    'name' => $package->title,
+                    'price' => $package->price,
+                    'deliveryTime' => $package->delivery_time,
+                    'revisions' => $package->revisions,
+                    'features' => json_decode($package->features) ?? []
+                ];
+            })->toArray() : [],
+            // Only define requirements once to avoid duplication
+            'faqs' => $service->faqs ? $service->faqs->map(function($faq) {
+                return [
+                    'question' => $faq->question,
+                    'answer' => $faq->answer
+                ];
+            })->toArray() : [],
             'rating' => round($service->reviews_avg_rating ?? 0, 1),
             'reviewsCount' => $service->reviews->count(),
             'ordersCount' => $service->total_orders_count ?? 0,
@@ -1440,6 +1753,12 @@ class FreelancerController extends Controller
             'created_at' => $service->created_at->format('d M Y'),
             'updated_at' => $service->updated_at->format('d M Y')
         ];
+
+        // Uncomment to debug the exact structure being sent to the frontend
+        // dd([
+        //     'serviceData' => $serviceData,
+        //     'requirements' => $serviceData['requirements']
+        // ]);
             
         return Inertia::render('Freelancer/ServiceDetail', [
             'user' => $user,
@@ -1448,5 +1767,62 @@ class FreelancerController extends Controller
             'ratingDistribution' => $ratingDistribution,
             'chartData' => $chartData
         ]);
+    }
+    
+    /**
+     * Delete the specified service.
+     */
+    public function deleteService($id)
+    {
+        try {
+            $user = Auth::user();
+            $service = Service::findOrFail($id);
+            
+            // Ensure the service belongs to the user
+            if ($service->user_id !== $user->id) {
+                return response()->json(['error' => 'You do not have permission to delete this service.'], 403);
+            }
+            
+            // Check if the service has any orders
+            $hasOrders = $service->orders()->exists();
+            if ($hasOrders) {
+                return response()->json(['error' => 'Cannot delete service with existing orders. You can deactivate it instead.'], 400);
+            }
+            
+            // Begin transaction
+            \DB::beginTransaction();
+            
+            try {
+                // Detach all skills before deleting the service
+                $service->skills()->detach();
+                
+                // Delete the thumbnail if it exists
+                if ($service->thumbnail) {
+                    Storage::disk('public')->delete($service->thumbnail);
+                }
+                
+                // Delete the service
+                $service->delete();
+                
+                \DB::commit();
+            } catch (\Exception $e) {
+                \DB::rollback();
+                \Log::error('Error deleting service: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to delete service. Please try again.'], 500);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error in deleteService method: ' . $e->getMessage());
+            return response()->json(['error' => 'Service not found or another error occurred.'], 404);
+        }
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'service_deleted',
+            'description' => "Deleted service: {$service->title}",
+            'subject_type' => \App\Models\Service::class,
+        ]);
+        
+        return response()->json(['success' => true, 'message' => 'Service deleted successfully.']);
     }
 }

@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_profiles', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('bio', 500)->nullable();
+        if (!Schema::hasTable('user_profiles')) {
+            Schema::create('user_profiles', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained()->onDelete('cascade');
+                $table->string('bio', 500)->nullable();
             $table->string('phone_number', 20)->nullable();
             $table->string('address')->nullable();
             $table->string('city')->nullable();
@@ -27,7 +28,8 @@ return new class extends Migration
             $table->string('social_media_links')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->timestamps();
-        });
+            });
+        }
     }
 
     /**

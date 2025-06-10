@@ -1,122 +1,208 @@
 import React, { useState, useEffect } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import FreelancerLayout from './Components/FreelancerLayout';
 import { FaArrowLeft, FaSave, FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 
-const ServiceEdit = ({ id }) => {
+const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
+  const { errors } = usePage().props;
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [service, setService] = useState({
-    id: id || 1,
-    title: 'Web Development dengan React & Laravel',
-    description: 'Membuat website modern dengan React di frontend dan Laravel di backend. Termasuk responsive design dan optimasi kinerja.',
-    price: 2500000,
-    deliveryTime: 14,
-    revisions: 3,
-    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    status: 'active',
-    featured: true,
-    category: 'Web Development',
-    packages: [
-      {
-        id: 1,
-        name: 'Paket Dasar',
-        price: 2500000,
-        deliveryTime: 14,
-        revisions: 3,
-        features: [
-          'Website dengan 5 halaman',
-          'Responsive design',
-          'Form kontak',
-          'Integrasi dengan sosial media',
-          'Optimasi SEO dasar',
-        ],
-      },
-      {
-        id: 2,
-        name: 'Paket Standar',
-        price: 4000000,
-        deliveryTime: 21,
-        revisions: 5,
-        features: [
-          'Website dengan 10 halaman',
-          'Responsive design',
-          'Form kontak & newsletter',
-          'Integrasi dengan sosial media',
-          'Optimasi SEO lengkap',
-          'Blog section',
-          'Admin dashboard',
-        ],
-      },
-      {
-        id: 3,
-        name: 'Paket Premium',
-        price: 6500000,
-        deliveryTime: 30,
-        revisions: 7,
-        features: [
-          'Website dengan 15+ halaman',
-          'Responsive design',
-          'Form kontak & newsletter',
-          'Integrasi dengan sosial media',
-          'Optimasi SEO lengkap',
-          'Blog section',
-          'Admin dashboard',
-          'E-commerce functionality',
-          'Payment gateway integration',
-          'Custom animations',
-          'Performance optimization',
-        ],
-      },
-    ],
-    requirements: [
-      'Detail tentang tujuan website',
-      'Brand guideline jika ada',
-      'Konten yang akan ditampilkan di website',
-      'Referensi website yang disukai',
-      'Akses hosting (jika sudah memiliki)',
-    ],
-    faqs: [
-      {
-        question: 'Apakah termasuk biaya hosting dan domain?',
-        answer: 'Tidak, biaya hosting dan domain tidak termasuk dalam paket. Namun, saya dapat membantu Anda dalam proses pemilihan dan setup hosting yang sesuai dengan kebutuhan website Anda.',
-      },
-      {
-        question: 'Apakah website yang dibuat mobile friendly?',
-        answer: 'Ya, semua website yang saya kembangkan bersifat responsive dan dapat diakses dengan baik pada perangkat mobile, tablet, maupun desktop.',
-      },
-      {
-        question: 'Apakah bisa melakukan penambahan fitur di luar paket?',
-        answer: 'Ya, bisa. Penambahan fitur akan dikenakan biaya tambahan sesuai dengan kompleksitas fitur yang diminta.',
-      },
-      {
-        question: 'Apakah ada garansi untuk website yang dibuat?',
-        answer: 'Ya, saya memberikan garansi perbaikan bug selama 1 bulan setelah website selesai dikembangkan.',
-      },
-    ],
-  });
-
   const [activeTab, setActiveTab] = useState('basic');
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(service.image);
+  
+  // Debug tabs
+  useEffect(() => {
+    console.log('Active tab changed to:', activeTab);
+  }, [activeTab]);
+  
+  // Improved tab navigation with better state preservation
+  const changeTab = (tabName) => {
+    console.log('Changing to tab:', tabName);
+    
+    // Track the previous tab for validation purposes
+    const previousTab = activeTab;
+    
+    // Create a snapshot of current service data before tab change
+    const currentServiceState = {...service};
+    
+    try {
+      // Use a loading state to ensure clean transition between tabs
+      setActiveTab('loading');
+      
+      // Validate current tab data if needed
+      if (previousTab === 'basic' && !service.title) {
+        alert('Judul layanan wajib diisi sebelum beralih tab');
+        setActiveTab(previousTab);
+        return;
+      }
+      
+      // Small delay to ensure React updates the DOM properly
+      setTimeout(() => {
+        // Apply the tab change after validation passes
+        setActiveTab(tabName);
+        
+        // Log the state to help debug
+        console.log('Tab changed. New tab:', tabName, 'Service state preserved');
+      }, 100); // Slightly longer delay for smoother transition
+    } catch (error) {
+      console.error('Error changing tabs:', error);
+      setActiveTab(tabName); // Fallback
+    }
+  };
+
+  // Parse requirements if it's a string
+  const parseRequirements = (requirementsData) => {
+    if (!requirementsData) return [];
+    
+    // If requirementsData is an array of objects with 'question' property, extract questions
+    if (Array.isArray(requirementsData) && requirementsData.length > 0 && requirementsData[0].question) {
+      return requirementsData.map(req => req.question);
+    }
+    
+    // If requirementsData is a string
+    if (typeof requirementsData === 'string') {
+      try {
+        // Try to parse as JSON if it's a JSON string
+        const parsed = JSON.parse(requirementsData);
+        if (Array.isArray(parsed)) {
+          return parsed.map(req => typeof req === 'object' ? req.question || req.text || '' : req);
+        }
+        return requirementsData.split('\n').filter(req => req.trim() !== '');
+      } catch (e) {
+        // If not JSON, split by new line
+        return requirementsData.split('\n').filter(req => req.trim() !== '');
+      }
+    }
+    
+    // If requirementsData is an array
+    return requirementsData;
+  };
+  
+  // Parse FAQs if they're stored as JSON or string
+  const parseFaqs = (faqsData) => {
+    if (!faqsData) return [];
+    
+    // If faqsData is an array of objects with 'question' and 'answer' properties, use as is
+    if (Array.isArray(faqsData) && faqsData.length > 0 && faqsData[0].question && faqsData[0].answer) {
+      return faqsData;
+    }
+    
+    if (typeof faqsData === 'string') {
+      try {
+        const parsed = JSON.parse(faqsData);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+        return [];
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    return faqsData;
+  };
+  
+  // Helper to process service packages from API 
+  const processServicePackages = (serviceData) => {
+    // If packages already exist in database, use that data
+    if (serviceData.packages && Array.isArray(serviceData.packages) && serviceData.packages.length > 0) {
+      return serviceData.packages.map(pkg => ({
+        id: pkg.id,
+        name: pkg.title || pkg.name || '',
+        price: pkg.price || 0,
+        deliveryTime: pkg.delivery_time || pkg.deliveryTime || 7,
+        revisions: pkg.revisions || 0,
+        features: Array.isArray(pkg.features) ? pkg.features : 
+                 (typeof pkg.features === 'string' ? JSON.parse(pkg.features || '[]') : [])
+      }));
+    }
+    
+    // If no packages exist, create default package based on service info
+    return [{
+      id: 1,
+      name: 'Paket Dasar', 
+      price: serviceData.price || 0, 
+      deliveryTime: serviceData.delivery_time || 7, 
+      revisions: serviceData.revisions || 1, 
+      features: []
+    }];
+  };
+  
+  // Initialize service state from props
+  const [service, setService] = useState({
+    id: initialService.id,
+    title: initialService.title || '',
+    description: initialService.description || '',
+    price: initialService.price || 0,
+    deliveryTime: initialService.delivery_time || 7,
+    revisions: initialService.revisions || 1,
+    category_id: initialService.category_id || '',
+    skills: initialService.skills ? initialService.skills.map(skill => typeof skill === 'object' ? skill.id : skill) : [],
+    status: initialService.status || 'active',
+    image_url: initialService.thumbnail || initialService.image_url || initialService.image || '',
+    requirements: parseRequirements(initialService.requirements || []),
+    faqs: parseFaqs(initialService.faqs || []),
+    packages: processServicePackages(initialService)
+  });
+
+  // Initialize image preview from service image
+  const [imagePreview, setImagePreview] = useState(() => {
+    // Check if the URL is complete or needs a prefix
+    if (service.image_url) {
+      // If it's a full URL (starts with http or https), use it directly
+      if (service.image_url.startsWith('http')) {
+        return service.image_url;
+      }
+      
+      // If it's a relative path, make sure it has a leading slash
+      if (!service.image_url.startsWith('/')) {
+        return '/' + service.image_url;
+      }
+      
+      return service.image_url;
+    }
+    
+    return null;
+  });
+
+  // Debug to make sure image_url is populated correctly
+  useEffect(() => {
+    console.log('Service image_url:', service.image_url);
+    console.log('Image preview URL:', imagePreview);
+  }, [service.image_url, imagePreview]);
+
+  // Function to validate image URL
+  const getValidImageUrl = (url) => {
+    if (!url) return null;
+    
+    // If url is a data URL (base64), return as is
+    if (url.startsWith('data:')) {
+      return url;
+    }
+    
+    // Check if URL is complete (with http or https)
+    if (url.startsWith('http')) {
+      return url;
+    }
+    
+    // Normalize storage path
+    if (url.includes('storage/') || url.includes('/storage/')) {
+      // Get path part after 'storage/'
+      const pathParts = url.split(/storage\//);
+      if (pathParts.length > 1) {
+        return '/storage/' + pathParts[1];
+      }
+    }
+    
+    // If URL doesn't have leading slash
+    if (!url.startsWith('/')) {
+      return '/' + url;
+    }
+    
+    return url;
+  };
 
   // Kategori layanan
-  const categories = [
-    'Web Development',
-    'Mobile App Development',
-    'UI/UX Design',
-    'Graphic Design',
-    'Content Writing',
-    'SEO',
-    'Digital Marketing',
-    'Video Editing',
-    'Animation',
-    'Music & Audio',
-    'Translation',
-    'Business',
-    'Lifestyle',
-    'Other',
-  ];
+  // Moved categories data to be received via props
 
   // Format price to Rupiah
   const formatRupiah = (price) => {
@@ -146,13 +232,40 @@ const ServiceEdit = ({ id }) => {
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        alert('File harus berformat gambar (JPG, PNG, GIF)');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Ukuran gambar tidak boleh lebih dari 5MB');
+        return;
+      }
+      
       setImageFile(file);
       
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (event) => {
+        console.log('Loaded image preview:', event.target.result);
         setImagePreview(event.target.result);
+        
+        // Reset error message if any
+        const errorElement = document.getElementById('image-error-message');
+        if (errorElement) {
+          errorElement.textContent = '';
+        }
       };
+      
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        alert('Terjadi kesalahan saat membaca file gambar');
+      };
+      
       reader.readAsDataURL(file);
     }
   };
@@ -276,6 +389,16 @@ const ServiceEdit = ({ id }) => {
     
     if (isSubmitting) return; // Prevent multiple submissions
     
+    // Validate form before submission
+    const { isValid, errors: validationErrors } = validateForm();
+    if (!isValid) {
+      // Show validation errors
+      alert('Mohon perbaiki kesalahan pada formulir');
+      
+      console.error('Validation errors:', validationErrors);
+      return;
+    }
+    
     setIsSubmitting(true);
     
     // Create form data for API submission
@@ -283,51 +406,172 @@ const ServiceEdit = ({ id }) => {
     formData.append('_method', 'PUT');
     formData.append('title', service.title);
     formData.append('description', service.description);
-    formData.append('category', service.category);
+    formData.append('category_id', service.category_id);
     formData.append('price', service.price);
-    formData.append('deliveryTime', service.deliveryTime);
+    formData.append('delivery_time', service.deliveryTime);
     formData.append('revisions', service.revisions);
-    formData.append('packages', JSON.stringify(service.packages));
-    formData.append('requirements', JSON.stringify(service.requirements));
-    formData.append('faqs', JSON.stringify(service.faqs));
+    formData.append('is_active', service.status === 'active' ? '1' : '0');
     
-    if (imageFile) {
-      formData.append('image', imageFile);
+    // Add selected skills
+    if (service.skills && service.skills.length > 0) {
+      service.skills.forEach(skillId => {
+        formData.append('skills[]', skillId);
+      });
     }
     
-    // Log the form data for debugging
-    console.log('Submitting service:', service);
+    // Add requirements as structured data
+    const filteredRequirements = service.requirements.filter(req => req.trim() !== '');
+    if (filteredRequirements.length > 0) {
+      filteredRequirements.forEach((req, index) => {
+        formData.append(`requirements[${index}][question]`, req);
+        formData.append(`requirements[${index}][required]`, '1');
+      });
+    }
+    
+    // Add FAQs as structured data
+    if (service.faqs && service.faqs.length > 0) {
+      // Filter out empty FAQs
+      const validFaqs = service.faqs.filter(faq => faq.question && faq.question.trim() !== '' && faq.answer && faq.answer.trim() !== '');
+      
+      validFaqs.forEach((faq, index) => {
+        formData.append(`faqs[${index}][question]`, faq.question);
+        formData.append(`faqs[${index}][answer]`, faq.answer);
+      });
+    }
+    
+    // Add packages as structured data
+    if (service.packages && service.packages.length > 0) {
+      service.packages.forEach((pkg, index) => {
+        formData.append(`packages[${index}][title]`, pkg.name);
+        formData.append(`packages[${index}][price]`, pkg.price);
+        formData.append(`packages[${index}][delivery_time]`, pkg.deliveryTime);
+        formData.append(`packages[${index}][revisions]`, pkg.revisions);
+        
+        // Add features if available
+        if (pkg.features && pkg.features.length > 0) {
+          const filteredFeatures = pkg.features.filter(feature => feature.trim() !== '');
+          if (filteredFeatures.length > 0) {
+            formData.append(`packages[${index}][features]`, JSON.stringify(filteredFeatures));
+          } else {
+            formData.append(`packages[${index}][features]`, JSON.stringify(['Basic service']));
+          }
+        } else {
+          formData.append(`packages[${index}][features]`, JSON.stringify(['Basic service']));
+        }
+      });
+    }
+    
+    // Add image if a new one was selected
+    if (imageFile) {
+      formData.append('image', imageFile);
+      console.log('Adding image file to form data:', imageFile.name);
+    } else if (service.image_url && !service.image_url.startsWith('data:')) {
+      // Make sure image_url is saved if there's no new file
+      formData.append('image_url', service.image_url);
+      console.log('Keeping existing image URL:', service.image_url);
+    }
+    
+    console.log('Submitting service update with data:', {
+      title: service.title,
+      description: service.description.substring(0, 30) + '...',
+      category: service.category_id,
+      price: service.price,
+      skills: service.skills,
+      packages: service.packages.length,
+      requirements: service.requirements.length,
+      faqs: service.faqs.length
+    });
     
     // Use Inertia to submit the form
     router.post(`/freelancer/services/${service.id}`, formData, {
+      forceFormData: true,
+      preserveState: true,
       onSuccess: () => {
-        // Redirect handled by Inertia automatically
-        console.log('Form submitted successfully');
+        alert('Layanan berhasil diperbarui');
+        router.visit(`/freelancer/services/${service.id}`);
       },
       onError: (errors) => {
-        console.error('Form submission errors:', errors);
-        setIsSubmitting(false);
+        console.error('Service update errors:', errors);
+        alert('Terjadi kesalahan saat memperbarui layanan: ' + Object.values(errors).join(', '));
       },
       onFinish: () => {
-        if (!router.page.props.errors) {
-          // If no errors and onSuccess didn't redirect, manually navigate
-          console.log('Form submitted, redirecting...');
-          window.location.href = `/freelancer/services/${service.id}`;
-        }
+        setIsSubmitting(false);
       }
     });
   };
 
-  // Fetch service data when component mounts
-  useEffect(() => {
-    // In a real app, you would fetch the service data from the API
-    // For now, we'll simulate an API call with setTimeout
-    setIsLoading(true);
-    setTimeout(() => {
-      // This is where you would normally set the service data from the API response
-      setIsLoading(false);
-    }, 500);
-  }, [id]);  return (
+  // Initialize loading state
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Function to handle skill selection
+  const handleSkillChange = (skillId) => {
+    const currentSkills = [...service.skills];
+    const skillIndex = currentSkills.indexOf(skillId);
+    
+    if (skillIndex === -1) {
+      currentSkills.push(skillId);
+    } else {
+      currentSkills.splice(skillIndex, 1);
+    }
+    
+    setService({
+      ...service,
+      skills: currentSkills
+    });
+  };
+
+  // Function to check if there are errors for a specific field
+  const hasErrors = (field) => {
+    return errors[field] !== undefined;
+  };
+
+  // Function to display error message for a specific field
+  const errorMessage = (field) => {
+    return errors[field];
+  };
+
+  // Function to validate the form before submission
+  const validateForm = () => {
+    const errors = {};
+    
+    // Validate basic information
+    if (!service.title) errors.title = 'Judul layanan wajib diisi';
+    if (!service.description) errors.description = 'Deskripsi layanan wajib diisi';
+    if (!service.category_id) errors.category_id = 'Kategori wajib dipilih';
+    if (service.skills.length === 0) errors.skills = 'Minimal pilih satu keahlian';
+    if (service.price <= 0) errors.price = 'Harga harus lebih dari 0';
+    
+    // Validate packages
+    if (service.packages.length === 0) {
+      errors.packages = 'Minimal harus ada satu paket layanan';
+    } else {
+      const invalidPackages = service.packages.filter(
+        pkg => !pkg.name || pkg.price <= 0 || pkg.deliveryTime <= 0
+      );
+      
+      if (invalidPackages.length > 0) {
+        errors.packages = 'Semua paket harus memiliki nama, harga yang valid, dan waktu pengerjaan';
+      }
+    }
+    
+    // Validate requirements - should have at least one requirement
+    if (service.requirements.length === 0 || !service.requirements.some(req => req.trim() !== '')) {
+      errors.requirements = 'Minimal satu persyaratan harus diisi';
+    }
+    
+    // Validate FAQs
+    const invalidFaqs = service.faqs.filter(faq => !faq.question || !faq.answer);
+    if (invalidFaqs.length > 0) {
+      errors.faqs = 'Semua FAQ harus memiliki pertanyaan dan jawaban';
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors
+    };
+  };
+
+  return (
     <FreelancerLayout
       title="Edit Layanan"
       subtitle="Perbarui detail layanan yang Anda tawarkan"
@@ -343,7 +587,7 @@ const ServiceEdit = ({ id }) => {
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center">
               <Link
-                href={`/freelancer/services/${id}`}
+                href={`/freelancer/services/${service.id}`}
                 className="mr-4 text-gray-600 hover:text-gray-900"
               >
                 <FaArrowLeft />
@@ -352,7 +596,7 @@ const ServiceEdit = ({ id }) => {
             </div>
             <div className="flex space-x-3">
               <Link
-                href={`/freelancer/services/${id}`}
+                href={`/freelancer/services/${service.id}`}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 flex items-center"
               >
                 <FaTimes className="mr-2" />
@@ -380,7 +624,7 @@ const ServiceEdit = ({ id }) => {
                       ? 'border-indigo-500 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
-                  onClick={() => setActiveTab('basic')}
+                  onClick={() => changeTab('basic')}
                 >
                   Informasi Dasar
                 </button>
@@ -391,39 +635,49 @@ const ServiceEdit = ({ id }) => {
                       ? 'border-indigo-500 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
-                  onClick={() => setActiveTab('packages')}
+                  onClick={() => changeTab('packages')}
                 >
                   Paket & Harga
                 </button>
                 <button
                   type="button"
-              className={`py-4 px-6 text-center border-b-2 text-sm font-medium ${
-                activeTab === 'requirements'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('requirements')}
-            >
-              Persyaratan
-            </button>
-            <button
-              type="button"
-              className={`py-4 px-6 text-center border-b-2 text-sm font-medium ${
-                activeTab === 'faqs'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('faqs')}
-            >
-              FAQ
-            </button>
+                  className={`py-4 px-6 text-center border-b-2 text-sm font-medium ${
+                    activeTab === 'requirements'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => changeTab('requirements')}
+                >
+                  Persyaratan
+                </button>
+                <button
+                  type="button"
+                  className={`py-4 px-6 text-center border-b-2 text-sm font-medium ${
+                    activeTab === 'faqs'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => changeTab('faqs')}
+                >
+                  FAQ
+                </button>
           </nav>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Loading state with a clear key */}
+          {activeTab === 'loading' && (
+            <div className="p-6 flex justify-center items-center" key="loading-tab">
+              <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-indigo-500" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Each tab with a unique key to help React's reconciliation */}
           {/* Basic Info Tab */}
           {activeTab === 'basic' && (
-            <div className="p-6">
+            <div className="p-6" key="basic-tab">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
                   <div>
@@ -436,32 +690,81 @@ const ServiceEdit = ({ id }) => {
                       name="title"
                       value={service.title}
                       onChange={handleBasicInfoChange}
-                      className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className={`shadow-sm ${errors.title ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} block w-full sm:text-sm rounded-md`}
                       required
                     />
+                    {errors.title && (
+                      <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                    )}
                     <p className="mt-1 text-xs text-gray-500">
                       Judul yang jelas dan menarik akan membantu klien menemukan layanan Anda.
                     </p>
                   </div>
                   
                   <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
                       Kategori
                     </label>
                     <select
-                      id="category"
-                      name="category"
-                      value={service.category}
+                      id="category_id"
+                      name="category_id"
+                      value={service.category_id}
                       onChange={handleBasicInfoChange}
-                      className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className={`shadow-sm ${errors.category_id ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} block w-full sm:text-sm rounded-md`}
                       required
                     >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
+                      <option value="">Pilih Kategori</option>
+                      {categories && categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
                         </option>
                       ))}
                     </select>
+                    {errors.category_id && (
+                      <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Keahlian
+                    </label>
+                    <div className="mt-1 grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {skills && skills.map((skill) => (
+                        <div key={skill.id} className="flex items-center">
+                          <input
+                            id={`skill-${skill.id}`}
+                            type="checkbox"
+                            checked={service.skills.includes(skill.id)}
+                            onChange={() => {
+                              const currentSkills = [...service.skills];
+                              const skillIndex = currentSkills.indexOf(skill.id);
+                              
+                              if (skillIndex === -1) {
+                                currentSkills.push(skill.id);
+                              } else {
+                                currentSkills.splice(skillIndex, 1);
+                              }
+                              
+                              setService({
+                                ...service,
+                                skills: currentSkills
+                              });
+                            }}
+                            className="h-4 w-4 border-gray-300 rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <label htmlFor={`skill-${skill.id}`} className="ml-2 text-sm text-gray-700">
+                            {skill.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {errors.skills && (
+                      <p className="mt-1 text-sm text-red-600">{errors.skills}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Pilih keahlian yang relevan dengan layanan yang Anda tawarkan.
+                    </p>
                   </div>
                   
                   <div>
@@ -474,16 +777,18 @@ const ServiceEdit = ({ id }) => {
                       rows={6}
                       value={service.description}
                       onChange={handleBasicInfoChange}
-                      className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className={`shadow-sm ${errors.description ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} block w-full sm:text-sm rounded-md`}
                       required
                     />
+                    {errors.description && (
+                      <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                    )}
                     <p className="mt-1 text-xs text-gray-500">
                       Jelaskan secara detail tentang layanan yang Anda tawarkan, termasuk apa yang akan klien dapatkan.
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">                      <div>
                       <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                         Harga Dasar
                       </label>
@@ -495,12 +800,21 @@ const ServiceEdit = ({ id }) => {
                           type="text"
                           id="price"
                           name="price"
-                          value={service.price}
-                          onChange={handleBasicInfoChange}
-                          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-12 sm:text-sm border-gray-300 rounded-md"
+                          value={service.price.toLocaleString('id-ID')}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d]/g, '');
+                            setService({
+                              ...service,
+                              price: value ? parseInt(value, 10) : 0
+                            });
+                          }}
+                          className={`shadow-sm ${errors.price ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'} block w-full pl-12 sm:text-sm rounded-md`}
                           required
                         />
                       </div>
+                      {errors.price && (
+                        <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -545,16 +859,66 @@ const ServiceEdit = ({ id }) => {
                     <div className="space-y-4 text-center">
                       {imagePreview ? (
                         <div>
+                          {/* Tampilan debug URL untuk membantu troubleshooting */}
+                          <div className="mb-2 text-xs text-gray-400 overflow-hidden text-ellipsis">
+                            Image URL: {typeof imagePreview === 'string' && imagePreview.substring(0, 100)}
+                            {typeof imagePreview === 'string' && imagePreview.length > 100 ? '...' : ''}
+                          </div>
+                          
                           <img
-                            src={imagePreview}
+                            src={getValidImageUrl(imagePreview)}
                             alt="Preview"
                             className="mx-auto h-48 w-full object-cover rounded-md"
+                            onError={(e) => {
+                              console.error('Error loading image, trying alternatives');
+                              e.target.onerror = null;
+                              
+                              // Mencoba berbagai format URL alternatif
+                              const imagePath = typeof imagePreview === 'string' 
+                                ? imagePreview.replace(/^\/storage\//, '').replace(/^storage\//, '')
+                                : '';
+                              
+                              const alternatives = [
+                                '/storage/' + imagePath,
+                                '/images/' + imagePath,
+                                '/assets/' + imagePath,
+                                '/public/storage/' + imagePath
+                              ];
+                              
+                              console.log('Trying alternative URLs:', alternatives);
+                              
+                              // Coba semua alternatif secara berurutan
+                              let currentIndex = 0;
+                              
+                              const tryNextAlternative = () => {
+                                if (currentIndex < alternatives.length) {
+                                  console.log('Trying:', alternatives[currentIndex]);
+                                  e.target.src = alternatives[currentIndex];
+                                  currentIndex++;
+                                  e.target.onerror = tryNextAlternative;
+                                } else {
+                                  // Jika semua gagal, tampilkan pesan
+                                  e.target.style.display = 'none';
+                                  const errorElement = document.getElementById('image-error-message');
+                                  if (errorElement) {
+                                    errorElement.textContent = 'Tidak dapat menampilkan gambar. Silakan upload gambar baru.';
+                                  }
+                                }
+                              };
+                              
+                              tryNextAlternative();
+                            }}
                           />
+                          <p id="image-error-message" className="mt-1 text-xs text-red-500"></p>
                           <button
                             type="button"
                             onClick={() => {
                               setImagePreview(null);
                               setImageFile(null);
+                              const errorElement = document.getElementById('image-error-message');
+                              if (errorElement) {
+                                errorElement.textContent = '';
+                              }
                             }}
                             className="mt-2 text-xs text-red-600 hover:text-red-900"
                           >
@@ -599,9 +963,14 @@ const ServiceEdit = ({ id }) => {
                       </div>
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Gambar berkualitas baik akan meningkatkan daya tarik layanan Anda.
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-gray-500">
+                      Gambar berkualitas baik akan meningkatkan daya tarik layanan Anda.
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Jika gambar tidak muncul, silakan upload gambar baru dengan ukuran maksimal 5MB.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -609,7 +978,7 @@ const ServiceEdit = ({ id }) => {
 
           {/* Packages Tab */}
           {activeTab === 'packages' && (
-            <div className="p-6">
+            <div className="p-6" key="packages-tab">
               <h3 className="text-lg font-medium text-gray-900 mb-6">Paket Layanan</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -728,7 +1097,7 @@ const ServiceEdit = ({ id }) => {
 
           {/* Requirements Tab */}
           {activeTab === 'requirements' && (
-            <div className="p-6">
+            <div className="p-6" key="requirements-tab">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-medium text-gray-900">Persyaratan untuk Klien</h3>
                 <button
@@ -779,7 +1148,7 @@ const ServiceEdit = ({ id }) => {
 
           {/* FAQs Tab */}
           {activeTab === 'faqs' && (
-            <div className="p-6">
+            <div className="p-6" key="faqs-tab">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-medium text-gray-900">Pertanyaan yang Sering Diajukan (FAQ)</h3>
                 <button
@@ -823,6 +1192,36 @@ const ServiceEdit = ({ id }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Skills Tab - New Tab for Skills Selection */}
+          {activeTab === 'skills' && (
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Keahlian yang Diperlukan</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {skills && skills.map((skill) => (
+                  <div key={skill.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`skill-${skill.id}`}
+                      checked={service.skills.includes(skill.id)}
+                      onChange={() => handleSkillChange(skill.id)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <label htmlFor={`skill-${skill.id}`} className="ml-3 block text-sm font-medium text-gray-700">
+                      {skill.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              
+              {hasErrors('skills') && (
+                <p className="mt-4 text-sm text-red-600">
+                  {errorMessage('skills')}
+                </p>
+              )}
             </div>
           )}
         </form>

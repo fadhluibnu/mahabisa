@@ -22,9 +22,10 @@ Route::get('/auth', function () {
     return Inertia::render('Auth/Auth', [
         'formType' => request()->query('form', 'login')
     ]);
-})->name('auth');
+})->name('login');
 
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+// ->name('login');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 

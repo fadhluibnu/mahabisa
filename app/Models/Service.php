@@ -24,6 +24,7 @@ class Service extends Model
         'price',
         'price_type',
         'delivery_time',
+        'revisions',
         'requirements',
         'thumbnail',
         'gallery',
@@ -104,5 +105,29 @@ class Service extends Model
     public function skills()
     {
         return $this->belongsToMany(Skill::class, 'service_skill');
+    }
+
+    /**
+     * Get the packages associated with this service.
+     */
+    public function packages()
+    {
+        return $this->hasMany(ServicePackage::class);
+    }
+
+    /**
+     * Get the requirements associated with this service.
+     */
+    public function requirement_s()
+    {
+        return $this->hasMany(ServiceRequirement::class, 'service_id');
+    }
+
+    /**
+     * Get the FAQs associated with this service.
+     */
+    public function faqs()
+    {
+        return $this->hasMany(ServiceFaq::class);
     }
 }

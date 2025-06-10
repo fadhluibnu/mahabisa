@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('client')->after('email');
-            $table->string('profile_photo_url')->nullable()->after('remember_token');
+        Schema::create('service_skill', function (Blueprint $table) {
+            $table->foreignId('service_id')->constrained()->onDelete('cascade');
+            $table->foreignId('skill_id')->constrained()->onDelete('cascade');
+            $table->primary(['service_id', 'skill_id']);
         });
     }
 
@@ -22,8 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['role', 'profile_photo_url']);
-        });
+        Schema::dropIfExists('service_skill');
     }
 };

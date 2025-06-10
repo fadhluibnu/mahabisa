@@ -9,6 +9,9 @@ use App\Models\Category;
 use App\Models\Skill;
 use App\Models\Project;
 use App\Models\Service;
+use App\Models\ServicePackage;
+use App\Models\ServiceRequirement;
+use App\Models\ServiceFaq;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -240,7 +243,7 @@ class DatabaseSeeder extends Seeder
         );
         
         // Create services
-        Service::updateOrCreate(
+        $webService = Service::updateOrCreate(
             [
                 'user_id' => $freelancer1->id,
                 'title' => 'I will develop a responsive website using Laravel'
@@ -250,13 +253,126 @@ class DatabaseSeeder extends Seeder
                 'price' => 2000000,
                 'price_type' => 'fixed',
                 'delivery_time' => 10,
+                'revisions' => 2,
                 'category_id' => $categoryWeb->id,
-                'requirements' => 'Please provide your website requirements, color preferences, and any reference websites you like.',
+                'thumbnail' => 'storage/public/service/web-development.jpg',
                 'is_active' => true,
             ]
         );
         
-        Service::updateOrCreate(
+        // Add service packages for web development service
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'title' => 'Paket Basic'
+            ],
+            [
+                'price' => 2000000,
+                'delivery_time' => 10,
+                'revisions' => 2,
+                'features' => json_encode(['Website 5 halaman', 'Responsive design', 'Contact form', 'Basic SEO', '1 bulan support'])
+            ]
+        );
+        
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'title' => 'Paket Business'
+            ],
+            [
+                'price' => 3500000,
+                'delivery_time' => 14,
+                'revisions' => 3,
+                'features' => json_encode(['Website 10 halaman', 'Responsive design', 'Contact form', 'Advanced SEO', 'Blog/News section', 'Admin panel', '3 bulan support'])
+            ]
+        );
+        
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'title' => 'Paket E-Commerce'
+            ],
+            [
+                'price' => 5000000,
+                'delivery_time' => 21,
+                'revisions' => 4,
+                'features' => json_encode(['Website unlimited halaman', 'Responsive design', 'Product catalog', 'Shopping cart & checkout', 'Payment gateway integration', 'Admin dashboard', 'Order management', '6 bulan support'])
+            ]
+        );
+        
+        // Add requirements for web development service
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Deskripsi singkat tentang website yang Anda inginkan'
+            ],
+            [
+                'required' => true
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Apakah Anda memiliki desain/mockup yang sudah ada?'
+            ],
+            [
+                'required' => false
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Website referensi yang Anda sukai'
+            ],
+            [
+                'required' => false
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Preferensi warna dan font'
+            ],
+            [
+                'required' => false
+            ]
+        );
+        
+        // Add FAQs for web development service
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Apakah saya perlu menyiapkan hosting dan domain sendiri?'
+            ],
+            [
+                'answer' => 'Ya, Anda perlu menyediakan hosting dan domain. Namun, saya dapat membantu proses setup dan deployment website ke server Anda.'
+            ]
+        );
+        
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Apakah saya akan mendapatkan source code website?'
+            ],
+            [
+                'answer' => 'Ya, Anda akan mendapatkan full source code dan hak milik penuh atas website yang dibuat.'
+            ]
+        );
+        
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'question' => 'Apakah website yang dibuat mendukung SEO?'
+            ],
+            [
+                'answer' => 'Ya, semua website yang saya buat mengikuti praktik SEO terbaik untuk memastikan website Anda mudah ditemukan di mesin pencari.'
+            ]
+        );
+        
+        $mobileService = Service::updateOrCreate(
             [
                 'user_id' => $freelancer2->id,
                 'title' => 'I will create a mobile app for Android and iOS'
@@ -267,12 +383,124 @@ class DatabaseSeeder extends Seeder
                 'price_type' => 'fixed',
                 'delivery_time' => 20,
                 'category_id' => $categoryMobile->id,
-                'requirements' => 'Please provide your app idea, features list, and any wireframes or mockups if available.',
+                'thumbnail' => 'storage/public/service/mobile-app.jpg',
                 'is_active' => true,
             ]
         );
         
-        Service::updateOrCreate(
+        // Add service packages for mobile app service
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'title' => 'Paket Basic'
+            ],
+            [
+                'price' => 5000000,
+                'delivery_time' => 20,
+                'revisions' => 2,
+                'features' => json_encode(['Basic UI/UX design', 'Up to 5 screens', 'Basic functionality', 'Android platform only', '1 month support'])
+            ]
+        );
+        
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'title' => 'Paket Pro'
+            ],
+            [
+                'price' => 8000000,
+                'delivery_time' => 30,
+                'revisions' => 3,
+                'features' => json_encode(['Custom UI/UX design', 'Up to 10 screens', 'Advanced functionality', 'Android & iOS platforms', 'Push notifications', '3 months support'])
+            ]
+        );
+        
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'title' => 'Paket Enterprise'
+            ],
+            [
+                'price' => 15000000,
+                'delivery_time' => 45,
+                'revisions' => 5,
+                'features' => json_encode(['Premium UI/UX design', 'Unlimited screens', 'Complex functionality', 'Android & iOS platforms', 'Push notifications', 'User authentication', 'Database integration', 'Admin dashboard', '6 months support'])
+            ]
+        );
+        
+        // Add requirements for mobile app service
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Deskripsi singkat tentang aplikasi yang Anda inginkan'
+            ],
+            [
+                'required' => true
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Daftar fitur utama yang dibutuhkan'
+            ],
+            [
+                'required' => true
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Apakah Anda memiliki wireframe atau mockup aplikasi?'
+            ],
+            [
+                'required' => false
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Platform yang diinginkan (Android, iOS, atau keduanya)'
+            ],
+            [
+                'required' => true
+            ]
+        );
+        
+        // Add FAQs for mobile app service
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Apakah aplikasi akan tersedia di Play Store dan App Store?'
+            ],
+            [
+                'answer' => 'Ya, saya dapat membantu proses publikasi aplikasi ke Play Store dan App Store, namun biaya publikasi ditanggung oleh klien.'
+            ]
+        );
+        
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Apakah saya akan mendapatkan source code aplikasi?'
+            ],
+            [
+                'answer' => 'Ya, Anda akan mendapatkan full source code dan hak kepemilikan penuh atas aplikasi yang dibuat.'
+            ]
+        );
+        
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'question' => 'Apakah ada biaya tambahan untuk maintenance aplikasi?'
+            ],
+            [
+                'answer' => 'Setiap paket sudah termasuk support untuk periode tertentu. Setelah periode tersebut berakhir, kami dapat mendiskusikan kontrak maintenance terpisah.'
+            ]
+        );
+        
+        $logoService = Service::updateOrCreate(
             [
                 'user_id' => $freelancer1->id,
                 'title' => 'I will design a modern and professional logo'
@@ -282,9 +510,122 @@ class DatabaseSeeder extends Seeder
                 'price' => 1000000,
                 'price_type' => 'fixed',
                 'delivery_time' => 5,
+                'revisions' => 3,
                 'category_id' => $categoryDesign->id,
-                'requirements' => 'Please provide your business name, industry, color preferences, and any existing branding materials.',
+                'thumbnail' => 'storage/public/service/logo-design.jpg',
                 'is_active' => true,
+            ]
+        );
+        
+        // Add service packages for logo design service
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'title' => 'Paket Dasar'
+            ],
+            [
+                'price' => 1000000,
+                'delivery_time' => 5,
+                'revisions' => 1,
+                'features' => json_encode(['1 konsep logo', 'File format JPG dan PNG', 'Resolusi tinggi', 'Hak komersial'])
+            ]
+        );
+        
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'title' => 'Paket Standar'
+            ],
+            [
+                'price' => 1500000,
+                'delivery_time' => 4,
+                'revisions' => 3,
+                'features' => json_encode(['3 konsep logo', 'File format JPG, PNG, dan SVG', 'Resolusi tinggi', 'Hak komersial', 'Source file'])
+            ]
+        );
+        
+        ServicePackage::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'title' => 'Paket Premium'
+            ],
+            [
+                'price' => 2500000,
+                'delivery_time' => 3,
+                'revisions' => 5,
+                'features' => json_encode(['5 konsep logo', 'File format JPG, PNG, SVG, dan AI', 'Resolusi tinggi', 'Hak komersial', 'Source file', 'Brand guidelines', 'Kartu nama dan kop surat'])
+            ]
+        );
+        
+        // Add requirements for logo design service
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Nama bisnis atau proyek Anda'
+            ],
+            [
+                'required' => true
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Jenis industri atau sektor bisnis'
+            ],
+            [
+                'required' => true
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Preferensi warna (jika ada)'
+            ],
+            [
+                'required' => false
+            ]
+        );
+        
+        ServiceRequirement::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Apakah Anda memiliki material branding yang sudah ada?'
+            ],
+            [
+                'required' => false
+            ]
+        );
+        
+        // Add FAQs for logo design service
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Berapa lama proses pembuatan logo?'
+            ],
+            [
+                'answer' => 'Waktu pengerjaan logo tergantung pada paket yang dipilih, mulai dari 3-5 hari kerja.'
+            ]
+        );
+        
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Apakah saya akan mendapatkan file sumber (source file)?'
+            ],
+            [
+                'answer' => 'Ya, Anda akan mendapatkan file sumber (AI/SVG) pada paket Standar dan Premium.'
+            ]
+        );
+        
+        ServiceFaq::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'question' => 'Berapa kali saya bisa meminta revisi?'
+            ],
+            [
+                'answer' => 'Jumlah revisi tergantung pada paket yang dipilih, mulai dari 1 revisi untuk paket Dasar hingga 5 revisi untuk paket Premium.'
             ]
         );
         

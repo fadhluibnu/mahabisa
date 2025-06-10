@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import FreelancerLayout from './Components/FreelancerLayout';
 
-const ServiceCreate = () => {
+const ServiceCreate = ({ categories = [], skills = [] }) => {
+  // Debug: Check the structure of props
+  console.log('Categories received:', categories);
+  console.log('Skills received:', skills);
   const [activeSection, setActiveSection] = useState('basic');
   const [packageCount, setPackageCount] = useState(1);
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
-    category: '',
+    category_id: '',
     description: '',
     price: '',
-    deliveryTime: '',
+    delivery_time: '',
     revisions: '',
     image: null,
     imagePreview: null,
@@ -33,7 +37,7 @@ const ServiceCreate = () => {
   });
 
   // List of categories
-  const categories = [
+  const categoryOptions = [
     'Web Development',
     'Mobile Development',
     'UI/UX Design',
@@ -55,6 +59,19 @@ const ServiceCreate = () => {
       ...formData,
       [name]: value,
     });
+  };
+
+  const handleSkillChange = (skillId) => {
+    const currentSkills = [...selectedSkills];
+    const index = currentSkills.indexOf(skillId);
+    
+    if (index === -1) {
+      currentSkills.push(skillId);
+    } else {
+      currentSkills.splice(index, 1);
+    }
+    
+    setSelectedSkills(currentSkills);
   };
 
   const handlePackageChange = (index, field, value) => {
@@ -200,9 +217,24 @@ const ServiceCreate = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    console.log("Submitting form data:", formData);
+    console.log("Selected skills:", selectedSkills);
+    
     // Validation
-    if (!formData.title || !formData.category || !formData.description) {
+    if (!formData.title || !formData.category_id || !formData.description) {
       alert('Mohon lengkapi semua informasi dasar.');
+      setActiveSection('basic');
+      return;
+    }
+
+    if (formData.description.length < 50) {
+      alert('Deskripsi layanan minimal 50 karakter.');
+      setActiveSection('basic');
+      return;
+    }
+
+    if (selectedSkills.length === 0) {
+      alert('Mohon pilih minimal satu skill.');
       setActiveSection('basic');
       return;
     }
@@ -224,21 +256,97 @@ const ServiceCreate = () => {
       setActiveSection('requirements');
       return;
     }
+    
+    // Prepare form data for submission
+    const submitData = new FormData();
+    submitData.append('title', formData.title);
+    submitData.append('category_id', formData.category_id);
+    submitData.append('description', formData.description);
+    
+    // Make sure these fields are formatted correctly as required by backend
+    submitData.append('price', formData.packages[0].price);
+    submitData.append('delivery_time', formData.packages[0].deliveryTime);
+    submitData.append('revisions', formData.packages[0].revisions);
+    
+    // Add skills - make sure we're sending the exact IDs expected by the backend
+    if (selectedSkills.length === 0) {
+      alert('Mohon pilih minimal satu skill.');
+      setActiveSection('basic');
+      return;
+    }
+    
+    selectedSkills.forEach(skillId => {
+      submitData.append('skills[]', skillId);
+    });
+    
+    // Add image if exists
+    if (formData.image) {
+      submitData.append('image', formData.image);
+    }
+    
+    // Fix 1: Convert requirements array to a string as expected by backend
+    const filteredRequirements = formData.requirements.filter(req => req.trim() !== '');
+    if (filteredRequirements.length > 0) {
+      // Join all requirements into a single string with line breaks
+      submitData.append('requirements', filteredRequirements.join('\n'));
+    } else {
+      // Ensure at least one default requirement if none were provided
+      submitData.append('requirements', 'Please provide details about your project');
+    }
+    
+    // Add packages
+    formData.packages.forEach((pkg, packageIndex) => {
+      // Only include packages that have a name and price
+      if (pkg.name && pkg.price) {
+        submitData.append(`packages[${packageIndex}][title]`, pkg.name);
+        submitData.append(`packages[${packageIndex}][price]`, pkg.price);
+        submitData.append(`packages[${packageIndex}][delivery_time]`, pkg.deliveryTime);
+        submitData.append(`packages[${packageIndex}][revisions]`, pkg.revisions);
+        
+        // Ensure features are sent as a proper array
+        const features = pkg.features.filter(feature => feature.trim() !== '');
+        
+        // If no features, provide a default
+        if (features.length === 0) {
+          features.push('Basic service');
+        }
+        
+        // Convert features to a JSON string for backend
+        submitData.append(`packages[${packageIndex}][features]`, JSON.stringify(features));
+      }
+    });
+    
+    // Add FAQs
+    formData.faqs.forEach((faq, faqIndex) => {
+      if (faq.question && faq.answer) {
+        submitData.append(`faqs[${faqIndex}][question]`, faq.question);
+        submitData.append(`faqs[${faqIndex}][answer]`, faq.answer);
+      }
+    });
 
-    // In a real application, this would submit the form to the backend
-    console.log('Form submitted:', formData);
-    
-    // Show success message
-    alert('Layanan berhasil dibuat!');
-    
-    // Redirect to services list page
-    // window.location.href = '/freelancer/services';
+    // Submit form via Inertia
+    router.post('/freelancer/services', submitData, {
+      forceFormData: true,
+      onSuccess: () => {
+        // Will automatically redirect to the success page based on controller response
+        console.log('Service created successfully');
+      },
+      onError: (errors) => {
+        console.error('Form submission errors:', errors);
+        // Display all validation errors to the user
+        const errorMessages = Object.values(errors).flat().join('\n');
+        alert('Terjadi kesalahan saat membuat layanan:\n' + errorMessages);
+      },
+      onFinish: () => {
+        console.log('Form submission completed');
+      }
+    });
   };
 
   const isStepComplete = (step) => {
     switch (step) {
       case 'basic':
-        return formData.title && formData.category && formData.description;
+        return formData.title && formData.category_id && formData.description;
       case 'packages':
         return formData.packages.some(pkg => 
           pkg.name && pkg.price && pkg.deliveryTime && pkg.revisions && pkg.features.some(f => f)
@@ -379,24 +487,29 @@ const ServiceCreate = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
                       Kategori <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1">
                       <select
-                        id="category"
-                        name="category"
-                        value={formData.category}
+                        id="category_id"
+                        name="category_id"
+                        value={formData.category_id}
                         onChange={handleBasicInfoChange}
                         className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                       >
                         <option value="">Pilih Kategori</option>
-                        {categories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
+                        {categories && categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
                           </option>
                         ))}
                       </select>
+                      {(!categories || categories.length === 0) && (
+                        <p className="mt-1 text-sm text-red-600">
+                          Tidak ada kategori tersedia. Harap hubungi administrator.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -416,8 +529,38 @@ const ServiceCreate = () => {
                       />
                     </div>
                     <p className="mt-1 text-sm text-gray-500">
-                      Berikan informasi yang jelas tentang layanan Anda dan keuntungan yang akan diterima klien.
+                      Berikan informasi yang jelas tentang layanan Anda dan keuntungan yang akan diterima klien. Minimal 50 karakter.
                     </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Keahlian <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Pilih keahlian yang relevan dengan layanan Anda (minimal satu).
+                    </p>
+                    <div className="mt-1 grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {skills.map((skill) => (
+                        <div key={skill.id} className="flex items-center">
+                          <input
+                            id={`skill-${skill.id}`}
+                            type="checkbox"
+                            checked={selectedSkills.includes(skill.id)}
+                            onChange={() => handleSkillChange(skill.id)}
+                            className="h-4 w-4 border-gray-300 rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <label htmlFor={`skill-${skill.id}`} className="ml-2 text-sm text-gray-700">
+                            {skill.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {skills.length === 0 && (
+                      <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
+                        Tidak ada keahlian tersedia. Silakan tambahkan keahlian di halaman profil Anda terlebih dahulu.
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -554,34 +697,39 @@ const ServiceCreate = () => {
                           <h4 className="text-base font-medium text-gray-900">{pkg.name}</h4>
                         </div>
                         <div className="p-4 space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Harga (Rp) <span className="text-red-500">*</span>
-                            </label>
-                            <div className="mt-1">
-                              <input
-                                type="number"
-                                value={pkg.price}
-                                onChange={(e) => handlePackageChange(packageIndex, 'price', e.target.value)}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                placeholder="Contoh: 2500000"
-                              />
-                            </div>
+                          <div>                              <label className="block text-sm font-medium text-gray-700">
+                                Harga (Rp) <span className="text-red-500">*</span>
+                              </label>
+                              <div className="mt-1">
+                                <input
+                                  type="number"
+                                  value={pkg.price}
+                                  onChange={(e) => handlePackageChange(packageIndex, 'price', e.target.value)}
+                                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                  placeholder="Contoh: 2500000"
+                                  min="1"
+                                  required
+                                />
+                              </div>
+                              <p className="mt-1 text-xs text-gray-500">
+                                Format: 1000000 (tanpa titik/koma)
+                              </p>
                           </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Waktu Pengerjaan (Hari) <span className="text-red-500">*</span>
-                            </label>
-                            <div className="mt-1">
-                              <input
-                                type="number"
-                                value={pkg.deliveryTime}
-                                onChange={(e) => handlePackageChange(packageIndex, 'deliveryTime', e.target.value)}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                placeholder="Contoh: 7"
-                              />
-                            </div>
+                          <div>                              <label className="block text-sm font-medium text-gray-700">
+                                Waktu Pengerjaan (Hari) <span className="text-red-500">*</span>
+                              </label>
+                              <div className="mt-1">
+                                <input
+                                  type="number"
+                                  value={pkg.deliveryTime}
+                                  onChange={(e) => handlePackageChange(packageIndex, 'deliveryTime', e.target.value)}
+                                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                  placeholder="Contoh: 7"
+                                  min="1"
+                                  required
+                                />
+                              </div>
                           </div>
 
                           <div>
