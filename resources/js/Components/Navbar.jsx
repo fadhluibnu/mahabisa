@@ -10,7 +10,7 @@ const Navbar = ({ user }) => {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-  
+
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
   };
@@ -25,7 +25,7 @@ const Navbar = ({ user }) => {
     };
 
     // Click outside to close user menu
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setIsUserMenuOpen(false);
       }
@@ -47,9 +47,9 @@ const Navbar = ({ user }) => {
     }
     return path !== '/' && currentPath.startsWith(path);
   };
-  
+
   // Helper function to get dashboard URL based on user role
-  const getDashboardUrl = (role) => {
+  const getDashboardUrl = role => {
     switch (role) {
       case 'admin':
         return '/admin/dashboard';
@@ -180,48 +180,66 @@ const Navbar = ({ user }) => {
           {/* Desktop Auth Buttons */}
           <div className='hidden md:flex items-center gap-4'>
             {user ? (
-              <div className="relative" ref={userMenuRef}>
-                <button 
+              <div className='relative' ref={userMenuRef}>
+                <button
                   onClick={toggleUserMenu}
-                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-all duration-300"
+                  className='flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-all duration-300'
                 >
-                  <img 
-                    src={user.profile_photo || "https://randomuser.me/api/portraits/men/1.jpg"} 
-                    alt={user.name} 
-                    className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                  <img
+                    src={
+                      user.profile_photo ||
+                      'https://randomuser.me/api/portraits/men/1.jpg'
+                    }
+                    alt={user.name}
+                    className='w-8 h-8 rounded-full object-cover border border-gray-200'
                   />
-                  <div className="flex flex-col">
-                    <span className="font-medium text-gray-700">{user.name}</span>
-                    <span className="text-xs text-gray-500 capitalize">{user.role}</span>
+                  <div className='flex flex-col'>
+                    <span className='font-medium text-gray-700'>
+                      {user.name}
+                    </span>
+                    <span className='text-xs text-gray-500 capitalize'>
+                      {user.role}
+                    </span>
                   </div>
-                  <svg 
-                    className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
+                  <svg
+                    className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
                   </svg>
                 </button>
-                
+
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  <div className='absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200'>
+                    <div className='px-4 py-2 border-b border-gray-100'>
+                      <p className='text-sm font-medium text-gray-900'>
+                        {user.name}
+                      </p>
+                      <p className='text-xs text-gray-500 capitalize'>
+                        {user.role}
+                      </p>
+                      <p className='text-xs text-gray-500 truncate'>
+                        {user.email}
+                      </p>
                     </div>
                     <Link
                       href={getDashboardUrl(user.role)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#7C3AED]"
+                      className='block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#7C3AED]'
                     >
                       Dashboard
                     </Link>
                     <Link
-                      href="/logout"
-                      method="post"
-                      as="button"
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#7C3AED] border-t border-gray-100"
+                      href='/logout'
+                      method='post'
+                      as='button'
+                      className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-[#7C3AED] border-t border-gray-100'
                     >
                       Logout
                     </Link>
@@ -344,32 +362,39 @@ const Navbar = ({ user }) => {
               Tentang Kami
             </a>
           </div>{' '}
-          <div className="px-4 py-3 border-t border-gray-200 flex flex-col space-y-3">
+          <div className='px-4 py-3 border-t border-gray-200 flex flex-col space-y-3'>
             {user ? (
               <>
-                <div className="flex items-center space-x-3 p-2 border-b border-gray-100 mb-1">
-                  <img 
-                    src={user.profile_photo || "https://randomuser.me/api/portraits/men/1.jpg"} 
-                    alt={user.name} 
-                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                <div className='flex items-center space-x-3 p-2 border-b border-gray-100 mb-1'>
+                  <img
+                    src={
+                      user.profile_photo ||
+                      'https://randomuser.me/api/portraits/men/1.jpg'
+                    }
+                    alt={user.name}
+                    className='w-10 h-10 rounded-full object-cover border border-gray-200'
                   />
                   <div>
-                    <p className="font-medium text-gray-900">{user.name}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className='font-medium text-gray-900'>{user.name}</p>
+                    <p className='text-xs text-gray-500 capitalize'>
+                      {user.role}
+                    </p>
+                    <p className='text-xs text-gray-500 truncate'>
+                      {user.email}
+                    </p>
                   </div>
                 </div>
                 <Link
                   href={getDashboardUrl(user.role)}
-                  className="block w-full px-4 py-2 text-center text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-all"
+                  className='block w-full px-4 py-2 text-center text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-all'
                 >
                   Dashboard
                 </Link>
                 <Link
-                  href="/logout"
-                  method="post"
-                  as="button"
-                  className="block w-full px-4 py-2 text-center text-white bg-[#7C3AED] rounded-md hover:bg-[#6D28D9] transition-all"
+                  href='/logout'
+                  method='post'
+                  as='button'
+                  className='block w-full px-4 py-2 text-center text-white bg-[#7C3AED] rounded-md hover:bg-[#6D28D9] transition-all'
                 >
                   Logout
                 </Link>

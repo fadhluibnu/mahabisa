@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'role',
         'profile_photo_url',
+        'privacy_settings',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'privacy_settings' => 'array',
         ];
     }
     
@@ -190,6 +192,14 @@ class User extends Authenticatable
     }
     
     /**
+     * Get orders where the user is a freelancer and the status is completed
+     */
+    public function completedOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'freelancer_id')->where('status', 'completed');
+    }
+    
+    /**
      * Get reviews received by the user (as freelancer)
      */
     public function receivedReviews(): HasMany
@@ -230,7 +240,15 @@ class User extends Authenticatable
     }
     
     /**
-     * Get payment methods belonging to the user
+     * Get the notification settings associated with the user
+     */
+    public function notificationSettings(): HasOne
+    {
+        return $this->hasOne(NotificationSetting::class);
+    }
+    
+    /**
+     * Get the payment methods associated with the user
      */
     public function paymentMethods(): HasMany
     {

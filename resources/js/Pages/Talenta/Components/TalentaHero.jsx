@@ -39,7 +39,9 @@ const TalentaHero = ({ searchValue, onSearchChange, onSearchSubmit }) => {
             value={searchValue}
             onChange={onSearchChange}
           />
-          <button type="submit" className="sr-only">Cari</button>
+          <button type='submit' className='sr-only'>
+            Cari
+          </button>
         </form>
       </div>
     </section>

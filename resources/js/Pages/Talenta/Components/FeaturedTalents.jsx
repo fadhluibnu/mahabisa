@@ -6,18 +6,28 @@ const FeaturedTalents = ({ freelancers = [] }) => {
   const featuredTalents = freelancers.map(freelancer => ({
     id: freelancer.id,
     name: freelancer.name,
-    title: freelancer.profile?.bio?.split('\n')[0] || "Freelancer",
-    image: freelancer.profile_photo_url || "https://randomuser.me/api/portraits/lego/1.jpg",
-    university: freelancer.profile?.university || freelancer.profile?.education || "Universitas",
+    title: freelancer.profile?.bio?.split('\n')[0] || 'Freelancer',
+    image:
+      freelancer.profile_photo_url ||
+      'https://randomuser.me/api/portraits/lego/1.jpg',
+    university:
+      freelancer.profile?.university ||
+      freelancer.profile?.education ||
+      'Universitas',
     isVerified: freelancer.profile?.is_verified || false,
-    isOnline: freelancer.last_active_at ? new Date(freelancer.last_active_at) > new Date(Date.now() - 15 * 60 * 1000) : false,
+    isOnline: freelancer.last_active_at
+      ? new Date(freelancer.last_active_at) >
+        new Date(Date.now() - 15 * 60 * 1000)
+      : false,
     stats: {
       rating: freelancer.avg_rating || 0,
       projects: freelancer.services_count || 0,
       clients: freelancer.completed_orders_count || 0,
     },
     skills: freelancer.skills?.map(skill => skill.name) || [],
-    description: freelancer.profile?.bio || "Freelancer tersedia untuk mengerjakan proyek Anda",
+    description:
+      freelancer.profile?.bio ||
+      'Freelancer tersedia untuk mengerjakan proyek Anda',
   }));
 
   return (

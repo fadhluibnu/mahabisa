@@ -8,10 +8,18 @@ import CategoryPillsSection from './Components/CategoryPillsSection';
 import ServicesGrid from './Components/ServicesGrid';
 import { debounce } from 'lodash';
 
-const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) => {
+const Explore = ({
+  services,
+  categories,
+  priceRanges,
+  ratingOptions,
+  filters,
+}) => {
   // Initialize state with values from props (which came from backend)
   const [searchValue, setSearchValue] = useState(filters.search || '');
-  const [activeCategory, setActiveCategory] = useState(filters.category || 'all');
+  const [activeCategory, setActiveCategory] = useState(
+    filters.category || 'all'
+  );
   const [currentFilters, setCurrentFilters] = useState({
     search: filters.search || '',
     category: filters.category || '',
@@ -20,52 +28,52 @@ const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) 
     rating: filters.rating || '',
     sort_by: filters.sortBy || 'newest',
   });
-  
+
   const { auth } = usePage().props;
-  
+
   // Create debounced version of the router visit
-  const debouncedSearch = debounce((newFilters) => {
+  const debouncedSearch = debounce(newFilters => {
     router.get(route('explore'), newFilters, {
       preserveState: true,
       preserveScroll: true,
       replace: true,
     });
   }, 500);
-  
+
   // Handler for search input
   const handleSearchChange = e => {
     const newValue = e.target.value;
     setSearchValue(newValue);
-    
+
     const newFilters = {
       ...currentFilters,
       search: newValue || null,
     };
-    
+
     setCurrentFilters(newFilters);
     debouncedSearch(newFilters);
   };
-  
+
   // Handle searching when the search form is submitted
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = e => {
     e.preventDefault();
-    
+
     const newFilters = {
       ...currentFilters,
       search: searchValue || null,
     };
-    
+
     setCurrentFilters(newFilters);
     router.get(route('explore'), newFilters, {
       preserveState: true,
       preserveScroll: true,
     });
   };
-  
+
   // Handler for filter changes
   const handleFilterChange = (filterType, value) => {
     let newFilters = { ...currentFilters };
-    
+
     // Handle price range selection
     if (filterType === 'price_range') {
       const selectedRange = priceRanges.find(range => range.id === value);
@@ -81,15 +89,15 @@ const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) 
       // For other filters, just set the value directly
       newFilters[filterType] = value || null;
     }
-    
+
     // Update state
     setCurrentFilters(newFilters);
-    
+
     // Update active category if category filter changes
     if (filterType === 'category') {
       setActiveCategory(value || 'all');
     }
-    
+
     // Apply the filter by navigating with the new parameters
     router.get(route('explore'), newFilters, {
       preserveState: true,
@@ -101,14 +109,14 @@ const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) 
   const handleCategoryClick = category => {
     const categoryValue = category === 'all' ? null : category;
     setActiveCategory(category);
-    
+
     const newFilters = {
       ...currentFilters,
       category: categoryValue,
     };
-    
+
     setCurrentFilters(newFilters);
-    
+
     router.get(route('explore'), newFilters, {
       preserveState: true,
       preserveScroll: true,
@@ -117,7 +125,7 @@ const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) 
 
   return (
     <div className='min-h-screen bg-slate-50'>
-      <Head title="MahaBisa | Eksplorasi Jasa" />
+      <Head title='MahaBisa | Eksplorasi Jasa' />
       <Navbar user={auth.user} />
       <div className='pt-16'>
         {/* Add padding to account for fixed navbar */}
@@ -126,8 +134,8 @@ const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) 
           onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
         />
-        <FilterSection 
-          filters={currentFilters} 
+        <FilterSection
+          filters={currentFilters}
           onFilterChange={handleFilterChange}
           categories={categories}
           priceRanges={priceRanges}
@@ -138,9 +146,7 @@ const Explore = ({ services, categories, priceRanges, ratingOptions, filters }) 
           onCategoryClick={handleCategoryClick}
           categories={categories}
         />
-        <ServicesGrid 
-          services={services}
-        />
+        <ServicesGrid services={services} />
       </div>
       <Footer />
     </div>

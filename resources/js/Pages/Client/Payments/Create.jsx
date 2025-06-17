@@ -29,11 +29,31 @@ const Create = ({ order, paymentSettings }) => {
 
   // Available payment methods
   const paymentMethods = [
-    { id: 'bank_transfer', name: 'Bank Transfer', enabled: paymentSettings.availableMethods.bank_transfer },
-    { id: 'credit_card', name: 'Credit Card', enabled: paymentSettings.availableMethods.credit_card },
-    { id: 'e_wallet', name: 'E-Wallet', enabled: paymentSettings.availableMethods.e_wallet },
-    { id: 'qris', name: 'QRIS', enabled: paymentSettings.availableMethods.qris },
-    { id: 'retail', name: 'Retail Store', enabled: paymentSettings.availableMethods.retail },
+    {
+      id: 'bank_transfer',
+      name: 'Bank Transfer',
+      enabled: paymentSettings.availableMethods.bank_transfer,
+    },
+    {
+      id: 'credit_card',
+      name: 'Credit Card',
+      enabled: paymentSettings.availableMethods.credit_card,
+    },
+    {
+      id: 'e_wallet',
+      name: 'E-Wallet',
+      enabled: paymentSettings.availableMethods.e_wallet,
+    },
+    {
+      id: 'qris',
+      name: 'QRIS',
+      enabled: paymentSettings.availableMethods.qris,
+    },
+    {
+      id: 'retail',
+      name: 'Retail Store',
+      enabled: paymentSettings.availableMethods.retail,
+    },
   ].filter(method => method.enabled);
 
   const handlePayment = async () => {
@@ -50,7 +70,8 @@ const Create = ({ order, paymentSettings }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+            .content,
         },
         body: JSON.stringify({
           payment_method: selectedMethod,
@@ -64,23 +85,25 @@ const Create = ({ order, paymentSettings }) => {
       } else if (data.snap_token) {
         // Open Midtrans Snap payment page
         window.snap.pay(data.snap_token, {
-          onSuccess: function(result) {
+          onSuccess: function (result) {
             window.location.href = `/client/payments/${result.order_id}`;
           },
-          onPending: function(result) {
+          onPending: function (result) {
             window.location.href = `/client/payments/${result.order_id}`;
           },
-          onError: function() {
+          onError: function () {
             setError('Payment failed. Please try again.');
             setIsProcessing(false);
           },
-          onClose: function() {
+          onClose: function () {
             setIsProcessing(false);
-          }
+          },
         });
       }
     } catch (err) {
-      setError('An error occurred while processing your payment. Please try again.');
+      setError(
+        'An error occurred while processing your payment. Please try again.'
+      );
     }
 
     setIsProcessing(false);
@@ -88,33 +111,37 @@ const Create = ({ order, paymentSettings }) => {
 
   return (
     <MainLayout>
-      <Head title="Payment" />
+      <Head title='Payment' />
 
-      <div className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-          <div className="p-6 bg-white border-b border-gray-200">
-            <h1 className="text-2xl font-semibold mb-6">Payment Details</h1>
+      <div className='max-w-3xl mx-auto py-6 sm:px-6 lg:px-8'>
+        <div className='bg-white overflow-hidden shadow-sm sm:rounded-lg'>
+          <div className='p-6 bg-white border-b border-gray-200'>
+            <h1 className='text-2xl font-semibold mb-6'>Payment Details</h1>
 
-            <div className="mb-8">
-              <h2 className="text-lg font-medium mb-2">Order Summary</h2>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="mb-2">
-                  <span className="font-medium">Service:</span> {order.service.title}
+            <div className='mb-8'>
+              <h2 className='text-lg font-medium mb-2'>Order Summary</h2>
+              <div className='bg-gray-50 p-4 rounded-lg'>
+                <p className='mb-2'>
+                  <span className='font-medium'>Service:</span>{' '}
+                  {order.service.title}
                 </p>
-                <p className="mb-2">
-                  <span className="font-medium">Freelancer:</span> {order.freelancer.name}
+                <p className='mb-2'>
+                  <span className='font-medium'>Freelancer:</span>{' '}
+                  {order.freelancer.name}
                 </p>
-                <p className="mb-4">
-                  <span className="font-medium">Amount:</span>{' '}
+                <p className='mb-4'>
+                  <span className='font-medium'>Amount:</span>{' '}
                   {formatCurrency(order.total_amount)}
                 </p>
               </div>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-lg font-medium mb-4">Select Payment Method</h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {paymentMethods.map((method) => (
+            <div className='mb-8'>
+              <h2 className='text-lg font-medium mb-4'>
+                Select Payment Method
+              </h2>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                {paymentMethods.map(method => (
                   <button
                     key={method.id}
                     onClick={() => setSelectedMethod(method.id)}
@@ -124,19 +151,19 @@ const Create = ({ order, paymentSettings }) => {
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="font-medium">{method.name}</div>
+                    <div className='font-medium'>{method.name}</div>
                   </button>
                 ))}
               </div>
             </div>
 
             {error && (
-              <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-lg">
+              <div className='mb-4 p-4 text-red-700 bg-red-100 rounded-lg'>
                 {error}
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className='flex justify-end'>
               <button
                 onClick={handlePayment}
                 disabled={isProcessing || !selectedMethod}

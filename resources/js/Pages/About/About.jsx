@@ -13,7 +13,7 @@ import BackgroundElements from './Components/BackgroundElements';
 
 const About = () => {
   const { auth } = usePage().props;
-  
+
   return (
     <>
       <Head title='MahaBisa | Tentang Kami' />

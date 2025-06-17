@@ -9,69 +9,72 @@ const Settings = ({ settings, user }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  
+
   // Initialize state from props when component mounts
   useEffect(() => {
     const initialData = {};
-    
+
     // General settings
     initialData.allow_registration = settings.general.allow_registration;
     initialData.maintenance_mode = settings.general.maintenance_mode;
-    
+
     // Fee settings
     initialData.platform_fee_percentage = settings.fee.platform_fee_percentage;
     initialData.minimum_commission = settings.fee.minimum_commission;
     initialData.withdraw_fee = settings.fee.withdraw_fee;
     initialData.minimum_withdraw = settings.fee.minimum_withdraw;
     initialData.automatic_withdrawal = settings.fee.automatic_withdrawal;
-    
+
     // Security settings
     initialData.password_min_length = settings.security.password_min_length;
-    initialData.password_require_letters_numbers = settings.security.password_require_letters_numbers;
-    initialData.password_require_special_chars = settings.security.password_require_special_chars;
+    initialData.password_require_letters_numbers =
+      settings.security.password_require_letters_numbers;
+    initialData.password_require_special_chars =
+      settings.security.password_require_special_chars;
     initialData.password_expiry_days = settings.security.password_expiry_days;
-    
+
     // Payment settings
     initialData.enable_midtrans = settings.payment.enable_midtrans;
     initialData.midtrans_client_key = settings.payment.midtrans_client_key;
     initialData.midtrans_server_key = settings.payment.midtrans_server_key;
     initialData.midtrans_sandbox = settings.payment.midtrans_sandbox;
     initialData.enable_qris = settings.payment.enable_qris;
-    
+
     setFormData(initialData);
   }, [settings]);
-  
+
   // Function to handle toggle click
-  const handleToggle = (field) => {
+  const handleToggle = field => {
     setFormData(prev => ({
       ...prev,
-      [field]: !prev[field]
+      [field]: !prev[field],
     }));
   };
 
   // Function to handle input change
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? Number(value) : value
+      [name]: type === 'number' ? Number(value) : value,
     }));
   };
-  
+
   // Function to save settings
   const saveSettings = () => {
     setIsLoading(true);
     setSuccessMessage('');
     setErrorMessage('');
-    
+
     // Send settings to the server
-    axios.post('/admin/settings', formData)
+    axios
+      .post('/admin/settings', formData)
       .then(response => {
         setIsLoading(false);
         setShowSaveModal(false);
         setSuccessMessage('Pengaturan berhasil disimpan');
-        
+
         // Show success message for 3 seconds
         setTimeout(() => {
           setSuccessMessage('');
@@ -80,8 +83,11 @@ const Settings = ({ settings, user }) => {
       .catch(error => {
         setIsLoading(false);
         setShowSaveModal(false);
-        setErrorMessage('Gagal menyimpan pengaturan: ' + (error.response?.data?.message || 'Terjadi kesalahan'));
-        
+        setErrorMessage(
+          'Gagal menyimpan pengaturan: ' +
+            (error.response?.data?.message || 'Terjadi kesalahan')
+        );
+
         // Show error message for 5 seconds
         setTimeout(() => {
           setErrorMessage('');
@@ -91,16 +97,16 @@ const Settings = ({ settings, user }) => {
 
   // Toggle UI component to reuse with enhanced animations
   const ToggleSwitch = ({ enabled, onChange }) => (
-    <button 
-      type="button"
+    <button
+      type='button'
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${enabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
       aria-pressed={enabled}
-      aria-label="Toggle setting"
+      aria-label='Toggle setting'
     >
-      <span className="sr-only">{enabled ? 'Enabled' : 'Disabled'}</span>
-      <span 
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-all duration-300 ease-in-out ${enabled ? 'translate-x-5' : 'translate-x-0'}`} 
+      <span className='sr-only'>{enabled ? 'Enabled' : 'Disabled'}</span>
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-all duration-300 ease-in-out ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
       />
     </button>
   );
@@ -112,18 +118,18 @@ const Settings = ({ settings, user }) => {
     >
       {/* Success message */}
       {successMessage && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-md">
+        <div className='mb-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-md'>
           {successMessage}
         </div>
       )}
-      
+
       {/* Error message */}
       {errorMessage && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-200 text-red-700 rounded-md">
+        <div className='mb-4 p-4 bg-red-100 border border-red-200 text-red-700 rounded-md'>
           {errorMessage}
         </div>
       )}
-      
+
       <div className='bg-white rounded-xl shadow-sm border border-gray-200 mb-8'>
         <div className='border-b border-gray-200'>
           <nav
@@ -205,9 +211,9 @@ const Settings = ({ settings, user }) => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.allow_registration} 
-                          onChange={() => handleToggle('allow_registration')} 
+                        <ToggleSwitch
+                          enabled={formData.allow_registration}
+                          onChange={() => handleToggle('allow_registration')}
                         />
                       </div>
                     </div>
@@ -222,15 +228,15 @@ const Settings = ({ settings, user }) => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.maintenance_mode} 
-                          onChange={() => handleToggle('maintenance_mode')} 
+                        <ToggleSwitch
+                          enabled={formData.maintenance_mode}
+                          onChange={() => handleToggle('maintenance_mode')}
                         />
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className='mt-6'>
                   <button
                     onClick={() => setShowSaveModal(true)}
@@ -365,9 +371,9 @@ const Settings = ({ settings, user }) => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.automatic_withdrawal} 
-                          onChange={() => handleToggle('automatic_withdrawal')} 
+                        <ToggleSwitch
+                          enabled={formData.automatic_withdrawal}
+                          onChange={() => handleToggle('automatic_withdrawal')}
                         />
                       </div>
                     </div>
@@ -430,9 +436,11 @@ const Settings = ({ settings, user }) => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.password_require_letters_numbers} 
-                          onChange={() => handleToggle('password_require_letters_numbers')} 
+                        <ToggleSwitch
+                          enabled={formData.password_require_letters_numbers}
+                          onChange={() =>
+                            handleToggle('password_require_letters_numbers')
+                          }
                         />
                       </div>
                     </div>
@@ -447,9 +455,11 @@ const Settings = ({ settings, user }) => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.password_require_special_chars} 
-                          onChange={() => handleToggle('password_require_special_chars')} 
+                        <ToggleSwitch
+                          enabled={formData.password_require_special_chars}
+                          onChange={() =>
+                            handleToggle('password_require_special_chars')
+                          }
                         />
                       </div>
                     </div>
@@ -525,9 +535,9 @@ const Settings = ({ settings, user }) => {
                         </div>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.enable_midtrans} 
-                          onChange={() => handleToggle('enable_midtrans')} 
+                        <ToggleSwitch
+                          enabled={formData.enable_midtrans}
+                          onChange={() => handleToggle('enable_midtrans')}
                         />
                       </div>
                     </div>
@@ -568,9 +578,9 @@ const Settings = ({ settings, user }) => {
                         </p>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.midtrans_sandbox} 
-                          onChange={() => handleToggle('midtrans_sandbox')} 
+                        <ToggleSwitch
+                          enabled={formData.midtrans_sandbox}
+                          onChange={() => handleToggle('midtrans_sandbox')}
                         />
                       </div>
                     </div>
@@ -596,9 +606,9 @@ const Settings = ({ settings, user }) => {
                         </div>
                       </div>
                       <div className='flex items-center'>
-                        <ToggleSwitch 
-                          enabled={formData.enable_qris} 
-                          onChange={() => handleToggle('enable_qris')} 
+                        <ToggleSwitch
+                          enabled={formData.enable_qris}
+                          onChange={() => handleToggle('enable_qris')}
                         />
                       </div>
                     </div>
@@ -625,8 +635,8 @@ const Settings = ({ settings, user }) => {
           <div className='bg-white rounded-lg p-8 max-w-sm mx-auto'>
             <div className='text-center'>
               {isLoading ? (
-                <div className="flex justify-center items-center mb-4">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+                <div className='flex justify-center items-center mb-4'>
+                  <div className='animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent'></div>
                 </div>
               ) : (
                 <svg

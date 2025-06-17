@@ -231,11 +231,11 @@ const Reviews = () => {
 
                           <div className='mt-3 flex justify-end'>
                             <Link
-                                to={`/client/reviews/create/${review.projectId}`}
-                                className='text-xs text-teal-600 hover:text-teal-700'
-                              >
-                                Edit Ulasan
-                              </Link>
+                              to={`/client/reviews/create/${review.projectId}`}
+                              className='text-xs text-teal-600 hover:text-teal-700'
+                            >
+                              Edit Ulasan
+                            </Link>
                           </div>
                         </div>
                       </div>

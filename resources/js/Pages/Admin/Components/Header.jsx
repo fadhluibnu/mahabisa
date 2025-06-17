@@ -91,7 +91,7 @@ const Header = ({ title, subtitle }) => {
           </div>
         </div> */}
 
-          {/* <div ref={notificationRef} className='relative'>
+        {/* <div ref={notificationRef} className='relative'>
             <button
               className='w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors relative'
               onClick={() => setShowNotifications(!showNotifications)}

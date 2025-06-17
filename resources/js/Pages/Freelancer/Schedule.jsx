@@ -14,7 +14,8 @@ const Schedule = () => {
       client: {
         name: 'Budi Santoso',
         position: 'Project Manager',
-        image: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=6366f1&color=fff',
+        image:
+          'https://ui-avatars.com/api/?name=Budi+Santoso&background=6366f1&color=fff',
       },
     },
     {
@@ -34,7 +35,8 @@ const Schedule = () => {
       client: {
         name: 'Diana Putri',
         position: 'CEO',
-        image: 'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
+        image:
+          'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
       },
     },
     {
@@ -59,7 +61,8 @@ const Schedule = () => {
       client: {
         name: 'Budi Santoso',
         position: 'Project Manager',
-        image: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=6366f1&color=fff',
+        image:
+          'https://ui-avatars.com/api/?name=Budi+Santoso&background=6366f1&color=fff',
       },
     },
     {
@@ -72,21 +75,22 @@ const Schedule = () => {
       client: {
         name: 'Diana Putri',
         position: 'CEO',
-        image: 'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
+        image:
+          'https://ui-avatars.com/api/?name=Diana+Putri&background=ec4899&color=fff',
       },
     },
   ];
 
   return (
     <FreelancerLayout
-      title="Jadwal"
-      subtitle="Kelola jadwal meeting dan tugas harian Anda"
+      title='Jadwal'
+      subtitle='Kelola jadwal meeting dan tugas harian Anda'
     >
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Jadwal Hari Ini</h2>
+      <div className='mb-8'>
+        <div className='flex justify-between items-center mb-6'>
+          <h2 className='text-xl font-bold text-gray-800'>Jadwal Hari Ini</h2>
           <div>
-            <span className="text-sm font-medium text-gray-500">
+            <span className='text-sm font-medium text-gray-500'>
               {new Date().toLocaleDateString('id-ID', {
                 weekday: 'long',
                 year: 'numeric',
@@ -96,10 +100,13 @@ const Schedule = () => {
             </span>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {scheduleItems.map((item) => (
-            <div key={item.id} className="border-b border-gray-100 last:border-b-0">
+
+        <div className='bg-white rounded-xl shadow-sm overflow-hidden'>
+          {scheduleItems.map(item => (
+            <div
+              key={item.id}
+              className='border-b border-gray-100 last:border-b-0'
+            >
               <ScheduleCard {...item} />
             </div>
           ))}
@@ -107,12 +114,19 @@ const Schedule = () => {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Jadwal Mendatang</h2>
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {upcomingSchedule.map((item) => (
-            <div key={item.id} className="border-b border-gray-100 last:border-b-0">
-              <div className="px-4 py-2 bg-gray-50">
-                <span className="text-sm font-medium text-gray-500">{item.date}</span>
+        <h2 className='text-xl font-bold text-gray-800 mb-6'>
+          Jadwal Mendatang
+        </h2>
+        <div className='bg-white rounded-xl shadow-sm overflow-hidden'>
+          {upcomingSchedule.map(item => (
+            <div
+              key={item.id}
+              className='border-b border-gray-100 last:border-b-0'
+            >
+              <div className='px-4 py-2 bg-gray-50'>
+                <span className='text-sm font-medium text-gray-500'>
+                  {item.date}
+                </span>
               </div>
               <ScheduleCard {...item} />
             </div>

@@ -19,21 +19,27 @@ const ServicesGrid = ({ services }) => {
         {/* Services Grid */}
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12'>
           {servicesData.map(service => (
-            <ServiceCard key={service.id} service={{
-              id: service.id,
-              title: service.title,
-              image: service.thumbnail || '/assets/img/service-placeholder.jpg',
-              badge: service.badge,
-              creator: {
-                name: service.user?.name || 'Anonymous',
-                avatar: service.user?.profile_photo_url || '/assets/img/avatar-placeholder.jpg',
-                level: service.user?.profile?.level || 1,
-              },
-              rating: service.reviews_avg_rating || 0,
-              reviewCount: service.reviews_count || 0,
-              price: service.price || 0,
-              category: service.category?.name?.toLowerCase() || 'other',
-            }} />
+            <ServiceCard
+              key={service.id}
+              service={{
+                id: service.id,
+                title: service.title,
+                image:
+                  service.thumbnail || '/assets/img/service-placeholder.jpg',
+                badge: service.badge,
+                creator: {
+                  name: service.user?.name || 'Anonymous',
+                  avatar:
+                    service.user?.profile_photo_url ||
+                    '/assets/img/avatar-placeholder.jpg',
+                  level: service.user?.profile?.level || 1,
+                },
+                rating: service.reviews_avg_rating || 0,
+                reviewCount: service.reviews_count || 0,
+                price: service.price || 0,
+                category: service.category?.name?.toLowerCase() || 'other',
+              }}
+            />
           ))}
         </div>
 
@@ -74,20 +80,30 @@ const ServicesGrid = ({ services }) => {
                   <span>Prev</span>
                 </a>
               )}
-              
+
               {/* Generate page numbers */}
               {Array.from({ length: meta.last_page }, (_, i) => i + 1)
                 .filter(i => {
                   const current = meta.current_page;
-                  return i === 1 || i === meta.last_page || (i >= current - 1 && i <= current + 1);
+                  return (
+                    i === 1 ||
+                    i === meta.last_page ||
+                    (i >= current - 1 && i <= current + 1)
+                  );
                 })
                 .map((number, i, arr) => (
                   <React.Fragment key={number}>
-                    {i > 0 && arr[i-1] !== number - 1 && (
-                      <span className="w-10 h-10 flex items-center justify-center">...</span>
+                    {i > 0 && arr[i - 1] !== number - 1 && (
+                      <span className='w-10 h-10 flex items-center justify-center'>
+                        ...
+                      </span>
                     )}
                     <a
-                      href={`${links.first.split('?')[0]}?page=${number}&${links.first.split('?')[1]?.split('&').filter(param => !param.startsWith('page=')).join('&')}`}
+                      href={`${links.first.split('?')[0]}?page=${number}&${links.first
+                        .split('?')[1]
+                        ?.split('&')
+                        .filter(param => !param.startsWith('page='))
+                        .join('&')}`}
                       className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
                         meta.current_page === number
                           ? 'bg-gradient-to-r from-violet-600 to-violet-800 text-white shadow-sm'
@@ -97,8 +113,7 @@ const ServicesGrid = ({ services }) => {
                       {number}
                     </a>
                   </React.Fragment>
-                ))
-              }
+                ))}
 
               {links.next && (
                 <a

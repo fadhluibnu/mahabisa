@@ -22,14 +22,14 @@ const ServiceCard = ({ service }) => {
   };
 
   return (
-    <Link href={`/jasa/${service.id}`} className="block">
+    <Link href={`/jasa/${service.id}`} className='block'>
       <div className='bg-white rounded-xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-slate-100 hover:border-violet-100'>
         {/* Image Container */}
         <div className='relative h-48 overflow-hidden'>
           <img
             src={service.image}
             alt={service.title}
-            onError={(e) => {
+            onError={e => {
               e.target.onerror = null;
               e.target.src = '/assets/img/service-placeholder.jpg';
             }}

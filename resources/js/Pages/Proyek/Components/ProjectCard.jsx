@@ -78,7 +78,10 @@ const ProjectCard = ({ project }) => {
 
         {/* Project Title */}
         <h3 className='text-lg font-bold text-slate-900 mb-2 line-clamp-2'>
-          <Link href={`/proyek/${project.id}`} className='hover:text-indigo-600 transition-colors'>
+          <Link
+            href={`/proyek/${project.id}`}
+            className='hover:text-indigo-600 transition-colors'
+          >
             {project.title}
           </Link>
         </h3>
@@ -155,7 +158,7 @@ const ProjectCard = ({ project }) => {
 
       {/* Action Button */}
       <div className='px-6 py-3 bg-slate-50 border-t border-slate-100 mt-auto'>
-        <Link 
+        <Link
           href={`/proyek/${project.id}`}
           className='w-full py-2 px-4 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-colors flex items-center justify-center'
         >

@@ -12,7 +12,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 } from 'chart.js';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 
@@ -28,36 +28,50 @@ ChartJS.register(
   Filler
 );
 
-const Dashboard = ({ 
-  stats, 
-  chartData: dashboardChartData, 
-  recentOrders, 
-  recentActivities, 
-  topFreelancers, 
+const Dashboard = ({
+  stats,
+  chartData: dashboardChartData,
+  recentOrders,
+  recentActivities,
+  topFreelancers,
   recentReviews,
-  user 
+  user,
 }) => {
   const [timeRange, setTimeRange] = useState('Bulanan');
-  
+
   // Prepare chart data based on props or use default data
   const dataForCharts = {
-    'Bulanan': {
-      labels: dashboardChartData?.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep'],
-      totalVisitors: dashboardChartData?.totalVisitors || [8000, 9500, 10200, 9000, 11500, 15000, 13500, 16000, 18000],
-      newVisitors: dashboardChartData?.newVisitors || [5000, 6200, 6800, 6000, 7500, 9000, 8200, 9500, 10500]
+    Bulanan: {
+      labels: dashboardChartData?.labels || [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+      ],
+      totalVisitors: dashboardChartData?.totalVisitors || [
+        8000, 9500, 10200, 9000, 11500, 15000, 13500, 16000, 18000,
+      ],
+      newVisitors: dashboardChartData?.newVisitors || [
+        5000, 6200, 6800, 6000, 7500, 9000, 8200, 9500, 10500,
+      ],
     },
-    'Mingguan': {
+    Mingguan: {
       labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
       totalVisitors: [3800, 4200, 4500, 5000],
-      newVisitors: [2200, 2500, 2800, 3100]
+      newVisitors: [2200, 2500, 2800, 3100],
     },
-    'Harian': {
+    Harian: {
       labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
       totalVisitors: [520, 680, 750, 620, 700, 800, 550],
-      newVisitors: [320, 420, 460, 380, 430, 480, 340]
-    }
+      newVisitors: [320, 420, 460, 380, 430, 480, 340],
+    },
   };
-  
+
   // Chart options and data structure
   const data = {
     labels: dataForCharts[timeRange].labels,
@@ -71,7 +85,7 @@ const Dashboard = ({
         tension: 0.4,
         borderWidth: 3,
         pointRadius: 4,
-        pointBackgroundColor: '#4f46e5'
+        pointBackgroundColor: '#4f46e5',
       },
       {
         label: 'Pengunjung Baru',
@@ -83,11 +97,11 @@ const Dashboard = ({
         tension: 0.4,
         borderWidth: 2,
         pointRadius: 3,
-        pointBackgroundColor: '#10b981'
-      }
-    ]
+        pointBackgroundColor: '#10b981',
+      },
+    ],
   };
-  
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -98,9 +112,9 @@ const Dashboard = ({
           usePointStyle: true,
           boxWidth: 6,
           font: {
-            size: 12
-          }
-        }
+            size: 12,
+          },
+        },
       },
       tooltip: {
         mode: 'index',
@@ -113,54 +127,54 @@ const Dashboard = ({
         padding: 10,
         boxPadding: 4,
         bodyFont: {
-          size: 12
+          size: 12,
         },
         titleFont: {
           size: 14,
-          weight: 'bold'
+          weight: 'bold',
         },
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       x: {
         grid: {
-          display: false
+          display: false,
         },
         ticks: {
           font: {
-            size: 11
+            size: 11,
           },
-          color: '#9ca3af'
-        }
+          color: '#9ca3af',
+        },
       },
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(243, 244, 246, 1)'
+          color: 'rgba(243, 244, 246, 1)',
         },
         ticks: {
           font: {
-            size: 11
+            size: 11,
           },
           color: '#9ca3af',
-          callback: function(value) {
+          callback: function (value) {
             if (value >= 1000) {
               return value / 1000 + 'k';
             }
             return value;
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   };
 
   // Handle time range change
-  const handleTimeRangeChange = (e) => {
+  const handleTimeRangeChange = e => {
     setTimeRange(e.target.value);
   };
 
@@ -169,7 +183,7 @@ const Dashboard = ({
       title='Dashboard Admin'
       subtitle='Selamat datang di pusat kendali MahaBisa'
     >
-      <Head title="Dashboard Admin" />
+      <Head title='Dashboard Admin' />
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8'>
         <StatCard
           title='Total Pengguna'
@@ -278,8 +292,8 @@ const Dashboard = ({
               <h3 className='font-bold text-lg text-gray-900'>
                 Proyek Terbaru
               </h3>
-              <Link 
-                href='/admin/orders' 
+              <Link
+                href='/admin/orders'
                 className='text-sm text-indigo-600 hover:text-indigo-800 font-medium'
               >
                 Lihat Semua
@@ -306,9 +320,14 @@ const Dashboard = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders?.map((order) => (
-                    <tr key={order.id} className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' 
-                        onClick={() => window.location.href = `/admin/orders/${order.id}`}>
+                  {recentOrders?.map(order => (
+                    <tr
+                      key={order.id}
+                      className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer'
+                      onClick={() =>
+                        (window.location.href = `/admin/orders/${order.id}`)
+                      }
+                    >
                       <td className='py-3 font-medium text-gray-900'>
                         {order.title}
                       </td>
@@ -333,7 +352,9 @@ const Dashboard = ({
                         </div>
                       </td>
                       <td className='py-3 hidden md:table-cell text-gray-500'>
-                        {order.deadline ? formatDate(order.deadline) : 'Tidak ada'}
+                        {order.deadline
+                          ? formatDate(order.deadline)
+                          : 'Tidak ada'}
                       </td>
                       <td className='py-3 hidden xs:table-cell'>
                         <span
@@ -342,19 +363,19 @@ const Dashboard = ({
                               order.status === 'completed'
                                 ? 'bg-green-100 text-green-800'
                                 : order.status === 'in-progress'
-                                ? 'bg-blue-100 text-blue-800'
-                                : order.status === 'revision'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : order.status === 'revision'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
                             }`}
                         >
                           {order.status === 'completed'
                             ? 'Selesai'
                             : order.status === 'in-progress'
-                            ? 'Proses'
-                            : order.status === 'revision'
-                            ? 'Revisi'
-                            : 'Pending'}
+                              ? 'Proses'
+                              : order.status === 'revision'
+                                ? 'Revisi'
+                                : 'Pending'}
                         </span>
                       </td>
                       <td className='py-3 text-right font-medium'>
@@ -362,10 +383,13 @@ const Dashboard = ({
                       </td>
                     </tr>
                   ))}
-                  
+
                   {(!recentOrders || recentOrders.length === 0) && (
                     <tr>
-                      <td colSpan="6" className="py-4 text-center text-gray-500">
+                      <td
+                        colSpan='6'
+                        className='py-4 text-center text-gray-500'
+                      >
                         Tidak ada proyek terbaru
                       </td>
                     </tr>
@@ -422,7 +446,7 @@ const Dashboard = ({
             </div>
 
             <div className='space-y-4'>
-              {topFreelancers?.map((freelancer) => (
+              {topFreelancers?.map(freelancer => (
                 <div key={freelancer.id} className='flex items-center'>
                   <img
                     src={freelancer.avatar}
@@ -437,7 +461,7 @@ const Dashboard = ({
                         </h4>
                         <div className='flex items-center mt-1'>
                           <div className='flex text-yellow-400'>
-                            {[1, 2, 3, 4, 5].map((star) => (
+                            {[1, 2, 3, 4, 5].map(star => (
                               <svg
                                 key={star}
                                 className={`w-3 h-3 ${
@@ -470,9 +494,9 @@ const Dashboard = ({
                   </div>
                 </div>
               ))}
-              
+
               {(!topFreelancers || topFreelancers.length === 0) && (
-                <div className="py-4 text-center text-gray-500">
+                <div className='py-4 text-center text-gray-500'>
                   Belum ada data freelancer
                 </div>
               )}
@@ -488,7 +512,7 @@ const Dashboard = ({
             </div>
 
             <div className='space-y-4 max-h-96 overflow-y-auto'>
-              {recentActivities?.map((activity) => (
+              {recentActivities?.map(activity => (
                 <div key={activity.id} className='flex'>
                   <div className='flex-shrink-0 mr-3'>
                     <div className='relative'>
@@ -502,8 +526,8 @@ const Dashboard = ({
                           activity.user.role === 'admin'
                             ? 'bg-green-400'
                             : activity.user.role === 'freelancer'
-                            ? 'bg-blue-400'
-                            : 'bg-purple-400'
+                              ? 'bg-blue-400'
+                              : 'bg-purple-400'
                         }`}
                       ></span>
                     </div>
@@ -519,9 +543,9 @@ const Dashboard = ({
                   </div>
                 </div>
               ))}
-              
+
               {(!recentActivities || recentActivities.length === 0) && (
-                <div className="py-4 text-center text-gray-500">
+                <div className='py-4 text-center text-gray-500'>
                   Tidak ada aktivitas terbaru
                 </div>
               )}
@@ -543,8 +567,11 @@ const Dashboard = ({
             </div>
 
             <div className='space-y-4'>
-              {recentReviews?.map((review) => (
-                <div key={review.id} className='pb-4 border-b border-gray-100 last:border-0 last:pb-0'>
+              {recentReviews?.map(review => (
+                <div
+                  key={review.id}
+                  className='pb-4 border-b border-gray-100 last:border-0 last:pb-0'
+                >
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center'>
                       <img
@@ -558,7 +585,7 @@ const Dashboard = ({
                         </p>
                         <div className='flex items-center mt-0.5'>
                           <div className='flex text-yellow-400'>
-                            {[1, 2, 3, 4, 5].map((star) => (
+                            {[1, 2, 3, 4, 5].map(star => (
                               <svg
                                 key={star}
                                 className={`w-3 h-3 ${
@@ -589,9 +616,9 @@ const Dashboard = ({
                   </p>
                 </div>
               ))}
-              
+
               {(!recentReviews || recentReviews.length === 0) && (
-                <div className="py-4 text-center text-gray-500">
+                <div className='py-4 text-center text-gray-500'>
                   Belum ada ulasan dari pengguna
                 </div>
               )}

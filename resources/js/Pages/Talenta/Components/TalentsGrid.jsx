@@ -116,17 +116,25 @@ const TalentsGrid = ({ freelancers }) => {
         {/* Talents Grid */}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12'>
           {talentsData.map(freelancer => (
-            <TalentCard key={freelancer.id} talent={{
-              id: freelancer.id,
-              name: freelancer.name,
-              title: freelancer.profile?.bio?.split('\n')[0] || "Freelancer",
-              image: freelancer.profile_photo_url || "https://randomuser.me/api/portraits/lego/1.jpg",
-              university: freelancer.profile?.education || freelancer.profile?.university || "Universitas",
-              isVerified: freelancer.profile?.is_verified || false,
-              skills: freelancer.skills?.map(skill => skill.name) || [],
-              rating: freelancer.avg_rating || 0,
-              projects: freelancer.completed_orders_count || 0
-            }} />
+            <TalentCard
+              key={freelancer.id}
+              talent={{
+                id: freelancer.id,
+                name: freelancer.name,
+                title: freelancer.profile?.bio?.split('\n')[0] || 'Freelancer',
+                image:
+                  freelancer.profile_photo_url ||
+                  'https://randomuser.me/api/portraits/lego/1.jpg',
+                university:
+                  freelancer.profile?.education ||
+                  freelancer.profile?.university ||
+                  'Universitas',
+                isVerified: freelancer.profile?.is_verified || false,
+                skills: freelancer.skills?.map(skill => skill.name) || [],
+                rating: freelancer.avg_rating || 0,
+                projects: freelancer.completed_orders_count || 0,
+              }}
+            />
           ))}
         </div>
 
@@ -167,20 +175,30 @@ const TalentsGrid = ({ freelancers }) => {
                   <span>Prev</span>
                 </Link>
               )}
-              
+
               {/* Generate page numbers */}
               {Array.from({ length: meta.last_page }, (_, i) => i + 1)
                 .filter(i => {
                   const current = meta.current_page;
-                  return i === 1 || i === meta.last_page || (i >= current - 1 && i <= current + 1);
+                  return (
+                    i === 1 ||
+                    i === meta.last_page ||
+                    (i >= current - 1 && i <= current + 1)
+                  );
                 })
                 .map((number, i, arr) => (
                   <React.Fragment key={number}>
-                    {i > 0 && arr[i-1] !== number - 1 && (
-                      <span className="w-10 h-10 flex items-center justify-center">...</span>
+                    {i > 0 && arr[i - 1] !== number - 1 && (
+                      <span className='w-10 h-10 flex items-center justify-center'>
+                        ...
+                      </span>
                     )}
                     <Link
-                      href={`${links.first.split('?')[0]}?page=${number}&${links.first.split('?')[1]?.split('&').filter(param => !param.startsWith('page=')).join('&')}`}
+                      href={`${links.first.split('?')[0]}?page=${number}&${links.first
+                        .split('?')[1]
+                        ?.split('&')
+                        .filter(param => !param.startsWith('page='))
+                        .join('&')}`}
                       className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
                         meta.current_page === number
                           ? 'bg-gradient-to-r from-violet-600 to-violet-800 text-white shadow-sm'
@@ -190,8 +208,7 @@ const TalentsGrid = ({ freelancers }) => {
                       {number}
                     </Link>
                   </React.Fragment>
-                ))
-              }
+                ))}
 
               {links.next && (
                 <Link

@@ -230,6 +230,7 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     
     // Profile management
     Route::get('/profile', [ClientController::class, 'profile'])->name('client.profile');
+    Route::get('/profile/edit', [ClientController::class, 'editProfile'])->name('client.profile.edit');
     Route::put('/profile', [ClientController::class, 'updateProfile'])->name('client.profile.update');
     
     // Messages
@@ -243,6 +244,11 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     
     // Settings
     Route::get('/settings', [ClientController::class, 'settings'])->name('client.settings');
+    Route::post('/settings/account', [ClientController::class, 'updateAccountSettings'])->name('client.settings.update.account');
+    Route::post('/settings/security', [ClientController::class, 'updateSecuritySettings'])->name('client.settings.update.security');
+    Route::post('/settings/notifications', [ClientController::class, 'updateNotificationSettings'])->name('client.settings.update.notifications');
+    Route::post('/settings/privacy', [ClientController::class, 'updatePrivacySettings'])->name('client.settings.update.privacy');
+    Route::post('/settings/billing', [ClientController::class, 'updateBillingSettings'])->name('client.settings.update.billing');
     
     // Services
     Route::get('/services', [ClientController::class, 'browseServices'])->name('client.services');

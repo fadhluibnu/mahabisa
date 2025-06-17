@@ -228,6 +228,32 @@ const Sidebar = ({ isOpen, closeSidebar, auth }) => {
                   Cari Freelancer
                 </Link>
               </li>
+              <li>
+                <Link
+                  href='/client/orders'
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive('orders')
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <svg
+                    className='mr-3 h-5 w-5'
+                    xmlns='http://www.w3.org/2000/svg'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'
+                    />
+                  </svg>
+                  Pesanan Saya
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -402,7 +428,10 @@ const Sidebar = ({ isOpen, closeSidebar, auth }) => {
             ) : (
               <div className='flex items-center'>
                 <img
-                  src={user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`}
+                  src={
+                    user?.profile_photo_url ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`
+                  }
                   alt={user?.name}
                   className='h-10 w-10 rounded-full'
                 />
