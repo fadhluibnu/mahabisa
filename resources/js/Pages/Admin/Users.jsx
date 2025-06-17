@@ -11,36 +11,40 @@ const Users = ({ users, user, stats, flash }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(users.current_page || 1);
   const [itemsPerPage] = useState(users.per_page || 10);
-  
+
   // Form for adding a new user
   const addUserForm = useForm({
     name: '',
     email: '',
     role: '',
     password: '',
-    password_confirmation: ''
+    password_confirmation: '',
   });
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     userType: 'Semua Jenis',
     status: 'Semua Status',
     startDate: '',
-    endDate: ''
+    endDate: '',
   });
-  
+
   // Get user role map for display
-  const getUserRoleDisplay = (role) => {
-    switch(role.toLowerCase()) {
-      case 'client': return 'Klien';
-      case 'freelancer': return 'Freelancer';
-      case 'admin': return 'Admin';
-      default: return 'Pengguna';
+  const getUserRoleDisplay = role => {
+    switch (role.toLowerCase()) {
+      case 'client':
+        return 'Klien';
+      case 'freelancer':
+        return 'Freelancer';
+      case 'admin':
+        return 'Admin';
+      default:
+        return 'Pengguna';
     }
   };
 
   // Get user status for display
-  const getUserStatusDisplay = (user) => {
+  const getUserStatusDisplay = user => {
     return user.email_verified_at ? 'Aktif' : 'Pending';
   };
 
@@ -48,16 +52,19 @@ const Users = ({ users, user, stats, flash }) => {
   const getFilteredUsers = () => {
     return users.data.filter(user => {
       // Filter by user type
-      if (filters.userType !== 'Semua Jenis' && getUserRoleDisplay(user.role) !== filters.userType) {
+      if (
+        filters.userType !== 'Semua Jenis' &&
+        getUserRoleDisplay(user.role) !== filters.userType
+      ) {
         return false;
       }
-      
+
       // Filter by status
       const userStatus = getUserStatusDisplay(user);
       if (filters.status !== 'Semua Status' && userStatus !== filters.status) {
         return false;
       }
-      
+
       // Filter by join date
       if (filters.startDate) {
         const joinDate = new Date(user.created_at);
@@ -66,7 +73,7 @@ const Users = ({ users, user, stats, flash }) => {
           return false;
         }
       }
-      
+
       if (filters.endDate) {
         const joinDate = new Date(user.created_at);
         const endDate = new Date(filters.endDate);
@@ -75,49 +82,52 @@ const Users = ({ users, user, stats, flash }) => {
           return false;
         }
       }
-      
+
       return true;
     });
   };
-  
+
   // Handle filter changes
-  const handleFilterChange = (e) => {
+  const handleFilterChange = e => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
   };
-  
+
   // Apply filters and reset pagination
-  const applyFilters = (e) => {
+  const applyFilters = e => {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page when applying filters
     setShowFilterModal(false);
   };
-  
+
   // Reset filters
   const resetFilters = () => {
     setFilters({
       userType: 'Semua Jenis',
       status: 'Semua Status',
       startDate: '',
-      endDate: ''
+      endDate: '',
     });
     setCurrentPage(1);
   };
 
   const filteredUsers = getFilteredUsers();
-  
+
   // Handle pagination either from Laravel pagination (when not filtered) or client-side (when filtered)
   const totalUsers = filteredUsers.length;
-  const totalPages = filters.userType !== 'Semua Jenis' || filters.status !== 'Semua Status' || 
-                    filters.startDate || filters.endDate
-                    ? Math.ceil(totalUsers / itemsPerPage)
-                    : Math.ceil(users.total / users.per_page);
+  const totalPages =
+    filters.userType !== 'Semua Jenis' ||
+    filters.status !== 'Semua Status' ||
+    filters.startDate ||
+    filters.endDate
+      ? Math.ceil(totalUsers / itemsPerPage)
+      : Math.ceil(users.total / users.per_page);
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   // Handle page change
-  const handlePageChange = (pageNumber) => {
+  const handlePageChange = pageNumber => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
@@ -128,17 +138,21 @@ const Users = ({ users, user, stats, flash }) => {
     const pageNumbers = [];
     // Always show first page
     pageNumbers.push(1);
-    
+
     // Show current page and surrounding pages
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       pageNumbers.push(i);
     }
-    
+
     // Always show last page
     if (totalPages > 1) {
       pageNumbers.push(totalPages);
     }
-    
+
     // Add ellipsis indicators
     return pageNumbers.reduce((result, page, index, array) => {
       if (index > 0 && page > array[index - 1] + 1) {
@@ -150,35 +164,71 @@ const Users = ({ users, user, stats, flash }) => {
   };
 
   // Handle view user details
-  const handleViewDetails = (user) => {
+  const handleViewDetails = user => {
     setSelectedUser(user);
     setShowDetailsModal(true);
   };
-  
+
   // Handle delete user
   const handleDeleteClick = (user, e) => {
     e.stopPropagation(); // Prevent row click event
+    e.preventDefault(); // Prevent any default action
+    console.log('Delete clicked for user:', user); // Add logging
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
-  
+
   // Handle confirm delete
   const handleConfirmDelete = () => {
-    // Use Inertia for the delete request
-    window.Inertia.delete(`/admin/users/${selectedUser.id}`, {
-      onSuccess: () => {
-        setShowDeleteModal(false);
-        // The page will refresh with updated data from the backend
-      },
-      onError: (errors) => {
-        alert('Error deleting user: ' + (errors.message || 'Unknown error'));
-        setShowDeleteModal(false);
-      }
-    });
+    console.log('Confirm delete clicked for user:', selectedUser); // Add logging
+
+    if (!selectedUser || !selectedUser.id) {
+      alert('Error: No user selected for deletion');
+      setShowDeleteModal(false);
+      return;
+    }
+
+    // Get CSRF token from meta tag for security
+    const csrfToken = document
+      .querySelector('meta[name="csrf-token"]')
+      .getAttribute('content');
+
+    // Use direct form submission as a backup in case there are issues with Inertia
+    try {
+      // Create a form element
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/admin/users/${selectedUser.id}`;
+      form.style.display = 'none';
+
+      // Add method and CSRF token fields
+      const methodField = document.createElement('input');
+      methodField.type = 'hidden';
+      methodField.name = '_method';
+      methodField.value = 'DELETE';
+      form.appendChild(methodField);
+
+      const csrfField = document.createElement('input');
+      csrfField.type = 'hidden';
+      csrfField.name = '_token';
+      csrfField.value = csrfToken;
+      form.appendChild(csrfField);
+
+      // Append to body and submit
+      document.body.appendChild(form);
+      form.submit();
+
+      // Close modal - though page will reload anyway
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error during form submission:', error);
+      alert('Error deleting user: ' + error.message);
+      setShowDeleteModal(false);
+    }
   };
 
   // Format date to readable format
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
@@ -188,44 +238,72 @@ const Users = ({ users, user, stats, flash }) => {
       title='Kelola Pengguna'
       subtitle='Manajemen data pengguna MahaBisa'
     >
-      <Head title="Kelola Pengguna - MahaBisa Admin" />
-      
+      <Head title='Kelola Pengguna - MahaBisa Admin' />
+
       {/* Flash Messages */}
       {flash.success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <span className="block sm:inline">{flash.success}</span>
+        <div
+          className='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4'
+          role='alert'
+        >
+          <span className='block sm:inline'>{flash.success}</span>
           <button
-            onClick={() => window.Inertia.visit(window.location.href, { only: ['users', 'stats'] })} 
-            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            onClick={() =>
+              window.Inertia.visit(window.location.href, {
+                only: ['users', 'stats'],
+              })
+            }
+            className='absolute top-0 bottom-0 right-0 px-4 py-3'
           >
-            <svg className="fill-current h-6 w-6 text-green-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+            <svg
+              className='fill-current h-6 w-6 text-green-500'
+              role='button'
+              xmlns='http://www.w3.org/2000/svg'
+              viewBox='0 0 20 20'
+            >
               <title>Close</title>
-              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+              <path d='M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z' />
             </svg>
           </button>
         </div>
       )}
-      
+
       {flash.error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <span className="block sm:inline">{flash.error}</span>
+        <div
+          className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'
+          role='alert'
+        >
+          <span className='block sm:inline'>{flash.error}</span>
           <button
-            onClick={() => window.Inertia.visit(window.location.href, { only: ['users', 'stats'] })} 
-            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            onClick={() =>
+              window.Inertia.visit(window.location.href, {
+                only: ['users', 'stats'],
+              })
+            }
+            className='absolute top-0 bottom-0 right-0 px-4 py-3'
           >
-            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+            <svg
+              className='fill-current h-6 w-6 text-red-500'
+              role='button'
+              xmlns='http://www.w3.org/2000/svg'
+              viewBox='0 0 20 20'
+            >
               <title>Close</title>
-              <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+              <path d='M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z' />
             </svg>
           </button>
         </div>
       )}
-      
+
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8'>
         <StatCard
           title='Total Pengguna'
           value={stats.totalUsers.toString()}
-          percentage={stats.newUsers > 0 ? ((stats.newUsers / stats.totalUsers) * 100).toFixed(1) : '0.0'}
+          percentage={
+            stats.newUsers > 0
+              ? ((stats.newUsers / stats.totalUsers) * 100).toFixed(1)
+              : '0.0'
+          }
           trend='up'
           color='purple'
           icon={
@@ -249,7 +327,13 @@ const Users = ({ users, user, stats, flash }) => {
         <StatCard
           title='Freelancer'
           value={stats.totalFreelancers.toString()}
-          percentage={stats.totalFreelancers > 0 ? ((stats.newFreelancers / stats.totalFreelancers) * 100).toFixed(1) : '0.0'}
+          percentage={
+            stats.totalFreelancers > 0
+              ? ((stats.newFreelancers / stats.totalFreelancers) * 100).toFixed(
+                  1
+                )
+              : '0.0'
+          }
           trend='up'
           color='pink'
           icon={
@@ -273,7 +357,11 @@ const Users = ({ users, user, stats, flash }) => {
         <StatCard
           title='Klien'
           value={stats.totalClients.toString()}
-          percentage={stats.totalClients > 0 ? ((stats.newClients / stats.totalClients) * 100).toFixed(1) : '0.0'}
+          percentage={
+            stats.totalClients > 0
+              ? ((stats.newClients / stats.totalClients) * 100).toFixed(1)
+              : '0.0'
+          }
           trend='up'
           color='green'
           icon={
@@ -297,8 +385,15 @@ const Users = ({ users, user, stats, flash }) => {
         <StatCard
           title='Pengguna Baru'
           value={stats.newUsers.toString()}
-          percentage={stats.newUsers > 0 && stats.lastMonthNewUsers > 0 ? 
-            (((stats.newUsers - stats.lastMonthNewUsers) / stats.lastMonthNewUsers) * 100).toFixed(1) : '0.0'}
+          percentage={
+            stats.newUsers > 0 && stats.lastMonthNewUsers > 0
+              ? (
+                  ((stats.newUsers - stats.lastMonthNewUsers) /
+                    stats.lastMonthNewUsers) *
+                  100
+                ).toFixed(1)
+              : '0.0'
+          }
           trend={stats.newUsers >= stats.lastMonthNewUsers ? 'up' : 'down'}
           color='orange'
           icon={
@@ -323,9 +418,17 @@ const Users = ({ users, user, stats, flash }) => {
       <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8'>
         <div className='flex justify-between items-center mb-6'>
           <h3 className='font-bold text-lg text-gray-900'>
-            Daftar Pengguna 
-            {filters.userType !== 'Semua Jenis' || filters.status !== 'Semua Status' || filters.startDate || filters.endDate ? 
-              <span className="ml-2 text-sm font-normal text-indigo-600">(Filtered)</span> : ''}
+            Daftar Pengguna
+            {filters.userType !== 'Semua Jenis' ||
+            filters.status !== 'Semua Status' ||
+            filters.startDate ||
+            filters.endDate ? (
+              <span className='ml-2 text-sm font-normal text-indigo-600'>
+                (Filtered)
+              </span>
+            ) : (
+              ''
+            )}
           </h3>
 
           <div className='flex gap-3'>
@@ -350,26 +453,7 @@ const Users = ({ users, user, stats, flash }) => {
               Filter
             </button>
 
-            <button
-              onClick={() => setShowAddModal(true)}
-              className='flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700'
-            >
-              <svg
-                className='w-5 h-5 mr-2'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 6v6m0 0v6m0-6h6m-6 0H6'
-                />
-              </svg>
-              Tambah Pengguna
-            </button>
+            {/* Add User button removed */}
           </div>
         </div>
 
@@ -390,8 +474,12 @@ const Users = ({ users, user, stats, flash }) => {
               </tr>
             </thead>
             <tbody>
-              {currentUsers.map((user) => (
-                <tr key={user.id} className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => handleViewDetails(user)}>
+              {currentUsers.map(user => (
+                <tr
+                  key={user.id}
+                  className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer'
+                  onClick={() => handleViewDetails(user)}
+                >
                   <td className='py-3'>
                     <div className='flex items-center'>
                       <div className='w-8 h-8 rounded-full mr-3 flex items-center justify-center overflow-hidden'>
@@ -414,33 +502,39 @@ const Users = ({ users, user, stats, flash }) => {
                   </td>
                   <td className='py-3'>{user.email}</td>
                   <td className='py-3 hidden sm:table-cell'>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      user.role === 'freelancer' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : user.role === 'client'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        user.role === 'freelancer'
+                          ? 'bg-purple-100 text-purple-800'
+                          : user.role === 'client'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
                       {getUserRoleDisplay(user.role)}
                     </span>
                   </td>
                   <td className='py-3 hidden md:table-cell'>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      getUserStatusDisplay(user) === 'Aktif' 
-                        ? 'bg-green-100 text-green-800' 
-                        : getUserStatusDisplay(user) === 'Pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        getUserStatusDisplay(user) === 'Aktif'
+                          ? 'bg-green-100 text-green-800'
+                          : getUserStatusDisplay(user) === 'Pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {getUserStatusDisplay(user)}
                     </span>
                   </td>
-                  <td className='py-3 hidden lg:table-cell'>{formatDate(user.created_at)}</td>
+                  <td className='py-3 hidden lg:table-cell'>
+                    {formatDate(user.created_at)}
+                  </td>
                   <td className='py-3 text-right'>
                     <div className='flex justify-end space-x-2'>
-                      <button 
+                      <button
                         className='p-1 rounded hover:bg-gray-100'
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation(); // Prevent row click
                           handleViewDetails(user);
                         }}
@@ -466,29 +560,12 @@ const Users = ({ users, user, stats, flash }) => {
                           />
                         </svg>
                       </button>
-                      <Link
-                        href={`/admin/users/${user.id}/edit`}
-                        className='p-1 rounded hover:bg-gray-100'
-                        onClick={(e) => e.stopPropagation()} // Prevent row click
-                      >
-                        <svg
-                          className='w-5 h-5 text-blue-600'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                          xmlns='http://www.w3.org/2000/svg'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                          />
-                        </svg>
-                      </Link>
-                      <button 
-                        className='p-1 rounded hover:bg-gray-100'
-                        onClick={(e) => handleDeleteClick(user, e)}
+                      {/* Edit button removed */}
+                      <button
+                        type='button'
+                        className='p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500'
+                        onClick={e => handleDeleteClick(user, e)}
+                        title='Hapus pengguna'
                       >
                         <svg
                           className='w-5 h-5 text-red-600'
@@ -515,37 +592,38 @@ const Users = ({ users, user, stats, flash }) => {
 
         <div className='flex flex-col md:flex-row gap-4 justify-between items-center mt-6'>
           <div className='text-sm text-gray-600'>
-            Menampilkan {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, totalUsers)} dari {totalUsers} data
+            Menampilkan {indexOfFirstUser + 1}-
+            {Math.min(indexOfLastUser, totalUsers)} dari {totalUsers} data
           </div>
 
           <div className='flex'>
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={`px-3 py-1 text-sm font-medium ${
-                currentPage === 1 
-                  ? 'text-gray-300 cursor-not-allowed' 
+                currentPage === 1
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-50'
               } bg-white border border-gray-300 rounded-l-md`}
             >
               Sebelumnya
             </button>
-            
-            {getPageNumbers().map((page, index) => (
+
+            {getPageNumbers().map((page, index) =>
               typeof page === 'number' ? (
-                <button 
+                <button
                   key={page}
                   onClick={() => handlePageChange(page)}
                   className={`px-3 py-1 text-sm font-medium ${
-                    currentPage === page 
-                      ? 'text-white bg-indigo-600 border-indigo-600' 
+                    currentPage === page
+                      ? 'text-white bg-indigo-600 border-indigo-600'
                       : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
                   } border`}
                 >
                   {page}
                 </button>
               ) : (
-                <button 
+                <button
                   key={page}
                   className='px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                   disabled
@@ -553,14 +631,14 @@ const Users = ({ users, user, stats, flash }) => {
                   ...
                 </button>
               )
-            ))}
-            
-            <button 
+            )}
+
+            <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className={`px-3 py-1 text-sm font-medium ${
-                currentPage === totalPages 
-                  ? 'text-gray-300 cursor-not-allowed' 
+                currentPage === totalPages
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-50'
               } bg-white border border-gray-300 rounded-r-md`}
             >
@@ -608,10 +686,10 @@ const Users = ({ users, user, stats, flash }) => {
               <div className='md:w-1/3 flex flex-col items-center'>
                 <div className='w-32 h-32 rounded-full overflow-hidden mb-4'>
                   {selectedUser.profile_photo_path ? (
-                    <img 
-                      src={selectedUser.profile_photo_path} 
-                      alt={selectedUser.name} 
-                      className='w-full h-full object-cover' 
+                    <img
+                      src={selectedUser.profile_photo_path}
+                      alt={selectedUser.name}
+                      className='w-full h-full object-cover'
                     />
                   ) : (
                     <div className='w-full h-full bg-gray-200 flex items-center justify-center text-gray-600 text-4xl font-semibold'>
@@ -619,15 +697,21 @@ const Users = ({ users, user, stats, flash }) => {
                     </div>
                   )}
                 </div>
-                <h4 className='text-xl font-bold text-gray-900 mb-1'>{selectedUser.name}</h4>
-                <p className='text-sm text-gray-600 mb-2'>{selectedUser.email}</p>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  selectedUser.role === 'freelancer' 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : selectedUser.role === 'client'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
-                }`}>
+                <h4 className='text-xl font-bold text-gray-900 mb-1'>
+                  {selectedUser.name}
+                </h4>
+                <p className='text-sm text-gray-600 mb-2'>
+                  {selectedUser.email}
+                </p>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    selectedUser.role === 'freelancer'
+                      ? 'bg-purple-100 text-purple-800'
+                      : selectedUser.role === 'client'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
+                  }`}
+                >
                   {getUserRoleDisplay(selectedUser.role)}
                 </span>
               </div>
@@ -635,7 +719,9 @@ const Users = ({ users, user, stats, flash }) => {
               {/* User Details */}
               <div className='md:w-2/3'>
                 <div className='bg-gray-50 p-4 rounded-lg mb-4'>
-                  <h5 className='font-medium text-gray-900 mb-3'>Informasi Pengguna</h5>
+                  <h5 className='font-medium text-gray-900 mb-3'>
+                    Informasi Pengguna
+                  </h5>
                   <div className='grid grid-cols-2 gap-4'>
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>ID Pengguna</p>
@@ -643,60 +729,78 @@ const Users = ({ users, user, stats, flash }) => {
                     </div>
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>Status</p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                        getUserStatusDisplay(selectedUser) === 'Aktif' 
-                          ? 'bg-green-100 text-green-800' 
-                          : getUserStatusDisplay(selectedUser) === 'Pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span
+                        className={`inline-block px-2 py-1 rounded-full text-xs ${
+                          getUserStatusDisplay(selectedUser) === 'Aktif'
+                            ? 'bg-green-100 text-green-800'
+                            : getUserStatusDisplay(selectedUser) === 'Pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                        }`}
+                      >
                         {getUserStatusDisplay(selectedUser)}
                       </span>
                     </div>
                     <div>
-                      <p className='text-xs text-gray-500 mb-1'>Tanggal Bergabung</p>
-                      <p className='text-sm font-medium'>{formatDate(selectedUser.created_at)}</p>
+                      <p className='text-xs text-gray-500 mb-1'>
+                        Tanggal Bergabung
+                      </p>
+                      <p className='text-sm font-medium'>
+                        {formatDate(selectedUser.created_at)}
+                      </p>
                     </div>
                     <div>
-                      <p className='text-xs text-gray-500 mb-1'>Terakhir Login</p>
-                      <p className='text-sm font-medium'>{selectedUser.last_login_at || 'Belum pernah login'}</p>
+                      <p className='text-xs text-gray-500 mb-1'>
+                        Terakhir Login
+                      </p>
+                      <p className='text-sm font-medium'>
+                        {selectedUser.last_login_at || 'Belum pernah login'}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 <div className='mb-4'>
-                  <h5 className='font-medium text-gray-900 mb-3'>Aktivitas Terbaru</h5>
+                  <h5 className='font-medium text-gray-900 mb-3'>
+                    Aktivitas Terbaru
+                  </h5>
                   <div className='space-y-3'>
                     <div className='p-3 bg-gray-50 rounded-lg'>
                       <p className='text-sm text-gray-900'>Login ke platform</p>
-                      <p className='text-xs text-gray-500'>{selectedUser.last_login_at || 'Belum pernah login'}</p>
+                      <p className='text-xs text-gray-500'>
+                        {selectedUser.last_login_at || 'Belum pernah login'}
+                      </p>
                     </div>
                     <div className='p-3 bg-gray-50 rounded-lg'>
-                      <p className='text-sm text-gray-900'>Memperbarui profil</p>
-                      <p className='text-xs text-gray-500'>{selectedUser.updated_at ? formatDate(selectedUser.updated_at) : 'Belum pernah diperbarui'}</p>
+                      <p className='text-sm text-gray-900'>
+                        Memperbarui profil
+                      </p>
+                      <p className='text-xs text-gray-500'>
+                        {selectedUser.updated_at
+                          ? formatDate(selectedUser.updated_at)
+                          : 'Belum pernah diperbarui'}
+                      </p>
                     </div>
                     <div className='p-3 bg-gray-50 rounded-lg'>
-                      <p className='text-sm text-gray-900'>Mendaftar ke platform</p>
-                      <p className='text-xs text-gray-500'>{formatDate(selectedUser.created_at)}</p>
+                      <p className='text-sm text-gray-900'>
+                        Mendaftar ke platform
+                      </p>
+                      <p className='text-xs text-gray-500'>
+                        {formatDate(selectedUser.created_at)}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className='flex justify-end mt-6 gap-3'>
+            <div className='flex justify-end mt-6'>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50'
               >
                 Tutup
               </button>
-              <Link
-                href={`/admin/users/${selectedUser.id}/edit`}
-                className='px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700'
-              >
-                Edit Pengguna
-              </Link>
             </div>
           </div>
         </div>
@@ -709,7 +813,10 @@ const Users = ({ users, user, stats, flash }) => {
             className='fixed inset-0 bg-black opacity-50'
             onClick={() => setShowDeleteModal(false)}
           ></div>
-          <div className='bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10'>
+          <div
+            className='bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10'
+            onClick={e => e.stopPropagation()}
+          >
             <div className='flex items-center justify-center mb-6'>
               <div className='w-12 h-12 rounded-full bg-red-100 flex items-center justify-center'>
                 <svg
@@ -728,25 +835,37 @@ const Users = ({ users, user, stats, flash }) => {
                 </svg>
               </div>
             </div>
-            
+
             <h3 className='text-center font-bold text-lg text-gray-900 mb-2'>
               Hapus Pengguna
             </h3>
-            
+
             <p className='text-center text-gray-600 mb-6'>
-              Apakah Anda yakin ingin menghapus pengguna <span className='font-medium'>{selectedUser.name}</span>? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus pengguna{' '}
+              <span className='font-medium'>{selectedUser.name}</span>? Tindakan
+              ini tidak dapat dibatalkan.
             </p>
 
             <div className='flex justify-center gap-3'>
               <button
-                onClick={() => setShowDeleteModal(false)}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50'
+                type='button'
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowDeleteModal(false);
+                }}
+                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
               >
                 Batal
               </button>
               <button
-                onClick={handleConfirmDelete}
-                className='px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700'
+                type='button'
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleConfirmDelete();
+                }}
+                className='px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
               >
                 Hapus
               </button>
@@ -756,21 +875,16 @@ const Users = ({ users, user, stats, flash }) => {
       )}
 
       {/* Modal Tambah Pengguna */}
-      {showAddModal && (
+      {/* Add User Modal removed */}
+      {false && (
         <div className='fixed inset-0 flex items-center justify-center z-50'>
-          <div
-            className='fixed inset-0 bg-black opacity-50'
-            onClick={() => setShowAddModal(false)}
-          ></div>
+          <div className='fixed inset-0 bg-black opacity-50'></div>
           <div className='bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10'>
             <div className='flex justify-between items-center mb-4'>
               <h3 className='font-bold text-lg text-gray-900'>
-                Tambah Pengguna Baru
+                Tambah Pengguna Baru (Disabled)
               </h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className='text-gray-400 hover:text-gray-600'
-              >
+              <button className='text-gray-400 hover:text-gray-600'>
                 <svg
                   className='w-6 h-6'
                   fill='none'
@@ -788,28 +902,32 @@ const Users = ({ users, user, stats, flash }) => {
               </button>
             </div>
 
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              window.Inertia.post('/admin/users/store', addUserForm.data, {
-                onSuccess: () => {
-                  setShowAddModal(false);
-                  addUserForm.reset();
-                }
-              });
-            }}>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                window.Inertia.post('/admin/users/store', addUserForm.data, {
+                  onSuccess: () => {
+                    setShowAddModal(false);
+                    addUserForm.reset();
+                  },
+                });
+              }}
+            >
               <div className='mb-4'>
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Nama Lengkap
                 </label>
                 <input
                   type='text'
-                  name="name"
+                  name='name'
                   value={addUserForm.data.name || ''}
                   onChange={e => addUserForm.setData('name', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
                 {addUserForm.errors.name && (
-                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.name}</div>
+                  <div className='text-red-500 text-sm mt-1'>
+                    {addUserForm.errors.name}
+                  </div>
                 )}
               </div>
 
@@ -819,13 +937,15 @@ const Users = ({ users, user, stats, flash }) => {
                 </label>
                 <input
                   type='email'
-                  name="email"
+                  name='email'
                   value={addUserForm.data.email || ''}
                   onChange={e => addUserForm.setData('email', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
                 {addUserForm.errors.email && (
-                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.email}</div>
+                  <div className='text-red-500 text-sm mt-1'>
+                    {addUserForm.errors.email}
+                  </div>
                 )}
               </div>
 
@@ -833,19 +953,21 @@ const Users = ({ users, user, stats, flash }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Jenis Pengguna
                 </label>
-                <select 
-                  name="role"
+                <select
+                  name='role'
                   value={addUserForm.data.role || ''}
                   onChange={e => addUserForm.setData('role', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 >
-                  <option value="">Pilih jenis pengguna</option>
-                  <option value="freelancer">Freelancer</option>
-                  <option value="client">Klien</option>
-                  <option value="admin">Admin</option>
+                  <option value=''>Pilih jenis pengguna</option>
+                  <option value='freelancer'>Freelancer</option>
+                  <option value='client'>Klien</option>
+                  <option value='admin'>Admin</option>
                 </select>
                 {addUserForm.errors.role && (
-                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.role}</div>
+                  <div className='text-red-500 text-sm mt-1'>
+                    {addUserForm.errors.role}
+                  </div>
                 )}
               </div>
 
@@ -855,13 +977,17 @@ const Users = ({ users, user, stats, flash }) => {
                 </label>
                 <input
                   type='password'
-                  name="password"
+                  name='password'
                   value={addUserForm.data.password || ''}
-                  onChange={e => addUserForm.setData('password', e.target.value)}
+                  onChange={e =>
+                    addUserForm.setData('password', e.target.value)
+                  }
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
                 {addUserForm.errors.password && (
-                  <div className="text-red-500 text-sm mt-1">{addUserForm.errors.password}</div>
+                  <div className='text-red-500 text-sm mt-1'>
+                    {addUserForm.errors.password}
+                  </div>
                 )}
               </div>
 
@@ -871,9 +997,11 @@ const Users = ({ users, user, stats, flash }) => {
                 </label>
                 <input
                   type='password'
-                  name="password_confirmation"
+                  name='password_confirmation'
                   value={addUserForm.data.password_confirmation || ''}
-                  onChange={e => addUserForm.setData('password_confirmation', e.target.value)}
+                  onChange={e =>
+                    addUserForm.setData('password_confirmation', e.target.value)
+                  }
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
               </div>
@@ -940,8 +1068,8 @@ const Users = ({ users, user, stats, flash }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Jenis Pengguna
                 </label>
-                <select 
-                  name="userType"
+                <select
+                  name='userType'
                   value={filters.userType}
                   onChange={handleFilterChange}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -957,8 +1085,8 @@ const Users = ({ users, user, stats, flash }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Status
                 </label>
-                <select 
-                  name="status"
+                <select
+                  name='status'
                   value={filters.status}
                   onChange={handleFilterChange}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -981,7 +1109,7 @@ const Users = ({ users, user, stats, flash }) => {
                     </label>
                     <input
                       type='date'
-                      name="startDate"
+                      name='startDate'
                       value={filters.startDate}
                       onChange={handleFilterChange}
                       className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -993,7 +1121,7 @@ const Users = ({ users, user, stats, flash }) => {
                     </label>
                     <input
                       type='date'
-                      name="endDate"
+                      name='endDate'
                       value={filters.endDate}
                       onChange={handleFilterChange}
                       className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'

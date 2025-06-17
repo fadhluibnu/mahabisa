@@ -21,7 +21,7 @@ const CtaSection = () => {
                 className='py-3 px-6 bg-gradient-to-r from-violet-600 to-violet-800 text-white rounded-lg font-medium hover:shadow-lg transition-all text-center'
               >
                 Daftar sebagai Talenta
-              </Link> 
+              </Link>
             </div>
           </div>
 

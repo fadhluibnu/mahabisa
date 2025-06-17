@@ -1473,32 +1473,122 @@ class FreelancerController extends Controller
     
     /**
      * Display the freelancer's messages.
+     * Handles listing conversations and displaying an active chat session.
      */
-    public function messages()
+    public function messages(Request $request)
     {
-        $user = Auth::user();
-        
-        // Get unique conversations
-        $conversations = Message::where('sender_id', $user->id)
-            ->orWhere('recipient_id', $user->id)
-            ->orderBy('created_at', 'desc')
+        $currentUser = Auth::user()->load('profile');
+
+        // 1. Fetch conversation list (sidebar)
+        $participantIds = Message::where('sender_id', $currentUser->id)
+            ->orWhere('recipient_id', $currentUser->id)
+            ->selectRaw('CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id', [$currentUser->id])
+            ->distinct()
+            ->pluck('other_user_id');
+
+        $conversationsData = User::whereIn('id', $participantIds)
+            ->with('profile') // Eager load profile for other users
             ->get()
-            ->map(function ($message) use ($user) {
-                $otherUserId = $message->sender_id == $user->id ? $message->recipient_id : $message->sender_id;
+            ->map(function ($otherUser) use ($currentUser) {
+                $lastMessage = Message::where(function ($query) use ($currentUser, $otherUser) {
+                    $query->where('sender_id', $currentUser->id)->where('recipient_id', $otherUser->id);
+                })->orWhere(function ($query) use ($currentUser, $otherUser) {
+                    $query->where('sender_id', $otherUser->id)->where('recipient_id', $currentUser->id);
+                })->orderBy('created_at', 'desc')->first();
+
+                $unreadCount = Message::where('sender_id', $otherUser->id)
+                                    ->where('recipient_id', $currentUser->id)
+                                    ->where('is_read', false)
+                                    ->count();
+                
+                $profilePhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($otherUser->name) . '&background=6366f1&color=fff';
+                if ($otherUser->profile && $otherUser->profile->profile_photo_url) {
+                    $profilePhotoUrl = $otherUser->profile->profile_photo_url;
+                } elseif ($otherUser->profile_photo_url) { // Fallback if profile_photo_url is directly on user
+                    $profilePhotoUrl = $otherUser->profile_photo_url;
+                }
+
                 return [
-                    'id' => $message->id,
-                    'other_user_id' => $otherUserId,
-                    'last_message' => $message->message,
-                    'timestamp' => $message->created_at,
-                    'user' => User::find($otherUserId),
+                    'user' => [
+                        'id' => $otherUser->id,
+                        'name' => $otherUser->name,
+                        'profile_photo_url' => $profilePhotoUrl,
+                    ],
+                    'last_message' => $lastMessage ? $lastMessage->message : null,
+                    'timestamp' => $lastMessage ? $lastMessage->created_at : null,
+                    'unread_count' => $unreadCount,
                 ];
             })
-            ->unique('other_user_id')
+            ->sortByDesc('timestamp')
             ->values();
-            
+
+        // 2. Handle active conversation (main panel)
+        $activeChatOtherUser = null;
+        $activeChatMessages = collect();
+        $activeChatUserId = $request->input('with'); // Expects ?with=USER_ID in URL
+
+        $loadedActiveChatOtherUser = null;
+        if ($activeChatUserId) {
+            $loadedActiveChatOtherUser = User::with('profile')->find($activeChatUserId);
+            if ($loadedActiveChatOtherUser) {
+                $activeChatOtherUserProfilePhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($loadedActiveChatOtherUser->name) . '&background=6366f1&color=fff';
+                if ($loadedActiveChatOtherUser->profile && $loadedActiveChatOtherUser->profile->profile_photo_url) {
+                    $activeChatOtherUserProfilePhotoUrl = $loadedActiveChatOtherUser->profile->profile_photo_url;
+                } elseif ($loadedActiveChatOtherUser->profile_photo_url) {
+                     $activeChatOtherUserProfilePhotoUrl = $loadedActiveChatOtherUser->profile_photo_url;
+                }
+
+                $activeChatOtherUser = [
+                     'id' => $loadedActiveChatOtherUser->id,
+                     'name' => $loadedActiveChatOtherUser->name,
+                     'profile_photo_url' => $activeChatOtherUserProfilePhotoUrl,
+                ];
+
+                $activeChatMessages = Message::where(function($query) use ($currentUser, $loadedActiveChatOtherUser) {
+                    $query->where('sender_id', $currentUser->id)
+                          ->where('recipient_id', $loadedActiveChatOtherUser->id);
+                })
+                ->orWhere(function($query) use ($currentUser, $loadedActiveChatOtherUser) {
+                    $query->where('sender_id', $loadedActiveChatOtherUser->id)
+                          ->where('recipient_id', $currentUser->id);
+                })
+                ->with('sender:id,name') 
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(function($message) use ($currentUser) {
+                    return [
+                        'id' => $message->id,
+                        'content' => $message->message, 
+                        'created_at' => $message->created_at,
+                        'is_mine' => $message->sender_id === $currentUser->id,
+                        'sender_name' => $message->sender->name,
+                    ];
+                });
+
+                Message::where('sender_id', $loadedActiveChatOtherUser->id)
+                    ->where('recipient_id', $currentUser->id)
+                    ->where('is_read', false)
+                    ->update(['is_read' => true, 'read_at' => now()]);
+            }
+        }
+        
+        $currentUserProfilePhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($currentUser->name) . '&background=6366f1&color=fff';
+        if ($currentUser->profile && $currentUser->profile->profile_photo_url) {
+            $currentUserProfilePhotoUrl = $currentUser->profile->profile_photo_url;
+        } elseif ($currentUser->profile_photo_url) {
+            $currentUserProfilePhotoUrl = $currentUser->profile_photo_url;
+        }
+
         return Inertia::render('Freelancer/Messages', [
-            'user' => $user,
-            'conversations' => $conversations
+            'auth_user' => [
+                'id' => $currentUser->id,
+                'name' => $currentUser->name,
+                'profile_photo_url' => $currentUserProfilePhotoUrl,
+            ],
+            'conversations' => $conversationsData,
+            'active_chat_other_user' => $activeChatOtherUser,
+            'active_chat_messages' => $activeChatMessages,
+            'initial_active_user_id' => $activeChatUserId ? (int)$activeChatUserId : null,
         ]);
     }
     

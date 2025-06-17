@@ -3,7 +3,7 @@
  * @param {number} amount - Amount to format
  * @returns {string} Formatted currency
  */
-export const formatCurrency = (amount) => {
+export const formatCurrency = amount => {
   // Handle undefined or null
   if (amount === undefined || amount === null) {
     return 'Rp0';
@@ -13,7 +13,7 @@ export const formatCurrency = (amount) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
-    minimumFractionDigits: 0
+    minimumFractionDigits: 0,
   }).format(amount);
 };
 
@@ -25,14 +25,14 @@ export const formatCurrency = (amount) => {
  */
 export const formatDate = (dateString, options = {}) => {
   if (!dateString) return '';
-  
+
   const defaultOptions = {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-    ...options
+    ...options,
   };
-  
+
   return new Date(dateString).toLocaleDateString('id-ID', defaultOptions);
 };
 
@@ -41,18 +41,23 @@ export const formatDate = (dateString, options = {}) => {
  * @param {string} type - Activity type
  * @returns {string} Formatted activity type
  */
-export const formatActivityType = (type) => {
+export const formatActivityType = type => {
   const activityTypes = {
-    'project_created': 'Proyek Baru Dibuat',
-    'project_status_updated': 'Status Proyek Diperbarui',
-    'proposal_accepted': 'Proposal Diterima',
-    'order_created': 'Pesanan Dibuat',
-    'payment_processed': 'Pembayaran Berhasil',
-    'review_submitted': 'Ulasan Diberikan',
-    'service_ordered': 'Jasa Dipesan',
+    project_created: 'Proyek Baru Dibuat',
+    project_status_updated: 'Status Proyek Diperbarui',
+    proposal_accepted: 'Proposal Diterima',
+    order_created: 'Pesanan Dibuat',
+    payment_processed: 'Pembayaran Berhasil',
+    review_submitted: 'Ulasan Diberikan',
+    service_ordered: 'Jasa Dipesan',
     // Add more types as needed
   };
-  
-  return activityTypes[type] || 
-    (type ? type.replace(/_/g, ' ').charAt(0).toUpperCase() + type.replace(/_/g, ' ').slice(1) : 'Aktivitas');
+
+  return (
+    activityTypes[type] ||
+    (type
+      ? type.replace(/_/g, ' ').charAt(0).toUpperCase() +
+        type.replace(/_/g, ' ').slice(1)
+      : 'Aktivitas')
+  );
 };

@@ -13,17 +13,18 @@ import CallToActionSection from './Components/CallToActionSection';
 
 const Homepage = () => {
   const [searchValue, setSearchValue] = useState('');
-  const { auth, featuredServices, topFreelancers, categories } = usePage().props;
-  
+  const { auth, featuredServices, topFreelancers, categories } =
+    usePage().props;
+
   // Handler for popular search terms
   const handlePopularClick = value => {
     setSearchValue(value);
     // Redirect to exploration page with search parameter
     router.visit(`/eksplorasi?search=${encodeURIComponent(value)}`);
   };
-        return (
+  return (
     <div>
-      <Head title="MahaBisa | Platform Freelance untuk Mahasiswa" />
+      <Head title='MahaBisa | Platform Freelance untuk Mahasiswa' />
       <Navbar user={auth.user} />
       <div className='max-w-7xl px-4 md:px-5 lg:px-0 mx-auto pt-16'>
         <HeroSection />

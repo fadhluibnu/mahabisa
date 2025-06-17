@@ -20,11 +20,11 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
     skillId: filters.skillId || '',
     sortBy: filters.sortBy || 'rating',
   });
-  
+
   const { auth } = usePage().props;
-  
+
   // Create debounced version of the router visit
-  const debouncedSearch = debounce((newFilters) => {
+  const debouncedSearch = debounce(newFilters => {
     router.get(route('talents'), newFilters, {
       preserveState: true,
       preserveScroll: true,
@@ -36,25 +36,25 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
   const handleSearchChange = e => {
     const newValue = e.target.value;
     setSearchValue(newValue);
-    
+
     const newFilters = {
       ...currentFilters,
       search: newValue || null,
     };
-    
+
     setCurrentFilters(newFilters);
     debouncedSearch(newFilters);
   };
-  
+
   // Handle searching when the search form is submitted
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = e => {
     e.preventDefault();
-    
+
     const newFilters = {
       ...currentFilters,
       search: searchValue || null,
     };
-    
+
     setCurrentFilters(newFilters);
     router.get(route('talents'), newFilters, {
       preserveState: true,
@@ -68,9 +68,9 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
       ...currentFilters,
       [filterType]: value || null,
     };
-    
+
     setCurrentFilters(newFilters);
-    
+
     router.get(route('talents'), newFilters, {
       preserveState: true,
       preserveScroll: true,
@@ -81,14 +81,14 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
   const handleSkillClick = skill => {
     const skillValue = skill === 'all' ? null : skill;
     setActiveSkill(skill);
-    
+
     const newFilters = {
       ...currentFilters,
       skillId: skillValue,
     };
-    
+
     setCurrentFilters(newFilters);
-    
+
     router.get(route('talents'), newFilters, {
       preserveState: true,
       preserveScroll: true,
@@ -97,7 +97,7 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
 
   return (
     <div className='min-h-screen bg-slate-50'>
-      <Head title="MahaBisa | Talenta" />
+      <Head title='MahaBisa | Talenta' />
       <Navbar user={auth.user} />
       <div className='pt-16'>
         {/* Add padding to account for fixed navbar */}
@@ -106,8 +106,8 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
           onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
         />
-        <FilterSection 
-          filters={currentFilters} 
+        <FilterSection
+          filters={currentFilters}
           onFilterChange={handleFilterChange}
           categories={categories}
         />
@@ -117,9 +117,7 @@ const Talenta = ({ freelancers, categories, skills, filters }) => {
           skills={skills}
         />
         <FeaturedTalents freelancers={freelancers?.data?.slice(0, 3) || []} />
-        <TalentsGrid
-          freelancers={freelancers}
-        />
+        <TalentsGrid freelancers={freelancers} />
         <CtaSection />
       </div>
       <Footer />

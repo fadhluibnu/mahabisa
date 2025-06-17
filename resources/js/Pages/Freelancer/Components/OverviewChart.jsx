@@ -17,15 +17,15 @@ const OverviewChart = ({ data, period }) => {
   // Create or update chart when data or period changes
   useEffect(() => {
     if (!chartRef.current) return;
-    
+
     // If we already have a chart, destroy it
     if (chartInstance) {
       chartInstance.destroy();
     }
-    
+
     // Create new chart
     const ctx = chartRef.current.getContext('2d');
-    
+
     const newChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
@@ -56,8 +56,8 @@ const OverviewChart = ({ data, period }) => {
             pointBorderWidth: 2,
             pointRadius: 4,
             pointHoverRadius: 6,
-          }
-        ]
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -88,7 +88,7 @@ const OverviewChart = ({ data, period }) => {
             padding: 12,
             cornerRadius: 8,
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 let label = context.dataset.label || '';
                 if (label) {
                   label += ': ';
@@ -105,9 +105,9 @@ const OverviewChart = ({ data, period }) => {
                   }
                 }
                 return label;
-              }
-            }
-          }
+              },
+            },
+          },
         },
         scales: {
           x: {
@@ -131,12 +131,12 @@ const OverviewChart = ({ data, period }) => {
                 family: "'Sora', sans-serif",
                 size: 11,
               },
-              callback: function(value) {
+              callback: function (value) {
                 return value >= 1000 ? value / 1000 + 'K' : value;
-              }
+              },
             },
             beginAtZero: true,
-          }
+          },
         },
         interaction: {
           mode: 'index',
@@ -144,33 +144,34 @@ const OverviewChart = ({ data, period }) => {
         },
         hover: {
           mode: 'nearest',
-          intersect: true
+          intersect: true,
         },
-      }
+      },
     });
-    
+
     setChartInstance(newChartInstance);
-    
   }, [data, period]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Ikhtisar Pendapatan</h3>
-        <div className="mt-3 sm:mt-0 flex space-x-2 bg-gray-100 p-1 rounded-lg">
-          <button 
+    <div className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
+      <div className='p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between'>
+        <h3 className='text-lg font-semibold text-gray-900'>
+          Ikhtisar Pendapatan
+        </h3>
+        <div className='mt-3 sm:mt-0 flex space-x-2 bg-gray-100 p-1 rounded-lg'>
+          <button
             className={`px-3 py-1 text-sm rounded-md transition ${period === 'week' ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
             onClick={() => {}}
           >
             Minggu
           </button>
-          <button 
+          <button
             className={`px-3 py-1 text-sm rounded-md transition ${period === 'month' ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
             onClick={() => {}}
           >
             Bulan
           </button>
-          <button 
+          <button
             className={`px-3 py-1 text-sm rounded-md transition ${period === 'year' ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
             onClick={() => {}}
           >
@@ -178,8 +179,8 @@ const OverviewChart = ({ data, period }) => {
           </button>
         </div>
       </div>
-      <div className="p-4 sm:p-6">
-        <div className="h-80">
+      <div className='p-4 sm:p-6'>
+        <div className='h-80'>
           <canvas ref={chartRef}></canvas>
         </div>
       </div>

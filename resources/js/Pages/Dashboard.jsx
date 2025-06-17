@@ -6,10 +6,10 @@ export default function Dashboard() {
     // Redirect to admin dashboard
     router.visit('/admin/dashboard');
   }, []);
-  
+
   return (
-    <div className="min-h-screen flex justify-center items-center">
-      <p className="text-gray-500">Redirecting to dashboard...</p>
+    <div className='min-h-screen flex justify-center items-center'>
+      <p className='text-gray-500'>Redirecting to dashboard...</p>
     </div>
   );
 }

@@ -16,119 +16,140 @@ const Payments = ({ payments, user }) => {
     totalPayments: 0,
     totalAmount: 0,
     totalCommission: 0,
-    pendingPayments: 0
+    pendingPayments: 0,
   });
-  
+
   useEffect(() => {
     // Calculate stats from payments data
     if (payments.data) {
       const total = payments.data.length;
-      const totalAmount = payments.data.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      const totalAmount = payments.data.reduce(
+        (sum, payment) => sum + parseFloat(payment.amount),
+        0
+      );
       const totalCommission = payments.data.reduce((sum, payment) => {
         // Calculate commission (20% of amount by default)
-        const commission = payment.commission || parseFloat(payment.amount) * 0.2;
+        const commission =
+          payment.commission || parseFloat(payment.amount) * 0.2;
         return sum + parseFloat(commission);
       }, 0);
-      const pending = payments.data.filter(payment => payment.status === 'pending').length;
-      
+      const pending = payments.data.filter(
+        payment => payment.status === 'pending'
+      ).length;
+
       setStats({
         totalPayments: total,
         totalAmount: totalAmount,
         totalCommission: totalCommission,
-        pendingPayments: pending
+        pendingPayments: pending,
       });
     }
   }, [payments]);
 
   // Convert payments data to the format used in the component
-  const transactions = payments.data ? payments.data.map(payment => {
-    // Generate code and colors for project badge
-    const projectName = payment.order?.project?.name || payment.order?.service?.title || 'Pembayaran';
-    const code = projectName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
-    
-    // Assign a color based on the first character of the project name
-    const colors = [
-      {bg: 'bg-blue-100', text: 'text-blue-600'},
-      {bg: 'bg-purple-100', text: 'text-purple-600'},
-      {bg: 'bg-pink-100', text: 'text-pink-600'},
-      {bg: 'bg-green-100', text: 'text-green-600'},
-      {bg: 'bg-yellow-100', text: 'text-yellow-600'},
-      {bg: 'bg-red-100', text: 'text-red-600'}
-    ];
-    
-    const colorIndex = projectName.charCodeAt(0) % colors.length;
-    
-    // Format status in Indonesian
-    const statusMap = {
-      'pending': 'Menunggu',
-      'paid': 'Dibayar',
-      'failed': 'Gagal',
-      'refunded': 'Dikembalikan',
-      'cancelled': 'Dibatalkan'
-    };
-    
-    // Format date to Indonesian format
-    const formatDate = (dateString) => {
-      if (!dateString) return '-';
-      const date = new Date(dateString);
-      const options = { day: 'numeric', month: 'long', year: 'numeric' };
-      return date.toLocaleDateString('id-ID', options);
-    };
-    
-    // Format currency to Indonesian Rupiah
-    const formatCurrency = (amount) => {
-      return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount);
-    };
-    
-    return {
-      id: `#INV-${payment.payment_id || payment.id}`,
-      project: {
-        name: projectName,
-        code: code,
-        bgColor: colors[colorIndex].bg,
-        textColor: colors[colorIndex].text
-      },
-      amount: formatCurrency(payment.amount),
-      commission: formatCurrency(payment.amount * 0.2), // Assuming 20% commission
-      status: statusMap[payment.status] || payment.status,
-      date: formatDate(payment.paid_at || payment.created_at),
-      client: payment.client?.name || 'Client',
-      freelancer: payment.order?.freelancer?.name || 'Freelancer',
-      category: payment.order?.project?.category?.name || payment.order?.service?.category?.name || 'Umum',
-      paymentMethod: payment.payment_method || 'Online Payment'
-    };
-  }) : [
-    // Fallback data in case there are no payments
-    {
-      id: '#INV-000000',
-      project: {
-        name: 'No Transactions',
-        code: 'NT',
-        bgColor: 'bg-gray-100',
-        textColor: 'text-gray-600'
-      },
-      amount: 'Rp 0',
-      commission: 'Rp 0',
-      status: 'N/A',
-      date: '-',
-      client: '-',
-      freelancer: '-',
-      category: '-',
-      paymentMethod: '-'
-    }
-  ];
+  const transactions = payments.data
+    ? payments.data.map(payment => {
+        // Generate code and colors for project badge
+        const projectName =
+          payment.order?.project?.name ||
+          payment.order?.service?.title ||
+          'Pembayaran';
+        const code = projectName
+          .split(' ')
+          .map(word => word[0])
+          .join('')
+          .substring(0, 2)
+          .toUpperCase();
+
+        // Assign a color based on the first character of the project name
+        const colors = [
+          { bg: 'bg-blue-100', text: 'text-blue-600' },
+          { bg: 'bg-purple-100', text: 'text-purple-600' },
+          { bg: 'bg-pink-100', text: 'text-pink-600' },
+          { bg: 'bg-green-100', text: 'text-green-600' },
+          { bg: 'bg-yellow-100', text: 'text-yellow-600' },
+          { bg: 'bg-red-100', text: 'text-red-600' },
+        ];
+
+        const colorIndex = projectName.charCodeAt(0) % colors.length;
+
+        // Format status in Indonesian
+        const statusMap = {
+          pending: 'Menunggu',
+          paid: 'Dibayar',
+          failed: 'Gagal',
+          refunded: 'Dikembalikan',
+          cancelled: 'Dibatalkan',
+        };
+
+        // Format date to Indonesian format
+        const formatDate = dateString => {
+          if (!dateString) return '-';
+          const date = new Date(dateString);
+          const options = { day: 'numeric', month: 'long', year: 'numeric' };
+          return date.toLocaleDateString('id-ID', options);
+        };
+
+        // Format currency to Indonesian Rupiah
+        const formatCurrency = amount => {
+          return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }).format(amount);
+        };
+
+        return {
+          id: `#INV-${payment.payment_id || payment.id}`,
+          project: {
+            name: projectName,
+            code: code,
+            bgColor: colors[colorIndex].bg,
+            textColor: colors[colorIndex].text,
+          },
+          amount: formatCurrency(payment.amount),
+          commission: formatCurrency(payment.amount * 0.2), // Assuming 20% commission
+          status: statusMap[payment.status] || payment.status,
+          date: formatDate(payment.paid_at || payment.created_at),
+          client: payment.client?.name || 'Client',
+          freelancer: payment.order?.freelancer?.name || 'Freelancer',
+          category:
+            payment.order?.project?.category?.name ||
+            payment.order?.service?.category?.name ||
+            'Umum',
+          paymentMethod: payment.payment_method || 'Online Payment',
+        };
+      })
+    : [
+        // Fallback data in case there are no payments
+        {
+          id: '#INV-000000',
+          project: {
+            name: 'No Transactions',
+            code: 'NT',
+            bgColor: 'bg-gray-100',
+            textColor: 'text-gray-600',
+          },
+          amount: 'Rp 0',
+          commission: 'Rp 0',
+          status: 'N/A',
+          date: '-',
+          client: '-',
+          freelancer: '-',
+          category: '-',
+          paymentMethod: '-',
+        },
+      ];
 
   // Filter transactions based on status
   const getFilteredTransactions = () => {
     if (filterStatus === 'Semua Status') {
       return transactions;
     }
-    return transactions.filter(transaction => transaction.status === filterStatus);
+    return transactions.filter(
+      transaction => transaction.status === filterStatus
+    );
   };
 
   const filteredTransactions = getFilteredTransactions();
@@ -138,23 +159,26 @@ const Payments = ({ payments, user }) => {
   const totalPages = Math.ceil(totalTransactions / itemsPerPage);
   const indexOfLastTransaction = currentPage * itemsPerPage;
   const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage;
-  const currentTransactions = filteredTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+  const currentTransactions = filteredTransactions.slice(
+    indexOfFirstTransaction,
+    indexOfLastTransaction
+  );
 
   // Handle page change
-  const handlePageChange = (pageNumber) => {
+  const handlePageChange = pageNumber => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
   };
 
   // Handle transaction details modal
-  const handleTransactionDetail = (transaction) => {
+  const handleTransactionDetail = transaction => {
     setSelectedTransaction(transaction);
     setShowTransactionModal(true);
   };
 
   // Handle filter change
-  const handleFilterChange = (e) => {
+  const handleFilterChange = e => {
     setFilterStatus(e.target.value);
   };
 
@@ -283,11 +307,11 @@ const Payments = ({ payments, user }) => {
           <div className='flex justify-between items-center mb-6'>
             <h3 className='font-bold text-lg text-gray-900'>
               Transaksi Terbaru
-              {filterStatus !== 'Semua Status' && 
-                <span className="ml-2 text-sm font-normal text-indigo-600">
+              {filterStatus !== 'Semua Status' && (
+                <span className='ml-2 text-sm font-normal text-indigo-600'>
                   (Filter: {filterStatus})
                 </span>
-              }
+              )}
             </h3>
             <div className='flex gap-3'>
               <button
@@ -335,7 +359,10 @@ const Payments = ({ payments, user }) => {
               <tbody>
                 {currentTransactions.length > 0 ? (
                   currentTransactions.map((transaction, index) => (
-                    <tr key={index} className='border-b border-gray-100 text-sm hover:bg-gray-50'>
+                    <tr
+                      key={index}
+                      className='border-b border-gray-100 text-sm hover:bg-gray-50'
+                    >
                       <td className='py-3'>
                         <span className='font-medium text-gray-900'>
                           {transaction.id}
@@ -343,7 +370,9 @@ const Payments = ({ payments, user }) => {
                       </td>
                       <td className='py-3'>
                         <div className='flex items-center'>
-                          <div className={`w-8 h-8 rounded ${transaction.project.bgColor} mr-3 flex items-center justify-center ${transaction.project.textColor} font-medium`}>
+                          <div
+                            className={`w-8 h-8 rounded ${transaction.project.bgColor} mr-3 flex items-center justify-center ${transaction.project.textColor} font-medium`}
+                          >
                             {transaction.project.code}
                           </div>
                           <span>{transaction.project.name}</span>
@@ -354,17 +383,21 @@ const Payments = ({ payments, user }) => {
                         {transaction.commission}
                       </td>
                       <td className='py-3 hidden sm:table-cell'>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          transaction.status === 'Dibayar' 
-                            ? 'bg-green-100 text-green-800' 
-                            : transaction.status === 'Menunggu'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            transaction.status === 'Dibayar'
+                              ? 'bg-green-100 text-green-800'
+                              : transaction.status === 'Menunggu'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {transaction.status}
                         </span>
                       </td>
-                      <td className='py-3 hidden lg:table-cell'>{transaction.date}</td>
+                      <td className='py-3 hidden lg:table-cell'>
+                        {transaction.date}
+                      </td>
                       <td className='py-3 text-right'>
                         <button
                           onClick={() => handleTransactionDetail(transaction)}
@@ -377,7 +410,7 @@ const Payments = ({ payments, user }) => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="py-6 text-center text-gray-500">
+                    <td colSpan='7' className='py-6 text-center text-gray-500'>
                       Tidak ada transaksi dengan filter yang dipilih
                     </td>
                   </tr>
@@ -387,32 +420,34 @@ const Payments = ({ payments, user }) => {
           </div>
 
           {totalTransactions > itemsPerPage && (
-            <div className="mt-6 flex justify-center">
-              <nav className="flex items-center">
-                <button 
-                  onClick={() => handlePageChange(currentPage - 1)} 
+            <div className='mt-6 flex justify-center'>
+              <nav className='flex items-center'>
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   &laquo; Sebelumnya
                 </button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                  <button
-                    key={number}
-                    onClick={() => handlePageChange(number)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium ${
-                      currentPage === number 
-                        ? 'text-white bg-indigo-600' 
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    {number}
-                  </button>
-                ))}
-                
-                <button 
-                  onClick={() => handlePageChange(currentPage + 1)} 
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  number => (
+                    <button
+                      key={number}
+                      onClick={() => handlePageChange(number)}
+                      className={`px-3 py-1 rounded-md text-sm font-medium ${
+                        currentPage === number
+                          ? 'text-white bg-indigo-600'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {number}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-gray-700'}`}
                 >
@@ -565,7 +600,7 @@ const Payments = ({ payments, user }) => {
             </div>
 
             <div className='mt-6'>
-              <button 
+              <button
                 onClick={handleFinancialReport}
                 className='w-full py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700'
               >
@@ -614,7 +649,7 @@ const Payments = ({ payments, user }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Status Pembayaran
                 </label>
-                <select 
+                <select
                   value={filterStatus}
                   onChange={handleFilterChange}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -683,73 +718,105 @@ const Payments = ({ payments, user }) => {
             <div className='bg-gray-50 p-4 rounded-lg mb-6 flex justify-between items-center'>
               <div>
                 <span className='text-sm text-gray-500'>ID Transaksi</span>
-                <p className='text-lg font-bold text-gray-900'>{selectedTransaction.id}</p>
+                <p className='text-lg font-bold text-gray-900'>
+                  {selectedTransaction.id}
+                </p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm ${
-                selectedTransaction.status === 'Dibayar' 
-                  ? 'bg-green-100 text-green-800' 
-                  : selectedTransaction.status === 'Menunggu'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
-              }`}>
+              <span
+                className={`px-3 py-1 rounded-full text-sm ${
+                  selectedTransaction.status === 'Dibayar'
+                    ? 'bg-green-100 text-green-800'
+                    : selectedTransaction.status === 'Menunggu'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
+                }`}
+              >
                 {selectedTransaction.status}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-6'>
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Informasi Proyek</h4>
-                <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                <h4 className='text-sm font-medium text-gray-500 mb-2'>
+                  Informasi Proyek
+                </h4>
+                <div className='bg-white p-4 border border-gray-200 rounded-lg'>
                   <div className='flex items-center mb-3'>
-                    <div className={`w-10 h-10 rounded ${selectedTransaction.project.bgColor} mr-3 flex items-center justify-center ${selectedTransaction.project.textColor} font-medium`}>
+                    <div
+                      className={`w-10 h-10 rounded ${selectedTransaction.project.bgColor} mr-3 flex items-center justify-center ${selectedTransaction.project.textColor} font-medium`}
+                    >
                       {selectedTransaction.project.code}
                     </div>
-                    <span className="font-medium">{selectedTransaction.project.name}</span>
+                    <span className='font-medium'>
+                      {selectedTransaction.project.name}
+                    </span>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Kategori:</span>
-                      <span className="font-medium">{selectedTransaction.category}</span>
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Kategori:</span>
+                      <span className='font-medium'>
+                        {selectedTransaction.category}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Freelancer:</span>
-                      <span className="font-medium">{selectedTransaction.freelancer}</span>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Freelancer:</span>
+                      <span className='font-medium'>
+                        {selectedTransaction.freelancer}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Klien:</span>
-                      <span className="font-medium">{selectedTransaction.client}</span>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Klien:</span>
+                      <span className='font-medium'>
+                        {selectedTransaction.client}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Informasi Pembayaran</h4>
-                <div className="bg-white p-4 border border-gray-200 rounded-lg">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tanggal:</span>
-                      <span className="font-medium">{selectedTransaction.date}</span>
+                <h4 className='text-sm font-medium text-gray-500 mb-2'>
+                  Informasi Pembayaran
+                </h4>
+                <div className='bg-white p-4 border border-gray-200 rounded-lg'>
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Tanggal:</span>
+                      <span className='font-medium'>
+                        {selectedTransaction.date}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Metode:</span>
-                      <span className="font-medium">{selectedTransaction.paymentMethod}</span>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Metode:</span>
+                      <span className='font-medium'>
+                        {selectedTransaction.paymentMethod}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Pembayaran:</span>
-                      <span className="font-medium">{selectedTransaction.amount}</span>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Total Pembayaran:</span>
+                      <span className='font-medium'>
+                        {selectedTransaction.amount}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Komisi Platform:</span>
-                      <span className="font-medium text-green-600">{selectedTransaction.commission}</span>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Komisi Platform:</span>
+                      <span className='font-medium text-green-600'>
+                        {selectedTransaction.commission}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Diterima Freelancer:</span>
-                      <span className="font-medium">
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>
+                        Diterima Freelancer:
+                      </span>
+                      <span className='font-medium'>
                         {(() => {
                           // Calculate amount received by freelancer
-                          const totalAmount = parseInt(selectedTransaction.amount.replace(/\D/g, ''));
-                          const commission = parseInt(selectedTransaction.commission.replace(/\D/g, ''));
+                          const totalAmount = parseInt(
+                            selectedTransaction.amount.replace(/\D/g, '')
+                          );
+                          const commission = parseInt(
+                            selectedTransaction.commission.replace(/\D/g, '')
+                          );
                           const received = totalAmount - commission;
                           // Format as currency
                           return `Rp ${received.toLocaleString('id-ID')}`;
@@ -761,11 +828,15 @@ const Payments = ({ payments, user }) => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Catatan Transaksi</h4>
-              <div className="bg-white p-4 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  Pembayaran telah diverifikasi dan diteruskan ke akun freelancer. Proyek telah selesai dan telah memenuhi semua persyaratan yang ditetapkan oleh klien.
+            <div className='mb-6'>
+              <h4 className='text-sm font-medium text-gray-500 mb-2'>
+                Catatan Transaksi
+              </h4>
+              <div className='bg-white p-4 border border-gray-200 rounded-lg'>
+                <p className='text-sm text-gray-700'>
+                  Pembayaran telah diverifikasi dan diteruskan ke akun
+                  freelancer. Proyek telah selesai dan telah memenuhi semua
+                  persyaratan yang ditetapkan oleh klien.
                 </p>
               </div>
             </div>
@@ -817,68 +888,96 @@ const Payments = ({ payments, user }) => {
                 </svg>
               </button>
             </div>
-            
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-3">Pilih Periode Laporan</h4>
-              <div className="grid grid-cols-2 gap-4">
+
+            <div className='mb-6'>
+              <h4 className='text-sm font-medium text-gray-500 mb-3'>
+                Pilih Periode Laporan
+              </h4>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="block text-gray-700 text-xs font-medium mb-1">
+                  <label className='block text-gray-700 text-xs font-medium mb-1'>
                     Dari Tanggal
                   </label>
                   <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    type='date'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-xs font-medium mb-1">
+                  <label className='block text-gray-700 text-xs font-medium mb-1'>
                     Sampai Tanggal
                   </label>
                   <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    type='date'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                   />
                 </div>
               </div>
             </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-              <h4 className="font-medium text-gray-900 mb-3">Ringkasan Laporan</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+
+            <div className='bg-gray-50 p-4 rounded-lg mb-6'>
+              <h4 className='font-medium text-gray-900 mb-3'>
+                Ringkasan Laporan
+              </h4>
+              <div className='grid grid-cols-2 gap-4 text-sm'>
                 <div>
-                  <p className="text-gray-500 mb-1">Total Pendapatan</p>
-                  <p className="font-bold text-lg">Rp 15.250.000</p>
+                  <p className='text-gray-500 mb-1'>Total Pendapatan</p>
+                  <p className='font-bold text-lg'>Rp 15.250.000</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 mb-1">Komisi Platform</p>
-                  <p className="font-bold text-lg">Rp 3.050.000</p>
+                  <p className='text-gray-500 mb-1'>Komisi Platform</p>
+                  <p className='font-bold text-lg'>Rp 3.050.000</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 mb-1">Pembayaran Freelancer</p>
-                  <p className="font-bold text-lg">Rp 12.200.000</p>
+                  <p className='text-gray-500 mb-1'>Pembayaran Freelancer</p>
+                  <p className='font-bold text-lg'>Rp 12.200.000</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 mb-1">Total Transaksi</p>
-                  <p className="font-bold text-lg">24</p>
+                  <p className='text-gray-500 mb-1'>Total Transaksi</p>
+                  <p className='font-bold text-lg'>24</p>
                 </div>
               </div>
             </div>
-            
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-3">Format Laporan</h4>
-              <div className="flex gap-3">
-                <button className="flex-1 py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-                  <span className="flex items-center justify-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+
+            <div className='mb-6'>
+              <h4 className='text-sm font-medium text-gray-500 mb-3'>
+                Format Laporan
+              </h4>
+              <div className='flex gap-3'>
+                <button className='flex-1 py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700'>
+                  <span className='flex items-center justify-center'>
+                    <svg
+                      className='w-4 h-4 mr-2'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                      xmlns='http://www.w3.org/2000/svg'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'
+                      />
                     </svg>
                     PDF
                   </span>
                 </button>
-                <button className="flex-1 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">
-                  <span className="flex items-center justify-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <button className='flex-1 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700'>
+                  <span className='flex items-center justify-center'>
+                    <svg
+                      className='w-4 h-4 mr-2'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                      xmlns='http://www.w3.org/2000/svg'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                      />
                     </svg>
                     Excel
                   </span>

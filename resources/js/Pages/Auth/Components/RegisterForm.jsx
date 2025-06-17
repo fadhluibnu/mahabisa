@@ -5,7 +5,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [role, setRole] = useState('client');
-  
+
   const { data, setData, post, processing, errors } = useForm({
     name: '',
     email: '',
@@ -22,7 +22,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       ...data,
       [name]: type === 'checkbox' ? checked : value,
     });
-    
+
     if (name === 'password_confirmation') {
       setPasswordConfirmation(value);
     }
@@ -35,7 +35,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
         // Registration successful
         console.log('Registration successful');
       },
-      onError: (errors) => {
+      onError: errors => {
         console.error('Registration errors:', errors);
       },
     });
@@ -65,10 +65,12 @@ const RegisterForm = ({ onSwitchToLogin }) => {
             placeholder='Nama lengkap'
             required
           />
-          {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
+          {errors.name && (
+            <div className='text-red-500 text-sm mt-1'>{errors.name}</div>
+          )}
         </div>
       </div>
-      
+
       <div className='mb-6'>
         <label
           htmlFor='register-role'
@@ -100,7 +102,9 @@ const RegisterForm = ({ onSwitchToLogin }) => {
             <span>Freelancer (Pekerja)</span>
           </label>
         </div>
-        {errors.role && <div className="text-red-500 text-sm mt-1">{errors.role}</div>}
+        {errors.role && (
+          <div className='text-red-500 text-sm mt-1'>{errors.role}</div>
+        )}
       </div>
       <div className='mb-6'>
         <label
@@ -119,7 +123,9 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           placeholder='Masukkan email Anda'
           required
         />
-        {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+        {errors.email && (
+          <div className='text-red-500 text-sm mt-1'>{errors.email}</div>
+        )}
       </div>
       <div className='mb-6 relative'>
         <label
@@ -140,7 +146,9 @@ const RegisterForm = ({ onSwitchToLogin }) => {
             minLength='8'
             required
           />
-          {errors.password && <div className="text-red-500 text-sm mt-1">{errors.password}</div>}
+          {errors.password && (
+            <div className='text-red-500 text-sm mt-1'>{errors.password}</div>
+          )}
           <button
             type='button'
             className='absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
@@ -201,7 +209,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           </button>
         </div>
       </div>
-      
+
       <div className='mb-6 relative'>
         <label
           htmlFor='register-password-confirmation'
@@ -223,7 +231,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           />
         </div>
       </div>
-      
+
       <div className='mb-6'>
         <label
           htmlFor='register-university'
@@ -295,7 +303,9 @@ const RegisterForm = ({ onSwitchToLogin }) => {
         disabled={processing || !data.agreeTerms}
         className='w-full py-4 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed'
       >
-        <span className='relative z-10'>{processing ? 'Mendaftar...' : 'Daftar'}</span>
+        <span className='relative z-10'>
+          {processing ? 'Mendaftar...' : 'Daftar'}
+        </span>
         <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:animate-shimmer'></span>
       </button>
       <div className='flex items-center my-6'>

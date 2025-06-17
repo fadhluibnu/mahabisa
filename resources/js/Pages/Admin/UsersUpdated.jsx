@@ -11,35 +11,39 @@ const Users = ({ users, user }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     userType: 'Semua Jenis',
     status: 'Semua Status',
     startDate: '',
-    endDate: ''
+    endDate: '',
   });
-  
+
   // User statistics
   const userStats = {
     total: users.data.length,
     clients: users.data.filter(user => user.role === 'client').length,
     freelancers: users.data.filter(user => user.role === 'freelancer').length,
-    admins: users.data.filter(user => user.role === 'admin').length
+    admins: users.data.filter(user => user.role === 'admin').length,
   };
 
   // Get user role map for display
-  const getUserRoleDisplay = (role) => {
-    switch(role.toLowerCase()) {
-      case 'client': return 'Klien';
-      case 'freelancer': return 'Freelancer';
-      case 'admin': return 'Admin';
-      default: return 'Pengguna';
+  const getUserRoleDisplay = role => {
+    switch (role.toLowerCase()) {
+      case 'client':
+        return 'Klien';
+      case 'freelancer':
+        return 'Freelancer';
+      case 'admin':
+        return 'Admin';
+      default:
+        return 'Pengguna';
     }
   };
 
   // Get user status for display
-  const getUserStatusDisplay = (user) => {
+  const getUserStatusDisplay = user => {
     // In a real application, you would determine status based on various criteria
     return user.email_verified_at ? 'Aktif' : 'Pending';
   };
@@ -48,16 +52,19 @@ const Users = ({ users, user }) => {
   const getFilteredUsers = () => {
     return users.data.filter(user => {
       // Filter by user type
-      if (filters.userType !== 'Semua Jenis' && getUserRoleDisplay(user.role) !== filters.userType) {
+      if (
+        filters.userType !== 'Semua Jenis' &&
+        getUserRoleDisplay(user.role) !== filters.userType
+      ) {
         return false;
       }
-      
+
       // Filter by status
       const userStatus = getUserStatusDisplay(user);
       if (filters.status !== 'Semua Status' && userStatus !== filters.status) {
         return false;
       }
-      
+
       // Filter by join date
       if (filters.startDate) {
         const joinDate = new Date(user.created_at);
@@ -66,7 +73,7 @@ const Users = ({ users, user }) => {
           return false;
         }
       }
-      
+
       if (filters.endDate) {
         const joinDate = new Date(user.created_at);
         const endDate = new Date(filters.endDate);
@@ -76,49 +83,52 @@ const Users = ({ users, user }) => {
           return false;
         }
       }
-      
+
       return true;
     });
   };
-  
+
   // Handle filter changes
-  const handleFilterChange = (e) => {
+  const handleFilterChange = e => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
   };
-  
+
   // Apply filters and reset pagination
-  const applyFilters = (e) => {
+  const applyFilters = e => {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page when applying filters
     setShowFilterModal(false);
   };
-  
+
   // Reset filters
   const resetFilters = () => {
     setFilters({
       userType: 'Semua Jenis',
       status: 'Semua Status',
       startDate: '',
-      endDate: ''
+      endDate: '',
     });
     setCurrentPage(1);
   };
 
   const filteredUsers = getFilteredUsers();
-  
+
   // Handle pagination either from Laravel pagination (when not filtered) or client-side (when filtered)
   const totalUsers = filteredUsers.length;
-  const totalPages = filters.userType !== 'Semua Jenis' || filters.status !== 'Semua Status' || 
-                    filters.startDate || filters.endDate
-                    ? Math.ceil(totalUsers / itemsPerPage)
-                    : Math.ceil(users.total / users.per_page);
+  const totalPages =
+    filters.userType !== 'Semua Jenis' ||
+    filters.status !== 'Semua Status' ||
+    filters.startDate ||
+    filters.endDate
+      ? Math.ceil(totalUsers / itemsPerPage)
+      : Math.ceil(users.total / users.per_page);
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   // Handle page change
-  const handlePageChange = (pageNumber) => {
+  const handlePageChange = pageNumber => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
@@ -129,17 +139,21 @@ const Users = ({ users, user }) => {
     const pageNumbers = [];
     // Always show first page
     pageNumbers.push(1);
-    
+
     // Show current page and surrounding pages
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       pageNumbers.push(i);
     }
-    
+
     // Always show last page
     if (totalPages > 1) {
       pageNumbers.push(totalPages);
     }
-    
+
     // Add ellipsis indicators
     return pageNumbers.reduce((result, page, index, array) => {
       if (index > 0 && page > array[index - 1] + 1) {
@@ -151,24 +165,24 @@ const Users = ({ users, user }) => {
   };
 
   // Handle view user details
-  const handleViewDetails = (user) => {
+  const handleViewDetails = user => {
     setSelectedUser(user);
     setShowDetailsModal(true);
   };
-  
+
   // Handle delete user
   const handleDeleteClick = (user, e) => {
     e.stopPropagation(); // Prevent row click event
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
-  
+
   // Handle confirm delete
   const handleConfirmDelete = () => {
     // In a real app, you would call an API to delete the user
     // For now, we'll just close the modal
     setShowDeleteModal(false);
-    
+
     // You could show a success message here
     alert(`User ${selectedUser.name} has been deleted successfully!`);
   };
@@ -176,24 +190,25 @@ const Users = ({ users, user }) => {
   // Calculate recent users (last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
+
   const recentUsersCount = users.data.filter(user => {
     const createdAt = new Date(user.created_at);
     return createdAt >= thirtyDaysAgo;
   }).length;
 
   // Calculate growth rate (just an approximation for demonstration)
-  const growthRate = recentUsersCount > 0 
-    ? ((recentUsersCount / userStats.total) * 100).toFixed(1) 
-    : '0.0';
+  const growthRate =
+    recentUsersCount > 0
+      ? ((recentUsersCount / userStats.total) * 100).toFixed(1)
+      : '0.0';
 
   // Format date for display
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('id-ID', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     }).format(date);
   };
 
@@ -202,8 +217,8 @@ const Users = ({ users, user }) => {
       title='Kelola Pengguna'
       subtitle='Manajemen data pengguna MahaBisa'
     >
-      <Head title="Kelola Pengguna - MahaBisa Admin" />
-      
+      <Head title='Kelola Pengguna - MahaBisa Admin' />
+
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8'>
         <StatCard
           title='Total Pengguna'
@@ -232,7 +247,9 @@ const Users = ({ users, user }) => {
         <StatCard
           title='Freelancer'
           value={userStats.freelancers.toString()}
-          percentage={(userStats.freelancers / userStats.total * 100).toFixed(1)}
+          percentage={((userStats.freelancers / userStats.total) * 100).toFixed(
+            1
+          )}
           trend='up'
           color='green'
           icon={
@@ -256,7 +273,7 @@ const Users = ({ users, user }) => {
         <StatCard
           title='Klien'
           value={userStats.clients.toString()}
-          percentage={(userStats.clients / userStats.total * 100).toFixed(1)}
+          percentage={((userStats.clients / userStats.total) * 100).toFixed(1)}
           trend='up'
           color='blue'
           icon={
@@ -305,9 +322,17 @@ const Users = ({ users, user }) => {
       <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8'>
         <div className='flex justify-between items-center mb-6'>
           <h3 className='font-bold text-lg text-gray-900'>
-            Daftar Pengguna 
-            {filters.userType !== 'Semua Jenis' || filters.status !== 'Semua Status' || filters.startDate || filters.endDate ? 
-              <span className="ml-2 text-sm font-normal text-indigo-600">(Filtered)</span> : ''}
+            Daftar Pengguna
+            {filters.userType !== 'Semua Jenis' ||
+            filters.status !== 'Semua Status' ||
+            filters.startDate ||
+            filters.endDate ? (
+              <span className='ml-2 text-sm font-normal text-indigo-600'>
+                (Filtered)
+              </span>
+            ) : (
+              ''
+            )}
           </h3>
 
           <div className='flex gap-3'>
@@ -372,13 +397,20 @@ const Users = ({ users, user }) => {
               </tr>
             </thead>
             <tbody>
-              {currentUsers.map((user) => (
-                <tr key={user.id} className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer' onClick={() => handleViewDetails(user)}>
+              {currentUsers.map(user => (
+                <tr
+                  key={user.id}
+                  className='border-b border-gray-100 text-sm hover:bg-gray-50 cursor-pointer'
+                  onClick={() => handleViewDetails(user)}
+                >
                   <td className='py-3'>
                     <div className='flex items-center'>
                       <div className='w-8 h-8 rounded-full mr-3 flex items-center justify-center overflow-hidden bg-gray-200'>
                         <img
-                          src={user.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`}
+                          src={
+                            user.profile_photo_url ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`
+                          }
                           alt={user.name}
                           className='w-full h-full object-cover'
                         />
@@ -390,31 +422,37 @@ const Users = ({ users, user }) => {
                   </td>
                   <td className='py-3'>{user.email}</td>
                   <td className='py-3 hidden sm:table-cell'>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      user.role === 'freelancer' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : user.role === 'client'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        user.role === 'freelancer'
+                          ? 'bg-purple-100 text-purple-800'
+                          : user.role === 'client'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
                       {getUserRoleDisplay(user.role)}
                     </span>
                   </td>
                   <td className='py-3 hidden md:table-cell'>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      getUserStatusDisplay(user) === 'Aktif' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        getUserStatusDisplay(user) === 'Aktif'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
                       {getUserStatusDisplay(user)}
                     </span>
                   </td>
-                  <td className='py-3 hidden lg:table-cell'>{formatDate(user.created_at)}</td>
+                  <td className='py-3 hidden lg:table-cell'>
+                    {formatDate(user.created_at)}
+                  </td>
                   <td className='py-3 text-right'>
                     <div className='flex justify-end space-x-2'>
-                      <button 
+                      <button
                         className='p-1 rounded hover:bg-gray-100'
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation(); // Prevent row click
                           handleViewDetails(user);
                         }}
@@ -443,7 +481,7 @@ const Users = ({ users, user }) => {
                       <Link
                         href={`/admin/users/${user.id}/edit`}
                         className='p-1 rounded hover:bg-gray-100'
-                        onClick={(e) => e.stopPropagation()} // Prevent row click
+                        onClick={e => e.stopPropagation()} // Prevent row click
                       >
                         <svg
                           className='w-5 h-5 text-blue-600'
@@ -460,9 +498,9 @@ const Users = ({ users, user }) => {
                           />
                         </svg>
                       </Link>
-                      <button 
+                      <button
                         className='p-1 rounded hover:bg-gray-100'
-                        onClick={(e) => handleDeleteClick(user, e)}
+                        onClick={e => handleDeleteClick(user, e)}
                       >
                         <svg
                           className='w-5 h-5 text-red-600'
@@ -489,37 +527,38 @@ const Users = ({ users, user }) => {
 
         <div className='flex flex-col md:flex-row gap-4 justify-between items-center mt-6'>
           <div className='text-sm text-gray-600'>
-            Menampilkan {indexOfFirstUser + 1}-{Math.min(indexOfLastUser, totalUsers)} dari {totalUsers} data
+            Menampilkan {indexOfFirstUser + 1}-
+            {Math.min(indexOfLastUser, totalUsers)} dari {totalUsers} data
           </div>
 
           <div className='flex'>
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={`px-3 py-1 text-sm font-medium ${
-                currentPage === 1 
-                  ? 'text-gray-300 cursor-not-allowed' 
+                currentPage === 1
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-50'
               } bg-white border border-gray-300 rounded-l-md`}
             >
               Sebelumnya
             </button>
-            
-            {getPageNumbers().map((page, index) => (
+
+            {getPageNumbers().map((page, index) =>
               typeof page === 'number' ? (
-                <button 
+                <button
                   key={page}
                   onClick={() => handlePageChange(page)}
                   className={`px-3 py-1 text-sm font-medium ${
-                    currentPage === page 
-                      ? 'text-white bg-indigo-600 border-indigo-600' 
+                    currentPage === page
+                      ? 'text-white bg-indigo-600 border-indigo-600'
                       : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
                   } border`}
                 >
                   {page}
                 </button>
               ) : (
-                <button 
+                <button
                   key={page}
                   className='px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                   disabled
@@ -527,14 +566,14 @@ const Users = ({ users, user }) => {
                   ...
                 </button>
               )
-            ))}
-            
-            <button 
+            )}
+
+            <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className={`px-3 py-1 text-sm font-medium ${
-                currentPage === totalPages 
-                  ? 'text-gray-300 cursor-not-allowed' 
+                currentPage === totalPages
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-50'
               } bg-white border border-gray-300 rounded-r-md`}
             >
@@ -581,21 +620,30 @@ const Users = ({ users, user }) => {
               {/* User Avatar and Basic Info */}
               <div className='md:w-1/3 flex flex-col items-center'>
                 <div className='w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-200'>
-                  <img 
-                    src={selectedUser.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.name)}`} 
-                    alt={selectedUser.name} 
-                    className='w-full h-full object-cover' 
+                  <img
+                    src={
+                      selectedUser.profile_photo_url ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.name)}`
+                    }
+                    alt={selectedUser.name}
+                    className='w-full h-full object-cover'
                   />
                 </div>
-                <h4 className='text-xl font-bold text-gray-900 mb-1'>{selectedUser.name}</h4>
-                <p className='text-sm text-gray-600 mb-2'>{selectedUser.email}</p>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  selectedUser.role === 'freelancer' 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : selectedUser.role === 'client'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
-                }`}>
+                <h4 className='text-xl font-bold text-gray-900 mb-1'>
+                  {selectedUser.name}
+                </h4>
+                <p className='text-sm text-gray-600 mb-2'>
+                  {selectedUser.email}
+                </p>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    selectedUser.role === 'freelancer'
+                      ? 'bg-purple-100 text-purple-800'
+                      : selectedUser.role === 'client'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
+                  }`}
+                >
                   {getUserRoleDisplay(selectedUser.role)}
                 </span>
               </div>
@@ -603,7 +651,9 @@ const Users = ({ users, user }) => {
               {/* User Details */}
               <div className='md:w-2/3'>
                 <div className='bg-gray-50 p-4 rounded-lg mb-4'>
-                  <h5 className='font-medium text-gray-900 mb-3'>Informasi Pengguna</h5>
+                  <h5 className='font-medium text-gray-900 mb-3'>
+                    Informasi Pengguna
+                  </h5>
                   <div className='grid grid-cols-2 gap-4'>
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>ID Pengguna</p>
@@ -611,29 +661,45 @@ const Users = ({ users, user }) => {
                     </div>
                     <div>
                       <p className='text-xs text-gray-500 mb-1'>Status</p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                        getUserStatusDisplay(selectedUser) === 'Aktif' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span
+                        className={`inline-block px-2 py-1 rounded-full text-xs ${
+                          getUserStatusDisplay(selectedUser) === 'Aktif'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
                         {getUserStatusDisplay(selectedUser)}
                       </span>
                     </div>
                     <div>
-                      <p className='text-xs text-gray-500 mb-1'>Tanggal Bergabung</p>
-                      <p className='text-sm font-medium'>{formatDate(selectedUser.created_at)}</p>
+                      <p className='text-xs text-gray-500 mb-1'>
+                        Tanggal Bergabung
+                      </p>
+                      <p className='text-sm font-medium'>
+                        {formatDate(selectedUser.created_at)}
+                      </p>
                     </div>
                     <div>
-                      <p className='text-xs text-gray-500 mb-1'>Email Terverifikasi</p>
-                      <p className='text-sm font-medium'>{selectedUser.email_verified_at ? formatDate(selectedUser.email_verified_at) : 'Belum terverifikasi'}</p>
+                      <p className='text-xs text-gray-500 mb-1'>
+                        Email Terverifikasi
+                      </p>
+                      <p className='text-sm font-medium'>
+                        {selectedUser.email_verified_at
+                          ? formatDate(selectedUser.email_verified_at)
+                          : 'Belum terverifikasi'}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 <div className='mb-4'>
-                  <h5 className='font-medium text-gray-900 mb-3'>Aktivitas Terbaru</h5>
+                  <h5 className='font-medium text-gray-900 mb-3'>
+                    Aktivitas Terbaru
+                  </h5>
                   <div className='p-4 bg-gray-50 rounded-lg text-center'>
-                    <p className='text-sm text-gray-500'>Belum ada data aktivitas</p>
+                    <p className='text-sm text-gray-500'>
+                      Belum ada data aktivitas
+                    </p>
                   </div>
                 </div>
               </div>
@@ -683,13 +749,15 @@ const Users = ({ users, user }) => {
                 </svg>
               </div>
             </div>
-            
+
             <h3 className='text-center font-bold text-lg text-gray-900 mb-2'>
               Hapus Pengguna
             </h3>
-            
+
             <p className='text-center text-gray-600 mb-6'>
-              Apakah Anda yakin ingin menghapus pengguna <span className='font-medium'>{selectedUser.name}</span>? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus pengguna{' '}
+              <span className='font-medium'>{selectedUser.name}</span>? Tindakan
+              ini tidak dapat dibatalkan.
             </p>
 
             <div className='flex justify-center gap-3'>
@@ -743,16 +811,22 @@ const Users = ({ users, user }) => {
               </button>
             </div>
 
-            <form action={route('admin.users.store')} method="POST">
-              <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')} />
-              
+            <form action={route('admin.users.store')} method='POST'>
+              <input
+                type='hidden'
+                name='_token'
+                value={document
+                  .querySelector('meta[name="csrf-token"]')
+                  ?.getAttribute('content')}
+              />
+
               <div className='mb-4'>
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Nama Lengkap
                 </label>
                 <input
                   type='text'
-                  name="name"
+                  name='name'
                   required
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
@@ -764,7 +838,7 @@ const Users = ({ users, user }) => {
                 </label>
                 <input
                   type='email'
-                  name="email"
+                  name='email'
                   required
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
@@ -774,15 +848,15 @@ const Users = ({ users, user }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Jenis Pengguna
                 </label>
-                <select 
-                  name="role"
+                <select
+                  name='role'
                   required
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 >
-                  <option value="">Pilih jenis pengguna</option>
-                  <option value="freelancer">Freelancer</option>
-                  <option value="client">Klien</option>
-                  <option value="admin">Admin</option>
+                  <option value=''>Pilih jenis pengguna</option>
+                  <option value='freelancer'>Freelancer</option>
+                  <option value='client'>Klien</option>
+                  <option value='admin'>Admin</option>
                 </select>
               </div>
 
@@ -792,7 +866,7 @@ const Users = ({ users, user }) => {
                 </label>
                 <input
                   type='password'
-                  name="password"
+                  name='password'
                   required
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
@@ -804,7 +878,7 @@ const Users = ({ users, user }) => {
                 </label>
                 <input
                   type='url'
-                  name="profile_photo_url"
+                  name='profile_photo_url'
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                 />
               </div>
@@ -867,8 +941,8 @@ const Users = ({ users, user }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Jenis Pengguna
                 </label>
-                <select 
-                  name="userType"
+                <select
+                  name='userType'
                   value={filters.userType}
                   onChange={handleFilterChange}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -884,8 +958,8 @@ const Users = ({ users, user }) => {
                 <label className='block text-gray-700 text-sm font-medium mb-2'>
                   Status
                 </label>
-                <select 
-                  name="status"
+                <select
+                  name='status'
                   value={filters.status}
                   onChange={handleFilterChange}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -907,7 +981,7 @@ const Users = ({ users, user }) => {
                     </label>
                     <input
                       type='date'
-                      name="startDate"
+                      name='startDate'
                       value={filters.startDate}
                       onChange={handleFilterChange}
                       className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -919,7 +993,7 @@ const Users = ({ users, user }) => {
                     </label>
                     <input
                       type='date'
-                      name="endDate"
+                      name='endDate'
                       value={filters.endDate}
                       onChange={handleFilterChange}
                       className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'

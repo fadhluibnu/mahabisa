@@ -16,11 +16,12 @@ const FilterSection = ({ filters, onFilterChange, categories }) => {
                 onChange={e => onFilterChange('categoryId', e.target.value)}
               >
                 <option value=''>Semua Kategori</option>
-                {categories && categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                {categories &&
+                  categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
               </select>
             </div>
 

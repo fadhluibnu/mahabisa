@@ -5,9 +5,9 @@ const CategoryCard = ({ category }) => {
   const handleClick = () => {
     router.visit(`/eksplorasi?kategori=${encodeURIComponent(category.name)}`);
   };
-  
+
   return (
-    <div 
+    <div
       onClick={handleClick}
       className='w-full cursor-pointer shadow-lg rounded-lg py-6 md:py-8 bg-white hover:shadow-xl transition-all duration-200 ease-in-out'
     >
@@ -43,7 +43,9 @@ const CategoryCard = ({ category }) => {
         </svg>
       </div>
       {category.description && (
-        <p className="px-4 md:px-6 mt-3 text-sm text-gray-600 line-clamp-2">{category.description}</p>
+        <p className='px-4 md:px-6 mt-3 text-sm text-gray-600 line-clamp-2'>
+          {category.description}
+        </p>
       )}
     </div>
   );

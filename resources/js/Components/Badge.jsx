@@ -10,11 +10,11 @@ const Badge = ({ children, color = 'gray', className = '' }) => {
     indigo: 'bg-indigo-100 text-indigo-800',
     purple: 'bg-purple-100 text-purple-800',
     pink: 'bg-pink-100 text-pink-800',
-    orange: 'bg-orange-100 text-orange-800'
+    orange: 'bg-orange-100 text-orange-800',
   };
 
   return (
-    <span 
+    <span
       className={`inline-flex items-center rounded-md font-medium ${colorClasses[color] || colorClasses.gray} ${className}`}
     >
       {children}
