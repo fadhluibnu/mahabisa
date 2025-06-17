@@ -218,6 +218,9 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     Route::get('/', [ClientController::class, 'dashboard'])->name('client.dashboard');
     Route::get('/dashboard', [ClientController::class, 'dashboard'])->name('client.dashboard');
     
+    // Debug routes - REMOVE IN PRODUCTION
+    Route::get('/debug/orders', [ClientController::class, 'debugOrders'])->name('client.debug.orders');
+    
     // Projects
     Route::get('/projects', [ClientController::class, 'projects'])->name('client.projects');
     Route::get('/projects/create', [ClientController::class, 'createProject'])->name('client.projects.create');

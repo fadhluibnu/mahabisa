@@ -555,68 +555,73 @@ class ClientController extends Controller
     /**
      * Display client's orders.
      */
-    // public function orders()
-    // {
-    //     $user = Auth::user();
+    public function orders(Request $request)
+    {
+        \Log::info('ClientController@orders called', [
+            'user_id' => auth()->id(),
+            'request' => $request->all()
+        ]);
         
-    //     $activeOrders = $user->clientOrders()
-    //         ->whereIn('status', ['pending', 'in-progress', 'revision'])
-    //         ->with(['freelancer', 'service', 'project'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate(10);
-            
-    //     $completedOrders = $user->clientOrders()
-    //         ->where('status', 'completed')
-    //         ->with(['freelancer', 'service', 'project'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate(10);
-            
-    //     $cancelledOrders = $user->clientOrders()
-    // public function orders() {
-    //     $user = Auth::user();
-    //     $order = Order::findOrFail($orderId);
+        $user = Auth::user();
+        $status = $request->get('status', 'all'); // Get status filter from request
+        $search = $request->get('search', ''); // Get search filter from request
+
+        $query = $user->clientOrders()
+            ->with(['freelancer', 'service', 'project']) // Eager load freelancer, service, project
+            ->orderBy('created_at', 'desc');
+
+        // Apply status filter
+        if ($status !== 'all') {
+            // Handle inconsistency between 'in-progress' and 'in_progress'
+            if ($status === 'in_progress') {
+                $query->where(function($q) {
+                    $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+                });
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        // Apply search filter
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'LIKE', "%{$search}%")
+                  ->orWhereHas('freelancer', function($q) use ($search) {
+                      $q->where('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('service', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('project', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
         
-    //     // Ensure the order belongs to the user and is completed
-    //     if ($order->client_id !== $user->id) {
-    //         return redirect()->route('client.orders')->with('error', 'You do not have access to this order.');
-    //     }
-        
-    //     if ($order->status !== 'completed') {
-    //         return redirect()->route('client.order.detail', $order->id)
-    //             ->with('error', 'You can only review completed orders.');
-    //     }
-        
-    //     // Check if review already exists
-    //     if (Review::where('order_id', $order->id)->exists()) {
-    //         return redirect()->route('client.order.detail', $order->id)
-    //             ->with('error', 'You have already submitted a review for this order.');
-    //     }
-        
-    //     $validated = $request->validate([
-    //         'rating' => 'required|integer|min:1|max:5',
-    //         'comment' => 'required|string|min:10',
-    //     ]);
-        
-    //     $review = Review::create([
-    //         'client_id' => $user->id,
-    //         'freelancer_id' => $order->freelancer_id,
-    //         'order_id' => $order->id,
-    //         'rating' => $validated['rating'],
-    //         'comment' => $validated['comment'],
-    //     ]);
-        
-    //     // Record activity
-    //     Activity::create([
-    //         'user_id' => $user->id,
-    //         'activity_type' => 'review_submitted',
-    //         'description' => "Submitted a {$review->rating}-star review for order #{$order->id}",
-    //         'reference_id' => $review->id,
-    //         'reference_type' => 'review',
-    //     ]);
-        
-    //     return redirect()->route('client.order.detail', $order->id)
-    //         ->with('success', 'Review submitted successfully.');
-    // }
+        $orders = $query->paginate(10)->appends($request->all()); // Paginate results
+
+        // Get count of orders for each status tab
+        $orderCounts = [
+            'all' => $user->clientOrders()->count(),
+            'pending' => $user->clientOrders()->where('status', 'pending')->count(),
+            'in_progress' => $user->clientOrders()->where(function($q) {
+                $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+            })->count(),
+            'delivered' => $user->clientOrders()->where('status', 'delivered')->count(),
+            'completed' => $user->clientOrders()->where('status', 'completed')->count(),
+            'revision' => $user->clientOrders()->where('status', 'revision')->count(),
+            'cancelled' => $user->clientOrders()->where('status', 'cancelled')->count(),
+        ];
+
+        return Inertia::render('Client/Orders', [
+            'orders' => $orders,
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+            ],
+            'orderCounts' => $orderCounts
+        ]);
+    }
     
     /**
      * Process a payment for an order.
@@ -1332,5 +1337,107 @@ class ClientController extends Controller
         ]);
         
         return back()->with('success', 'Informasi penagihan berhasil diperbarui');
+    }
+    
+    /**
+     * Display details of a specific order.
+     *
+     * @param  int  $id
+     * @return \Inertia\Response
+     */
+    public function showOrder($id)
+    {
+        \Log::info('ClientController@showOrder called', [
+            'user_id' => auth()->id(),
+            'order_id' => $id
+        ]);
+        
+        $user = Auth::user();
+        
+        // Get the order and make sure it belongs to the current client
+        $order = $user->clientOrders()
+            ->with(['freelancer', 'freelancer.profile', 'service', 'project', 'reviews', 'deliveries', 'revisions'])
+            ->findOrFail($id);
+        
+        // Get messages related to this order
+        $messages = Message::where('order_id', $order->id)
+            ->where(function($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                      ->orWhere('recipient_id', $user->id);
+            })
+            ->with(['sender', 'recipient'])
+            ->orderBy('created_at', 'asc')
+            ->get();
+            
+        // Check if the client can leave a review (completed orders that don't have a review yet)
+        $canReview = $order->status === 'completed' && $order->reviews()->where('client_id', $user->id)->count() === 0;
+        
+        return Inertia::render('Client/OrderDetail', [
+            'order' => $order,
+            'messages' => $messages,
+            'canReview' => $canReview
+        ]);
+    }
+    
+    /**
+     * Debug helper for client orders (REMOVE IN PRODUCTION).
+     */
+    public function debugOrders(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Basic checks
+        $hasClientOrdersRelationship = method_exists($user, 'clientOrders');
+        
+        // Test the relationship
+        $orderCount = 0;
+        $firstOrder = null;
+        $error = null;
+        
+        try {
+            $orders = $user->clientOrders;
+            $orderCount = count($orders);
+            if ($orderCount > 0) {
+                $firstOrder = $orders->first();
+            }
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
+        }
+        
+        // Check order counts by status
+        $orderCounts = [];
+        if (!$error) {
+            $orderCounts = [
+                'all' => $user->clientOrders()->count(),
+                'pending' => $user->clientOrders()->where('status', 'pending')->count(),
+                'in_progress' => $user->clientOrders()->where(function($q) {
+                    $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+                })->count(),
+                'delivered' => $user->clientOrders()->where('status', 'delivered')->count(),
+                'completed' => $user->clientOrders()->where('status', 'completed')->count(),
+                'revision' => $user->clientOrders()->where('status', 'revision')->count(),
+                'cancelled' => $user->clientOrders()->where('status', 'cancelled')->count(),
+            ];
+        }
+        
+        // Return the debug information
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role
+            ],
+            'relationship_checks' => [
+                'has_client_orders_method' => $hasClientOrdersRelationship,
+                'order_count' => $orderCount,
+                'error' => $error
+            ],
+            'first_order' => $firstOrder,
+            'order_counts' => $orderCounts,
+            'debug_info' => [
+                'controller_method' => __METHOD__,
+                'time' => now()->toDateTimeString()
+            ]
+        ]);
     }
 }
