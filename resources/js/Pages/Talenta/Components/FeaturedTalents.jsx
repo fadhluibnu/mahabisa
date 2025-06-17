@@ -1,49 +1,24 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 
-const FeaturedTalents = () => {
-  // Data for featured talents
-  const featuredTalents = [
-    {
-      id: 1,
-      name: 'Ahmad Rizky',
-      title: 'UI/UX Designer & Web Developer',
-      image: 'https://randomuser.me/api/portraits/men/42.jpg',
-      university: 'Universitas Indonesia',
-      isVerified: true,
-      isOnline: true,
-      stats: {
-        rating: 4.9,
-        projects: 38,
-        clients: 24,
-      },
-      skills: ['UI/UX', 'React', 'Figma', 'Tailwind CSS'],
-      description:
-        'Mahasiswa Ilmu Komputer dengan pengalaman 3 tahun di UI/UX design dan web development. Spesialis dalam membuat desain yang user-centered dan implementasi dengan teknologi modern.',
+const FeaturedTalents = ({ freelancers = [] }) => {
+  // Transform freelancers data to format needed by the component
+  const featuredTalents = freelancers.map(freelancer => ({
+    id: freelancer.id,
+    name: freelancer.name,
+    title: freelancer.profile?.bio?.split('\n')[0] || "Freelancer",
+    image: freelancer.profile_photo_url || "https://randomuser.me/api/portraits/lego/1.jpg",
+    university: freelancer.profile?.university || freelancer.profile?.education || "Universitas",
+    isVerified: freelancer.profile?.is_verified || false,
+    isOnline: freelancer.last_active_at ? new Date(freelancer.last_active_at) > new Date(Date.now() - 15 * 60 * 1000) : false,
+    stats: {
+      rating: freelancer.avg_rating || 0,
+      projects: freelancer.services_count || 0,
+      clients: freelancer.completed_orders_count || 0,
     },
-    {
-      id: 2,
-      name: 'Putri Ariani',
-      title: 'Video Editor & Motion Graphics Artist',
-      image: 'https://randomuser.me/api/portraits/women/33.jpg',
-      university: 'Institut Teknologi Bandung',
-      isVerified: true,
-      isOnline: false,
-      stats: {
-        rating: 4.8,
-        projects: 42,
-        clients: 29,
-      },
-      skills: [
-        'Adobe Premiere',
-        'After Effects',
-        'DaVinci Resolve',
-        'Motion Graphics',
-      ],
-      description:
-        'Mahasiswi Desain Komunikasi Visual dengan fokus pada editing video dan motion graphics. Telah mengerjakan berbagai proyek untuk brand nasional dan startup.',
-    },
-  ];
+    skills: freelancer.skills?.map(skill => skill.name) || [],
+    description: freelancer.profile?.bio || "Freelancer tersedia untuk mengerjakan proyek Anda",
+  }));
 
   return (
     <section className='py-12 md:py-16 bg-white'>

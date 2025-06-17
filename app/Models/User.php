@@ -100,6 +100,38 @@ class User extends Authenticatable
     }
     
     /**
+     * Get the user's wallet
+     */
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+    
+    /**
+     * Get the user's transactions
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+    
+    /**
+     * Get the user's withdrawals
+     */
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
+    
+    /**
+     * Get the files that the user has uploaded
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class);
+    }
+    
+    /**
      * Get the user's portfolio items
      */
     public function portfolios(): HasMany
@@ -190,18 +222,18 @@ class User extends Authenticatable
     }
     
     /**
-     * Get withdrawals made by the user (as freelancer)
-     */
-    public function withdrawals(): HasMany
-    {
-        return $this->hasMany(Withdrawal::class);
-    }
-    
-    /**
      * Get activities performed by the user
      */
     public function activities(): HasMany
     {
         return $this->hasMany(Activity::class);
+    }
+    
+    /**
+     * Get payment methods belonging to the user
+     */
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(PaymentMethod::class);
     }
 }

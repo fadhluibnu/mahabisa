@@ -12,6 +12,8 @@ use App\Models\Service;
 use App\Models\ServicePackage;
 use App\Models\ServiceRequirement;
 use App\Models\ServiceFaq;
+
+use App\Models\ServiceGallery;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -25,7 +27,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UsersSeeder::class,
             SettingsSeeder::class,
+            PaymentSettingsSeeder::class,
         ]);
+        
         
         // Get admin user
         $admin = User::where('email', 'admin@mahabisa.com')->first();
@@ -143,14 +147,38 @@ class DatabaseSeeder extends Seeder
         );
         
         // Create categories
-        $categoryWeb = Category::firstOrCreate(['name' => 'Web Development']);
-        $categoryMobile = Category::firstOrCreate(['name' => 'Mobile App Development']);
-        $categoryDesign = Category::firstOrCreate(['name' => 'Design']);
-        $categoryWriting = Category::firstOrCreate(['name' => 'Content Writing']);
-        $categoryMarketing = Category::firstOrCreate(['name' => 'Digital Marketing']);
-        $categoryVideo = Category::firstOrCreate(['name' => 'Video & Animation']);
-        $categoryMusic = Category::firstOrCreate(['name' => 'Music & Audio']);
-        $categoryBusiness = Category::firstOrCreate(['name' => 'Business']);
+        $categoryWeb = Category::firstOrCreate(
+            ['name' => 'Web Development'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryMobile = Category::firstOrCreate(
+            ['name' => 'Mobile App Development'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryDesign = Category::firstOrCreate(
+            ['name' => 'Design'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryWriting = Category::firstOrCreate(
+            ['name' => 'Content Writing'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryMarketing = Category::firstOrCreate(
+            ['name' => 'Digital Marketing'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryVideo = Category::firstOrCreate(
+            ['name' => 'Video & Animation'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryMusic = Category::firstOrCreate(
+            ['name' => 'Music & Audio'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
+        $categoryBusiness = Category::firstOrCreate(
+            ['name' => 'Business'],
+            ['image_url' => 'storage\\category\\web.png']
+        );
         
         // Create skills
         $skills = [
@@ -255,7 +283,7 @@ class DatabaseSeeder extends Seeder
                 'delivery_time' => 10,
                 'revisions' => 2,
                 'category_id' => $categoryWeb->id,
-                'thumbnail' => 'storage/public/service/web-development.jpg',
+                'thumbnail' => 'storage\services\1y6EeS9jX2P4cRsMOqWX5HJHT4bs4dFsClSGjvFE.png',
                 'is_active' => true,
             ]
         );
@@ -372,6 +400,37 @@ class DatabaseSeeder extends Seeder
             ]
         );
         
+        // Add gallery images for web development service
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'image_path' => 'storage\services\gallery\7WwLjZw9nChFdPqKZVVXOHfARNENk2NDHJ9fKgcJ.jpg',
+            ],
+            [
+                'order' => 0
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'image_path' => 'storage\services\gallery\dob9ixqdNjBFMJBSpr7r6aysud56gksaJeGlu3l8.jpg',
+            ],
+            [
+                'order' => 1
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $webService->id,
+                'image_path' => 'storage\services\gallery\JT3J0XlRX1K6A2KUTP39e6OSQg1wQduYKXH1ABAI.jpg',
+            ],
+            [
+                'order' => 2
+            ]
+        );
+        
         $mobileService = Service::updateOrCreate(
             [
                 'user_id' => $freelancer2->id,
@@ -383,7 +442,7 @@ class DatabaseSeeder extends Seeder
                 'price_type' => 'fixed',
                 'delivery_time' => 20,
                 'category_id' => $categoryMobile->id,
-                'thumbnail' => 'storage/public/service/mobile-app.jpg',
+                'thumbnail' => 'storage\services\64366eb8649ff079fcc8d452_Visual_7.webp',
                 'is_active' => true,
             ]
         );
@@ -500,6 +559,47 @@ class DatabaseSeeder extends Seeder
             ]
         );
         
+        // Add gallery images for mobile app service
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'image_path' => 'storage\services\gallery\Qf6LzIwAHhtNkJQ4dRglRfaDprmx1VCG8efiBoXs.jpg',
+            ],
+            [
+                'order' => 0
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'image_path' => 'storage\services\gallery\QiKhTPzXIJHDoj5zyr3jnAp1ktlo0Cumz2s4aPNT.jpg',
+            ],
+            [
+                'order' => 1
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'image_path' => 'storage\services\gallery\sy5v7iwNVSty63R6J4j2snNHNfGA5BsqVMzIH8pc.jpg',
+            ],
+            [
+                'order' => 2
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $mobileService->id,
+                'image_path' => 'storage\services\gallery\xN0lbLsiyNyoPgEbnDHqTIPGqKtZ3kPHqgehVvLo.jpg',
+            ],
+            [
+                'order' => 3
+            ]
+        );
+        
         $logoService = Service::updateOrCreate(
             [
                 'user_id' => $freelancer1->id,
@@ -512,7 +612,7 @@ class DatabaseSeeder extends Seeder
                 'delivery_time' => 5,
                 'revisions' => 3,
                 'category_id' => $categoryDesign->id,
-                'thumbnail' => 'storage/public/service/logo-design.jpg',
+                'thumbnail' => 'storage\services\Apa-Sih-Tugas-Seorang-Web-Developer.webp',
                 'is_active' => true,
             ]
         );
@@ -626,6 +726,57 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'answer' => 'Jumlah revisi tergantung pada paket yang dipilih, mulai dari 1 revisi untuk paket Dasar hingga 5 revisi untuk paket Premium.'
+            ]
+        );
+        
+        // Add gallery images for logo design service
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'image_path' => 'storage\services\gallery\xO5KHsrY1Jf8pXc7s0VNXWfORTeV2coLKGCsxe4J.jpg',
+            ],
+            [
+                'order' => 0
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'image_path' => 'storage\services\gallery\yDEx1a6yrWdoEV7enuAccSqx3KqPCSJcpeMd8OVo.jpg',
+            ],
+            [
+                'order' => 1
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'image_path' => 'storage\services\gallery\YXjCnHnYVLYhR95PNlTKMVRKyudB7Q9U4IZDnA0p.jpg',
+            ],
+            [
+                'order' => 2
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'image_path' => 'storage\services\AUU5J61kiwNmMSLe42cnf9mxgNjFvX5K4uza1V5K.jpg',
+            ],
+            [
+                'order' => 3
+            ]
+        );
+        
+        ServiceGallery::updateOrCreate(
+            [
+                'service_id' => $logoService->id,
+                'image_path' => 'storage\services\content-creator.png',
+            ],
+            [
+                'order' => 4
             ]
         );
         

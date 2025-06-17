@@ -9,6 +9,8 @@ const ServiceCreate = ({ categories = [], skills = [] }) => {
   const [activeSection, setActiveSection] = useState('basic');
   const [packageCount, setPackageCount] = useState(1);
   const [selectedSkills, setSelectedSkills] = useState([]);
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     category_id: '',
@@ -213,12 +215,58 @@ const ServiceCreate = ({ categories = [], skills = [] }) => {
       });
     }
   };
+  
+  // Handle gallery images upload
+  const handleGalleryImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Create object URLs for preview
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      
+      // Update state with new files and previews
+      setGalleryImages([...galleryImages, ...files]);
+      setGalleryPreviews([...galleryPreviews, ...newPreviews]);
+    }
+  };
+  
+  // Remove a gallery image
+  const removeGalleryImage = (index) => {
+    const updatedImages = [...galleryImages];
+    const updatedPreviews = [...galleryPreviews];
+    
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(updatedPreviews[index]);
+    
+    // Remove the image and preview from arrays
+    updatedImages.splice(index, 1);
+    updatedPreviews.splice(index, 1);
+    
+    setGalleryImages(updatedImages);
+    setGalleryPreviews(updatedPreviews);
+  };
+
+  const handleGalleryImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = files.filter(file => file.size <= 10 * 1024 * 1024 && /\.(jpg|jpeg|png|gif)$/i.test(file.name));
+    
+    if (validFiles.length + galleryImages.length > 5) {
+      alert('Anda hanya dapat mengunggah hingga 5 gambar.');
+      return;
+    }
+    
+    const newGalleryImages = [...galleryImages, ...validFiles];
+    const newGalleryPreviews = newGalleryImages.map(file => URL.createObjectURL(file));
+    
+    setGalleryImages(newGalleryImages);
+    setGalleryPreviews(newGalleryPreviews);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
     console.log("Submitting form data:", formData);
     console.log("Selected skills:", selectedSkills);
+    console.log("Gallery images:", galleryImages);
     
     // Validation
     if (!formData.title || !formData.category_id || !formData.description) {
@@ -279,9 +327,23 @@ const ServiceCreate = ({ categories = [], skills = [] }) => {
       submitData.append('skills[]', skillId);
     });
     
-    // Add image if exists
+    // Add main image if exists
     if (formData.image) {
       submitData.append('image', formData.image);
+    }
+    
+    // Add gallery images
+    if (galleryImages.length > 0) {
+      galleryImages.forEach((image, index) => {
+        submitData.append(`gallery[${index}]`, image);
+      });
+    }
+    
+    // Add gallery images if exist
+    if (galleryImages.length > 0) {
+      galleryImages.forEach((image, index) => {
+        submitData.append(`gallery_images[${index}]`, image);
+      });
     }
     
     // Fix 1: Convert requirements array to a string as expected by backend
@@ -565,7 +627,7 @@ const ServiceCreate = ({ categories = [], skills = [] }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Gambar Layanan
+                      Gambar Layanan (Thumbnail Utama)
                     </label>
                     <div className="mt-1 flex flex-col items-center justify-center pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                       {formData.imagePreview ? (
@@ -620,6 +682,79 @@ const ServiceCreate = ({ categories = [], skills = [] }) => {
                         </div>
                       )}
                     </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Upload gambar utama yang akan ditampilkan sebagai thumbnail layanan Anda.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Galeri Gambar
+                    </label>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Upload gambar tambahan untuk ditampilkan dalam galeri layanan (opsional, maksimal 5 gambar).
+                    </p>
+                    
+                    {/* Gallery Previews */}
+                    {galleryPreviews.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                        {galleryPreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
+                              <img
+                                src={preview}
+                                alt={`Gallery image ${index + 1}`}
+                                className="h-full w-full object-cover object-center"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeGalleryImage(index)}
+                                className="absolute top-2 right-2 bg-white rounded-full p-1.5 text-red-500 opacity-80 hover:opacity-100 transition-opacity"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Gallery Upload */}
+                    {galleryPreviews.length < 5 && (
+                      <div className="mt-1 flex flex-col items-center justify-center pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-md">
+                        <div className="space-y-1 text-center">
+                          <svg className="mx-auto h-10 w-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <div className="flex text-sm text-gray-600">
+                            <label
+                              htmlFor="gallery-upload"
+                              className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                            >
+                              <span>Upload gallery images</span>
+                              <input
+                                id="gallery-upload"
+                                name="gallery-upload"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="sr-only"
+                                onChange={handleGalleryImagesChange}
+                              />
+                            </label>
+                          </div>
+                          <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {galleryPreviews.length >= 5 && (
+                      <p className="text-sm text-yellow-600">
+                        Maximum 5 gallery images allowed. Remove some images if you want to upload more.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex justify-end">

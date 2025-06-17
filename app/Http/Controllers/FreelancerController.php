@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Services\FileService;
+use App\Services\OrderService;
 
 class FreelancerController extends Controller
 {
@@ -42,10 +44,11 @@ class FreelancerController extends Controller
     /**
      * Create a new controller instance.
      */
-    public function __construct()
+    protected $fileService; // Tambahkan properti ini
+
+    public function __construct(FileService $fileService) // Inject FileService
     {
-        // No middleware registration needed here
-        // The middleware is applied at the route level with 'auth' and 'role:freelancer'
+        $this->fileService = $fileService;
     }
 
     /**
@@ -518,6 +521,7 @@ class FreelancerController extends Controller
             'skills.*' => 'exists:skills,id',
             'requirements' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // New validation for gallery images
             'packages' => 'nullable|array',
             'packages.*.title' => 'nullable|string', 
             'packages.*.price' => 'nullable|numeric|min:0',
@@ -547,6 +551,21 @@ class FreelancerController extends Controller
         }
         
         $service->save();
+        
+        // Handle gallery images upload
+        if ($request->hasFile('gallery')) {
+            $order = 0;
+            foreach ($request->file('gallery') as $image) {
+                $imagePath = $image->store('services/gallery', 'public');
+                
+                // Create gallery entry
+                \App\Models\ServiceGallery::create([
+                    'service_id' => $service->id,
+                    'image_path' => $imagePath,
+                    'order' => $order++
+                ]);
+            }
+        }
         
         // Attach skills
         if (!empty($validated['skills'])) {
@@ -692,7 +711,7 @@ class FreelancerController extends Controller
     public function editService($id)
     {
         $user = Auth::user();
-        $service = Service::with(['skills', 'packages', 'requirements', 'faqs'])->findOrFail($id);
+        $service = Service::with(['skills', 'packages', 'requirement_s', 'faqs', 'galleries'])->findOrFail($id);
         
         // Ensure the service belongs to the user
         if ($service->user_id !== $user->id) {
@@ -760,7 +779,7 @@ class FreelancerController extends Controller
     public function updateService(Request $request, $id)
     {
         $user = Auth::user();
-        $service = Service::with(['packages', 'requirements', 'faqs'])->findOrFail($id);
+        $service = Service::with(['packages', 'requirement_s', 'faqs', 'galleries'])->findOrFail($id);
         
         // Ensure the service belongs to the user
         if ($service->user_id !== $user->id) {
@@ -770,30 +789,46 @@ class FreelancerController extends Controller
         // Log the request data for debugging
         \Log::info('Service update request data:', $request->all());
         
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'description' => 'required|string|min:50',
-            'category_id' => 'required|exists:categories,id',
-            'price' => 'required|numeric|min:1',
-            'delivery_time' => 'required|integer|min:1',
-            'revisions' => 'required|integer|min:0',
-            'skills' => 'required|array',
-            'skills.*' => 'exists:skills,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean',
-            'requirements' => 'nullable|array',
-            'requirements.*.question' => 'required|string',
-            'requirements.*.required' => 'nullable|boolean',
-            'faqs' => 'nullable|array',
-            'faqs.*.question' => 'required|string',
-            'faqs.*.answer' => 'required|string',
-            'packages' => 'nullable|array',
-            'packages.*.title' => 'required|string',
-            'packages.*.price' => 'required|numeric|min:0',
-            'packages.*.delivery_time' => 'required|integer|min:1',
-            'packages.*.revisions' => 'required|integer|min:0',
-            'packages.*.features' => 'nullable|array',
-        ]);
+        // Log gallery-related data specifically
+        if ($request->hasFile('gallery')) {
+            \Log::info('Gallery files received:', ['count' => count($request->file('gallery'))]);
+        }
+        if ($request->has('removed_gallery_images')) {
+            \Log::info('Gallery images to remove:', ['removed' => $request->removed_gallery_images]);
+        }
+        
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:100',
+                'description' => 'required|string|min:50',
+                'category_id' => 'required|exists:categories,id',
+                'price' => 'required|numeric|min:1',
+                'delivery_time' => 'required|integer|min:1',
+                'revisions' => 'required|integer|min:0',
+                'skills' => 'required|array',
+                'skills.*' => 'exists:skills,id',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // New validation for gallery images
+                'gallery_items' => 'nullable|array', // For keeping track of existing images
+                'is_active' => 'boolean',
+                'requirements' => 'nullable|array',
+                'requirements.*.question' => 'required|string',
+                'requirements.*.required' => 'nullable|boolean',
+                'faqs' => 'nullable|array',
+                'faqs.*.question' => 'required|string',
+                'faqs.*.answer' => 'required|string',
+                'packages' => 'nullable|array',
+                'packages.*.title' => 'required|string',
+                'packages.*.price' => 'required|numeric|min:0',
+                'packages.*.delivery_time' => 'required|integer|min:1',
+                'packages.*.revisions' => 'required|integer|min:0',
+                'packages.*.features' => 'nullable',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log the actual submitted data for packages
+            \Log::info('Service Update Validation Failed. Package data:', $request->input('packages', []));
+            throw $e; // Re-throw the exception after logging
+        }
         
         $service->title = $validated['title'];
         $service->description = $validated['description'];
@@ -803,7 +838,7 @@ class FreelancerController extends Controller
         $service->revisions = $validated['revisions'];
         $service->is_active = $validated['is_active'] ?? $service->is_active;
         
-        // Handle file upload
+        // Handle file upload for main thumbnail
         if ($request->hasFile('image')) {
             // Delete the old image if it exists
             if ($service->thumbnail) {
@@ -816,6 +851,66 @@ class FreelancerController extends Controller
         
         $service->save();
         
+        // Handle gallery images upload
+        if ($request->hasFile('gallery')) {
+            $order = $service->galleries()->max('order') + 1;
+            foreach ($request->file('gallery') as $image) {
+                $imagePath = $image->store('services/gallery', 'public');
+                
+                // Create gallery entry
+                \App\Models\ServiceGallery::create([
+                    'service_id' => $service->id,
+                    'image_path' => $imagePath,
+                    'order' => $order++
+                ]);
+            }
+        }
+        
+        // Handle gallery image removals if specified
+        try {
+            if ($request->has('removed_gallery_images')) {
+                $removedGalleryImages = $request->removed_gallery_images;
+                
+                // Convert to array if string
+                if (is_string($removedGalleryImages)) {
+                    $removedGalleryImages = json_decode($removedGalleryImages, true);
+                    if (!is_array($removedGalleryImages)) {
+                        $removedGalleryImages = [$removedGalleryImages];
+                    }
+                }
+                
+                if (is_array($removedGalleryImages)) {
+                    foreach ($removedGalleryImages as $galleryId) {
+                        $gallery = \App\Models\ServiceGallery::where('id', $galleryId)
+                            ->where('service_id', $service->id)
+                            ->first();
+                            
+                        if ($gallery) {
+                            // Delete the image file
+                            Storage::disk('public')->delete($gallery->image_path);
+                            
+                            // Delete the database record
+                            $gallery->delete();
+                        }
+                    }
+                } else {
+                    \Log::warning('Invalid removed_gallery_images format', ['removed_gallery_images' => $request->removed_gallery_images]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error handling gallery image removals: ' . $e->getMessage(), ['exception' => $e]);
+            // Continue with the rest of the update process
+        }
+        
+        // Handle gallery image reordering
+        if ($request->has('gallery_order') && is_array($request->gallery_order)) {
+            foreach ($request->gallery_order as $index => $galleryId) {
+                \App\Models\ServiceGallery::where('id', $galleryId)
+                    ->where('service_id', $service->id)
+                    ->update(['order' => $index]);
+            }
+        }
+        
         // Sync skills
         if (!empty($validated['skills'])) {
             $service->skills()->sync($validated['skills']);
@@ -823,23 +918,47 @@ class FreelancerController extends Controller
         
         // Handle packages
         if ($request->has('packages')) {
+            // Log the packages data for debugging
+            \Log::debug('Packages data received:', $request->packages);
+            
             // Delete old packages
             $service->packages()->delete();
             
             // Create new packages
             foreach ($request->packages as $packageData) {
-                $features = null;
+                $features = [];
                 
                 // Handle different possible formats for features
                 if (isset($packageData['features'])) {
+                    \Log::debug('Features for package:', ['features' => $packageData['features'], 'type' => gettype($packageData['features'])]);
+                    
                     if (is_array($packageData['features'])) {
-                        $features = json_encode($packageData['features']);
-                    } elseif (is_string($packageData['features']) && $this->isJson($packageData['features'])) {
-                        $features = $packageData['features']; // Already JSON
+                        $features = array_values(array_filter($packageData['features'], function($item) {
+                            return !empty(trim($item));
+                        }));
+                    } elseif (is_string($packageData['features'])) {
+                        if ($this->isJson($packageData['features'])) {
+                            $features = json_decode($packageData['features'], true);
+                            if (!is_array($features)) {
+                                $features = [$packageData['features']];
+                            }
+                        } else {
+                            // Convert string to array
+                            $features = [$packageData['features']];
+                        }
                     } else {
-                        $features = json_encode([$packageData['features']]); // Convert to JSON array
+                        $features = ['Basic service'];
                     }
+                } else {
+                    $features = ['Basic service'];
                 }
+                
+                // Ensure features is always an array and not empty
+                if (empty($features)) {
+                    $features = ['Basic service'];
+                }
+                
+                \Log::debug('Final features for package:', ['features' => $features]);
                 
                 $package = new \App\Models\ServicePackage([
                     'service_id' => $service->id,
@@ -847,7 +966,7 @@ class FreelancerController extends Controller
                     'price' => $packageData['price'],
                     'delivery_time' => $packageData['delivery_time'],
                     'revisions' => $packageData['revisions'],
-                    'features' => $features
+                    'features' => $features  // Laravel will automatically JSON-encode due to cast
                 ]);
                 
                 $package->save();
@@ -857,7 +976,7 @@ class FreelancerController extends Controller
         // Handle requirements
         if ($request->has('requirements')) {
             // Delete old requirements
-            $service->requirements()->delete();
+            $service->requirement_s()->delete();
             
             // Create new requirements
             foreach ($request->requirements as $reqData) {
@@ -928,33 +1047,65 @@ class FreelancerController extends Controller
     /**
      * Display freelancer's active orders.
      */
-    public function orders()
+    public function orders(Request $request)
     {
         $user = Auth::user();
+        $status = $request->get('status', 'all');
+        $search = $request->get('search', '');
         
-        $activeOrders = $user->freelancerOrders()
-            ->whereIn('status', ['pending', 'in-progress', 'revision'])
+        // Query base
+        $query = $user->freelancerOrders()
             ->with(['client', 'service', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->orderBy('created_at', 'desc');
             
-        $completedOrders = $user->freelancerOrders()
-            ->where('status', 'completed')
-            ->with(['client', 'service', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-            
-        $cancelledOrders = $user->freelancerOrders()
-            ->where('status', 'cancelled')
-            ->with(['client', 'service', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // Apply status filter
+        if ($status !== 'all') {
+            // Fix the inconsistency between in-progress and in_progress
+            if ($status === 'in_progress') {
+                $query->where('status', 'in_progress')->orWhere('status', 'in-progress');
+            } else {
+                $query->where('status', $status);
+            }
+        }
+        
+        // Apply search if specified
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'LIKE', "%{$search}%")
+                  ->orWhereHas('client', function($q) use ($search) {
+                      $q->where('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('service', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('project', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Get paginated results
+        $orders = $query->paginate(10)->appends($request->all());
+        
+        // Get order counts for each status tab
+        $orderCounts = [
+            'all' => $user->freelancerOrders()->count(),
+            'pending' => $user->freelancerOrders()->where('status', 'pending')->count(),
+            'in_progress' => $user->freelancerOrders()->where(function($q) {
+                $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+            })->count(),
+            'delivered' => $user->freelancerOrders()->where('status', 'delivered')->count(),
+            'completed' => $user->freelancerOrders()->where('status', 'completed')->count(),
+            'cancelled' => $user->freelancerOrders()->where('status', 'cancelled')->count(),
+        ];
             
         return Inertia::render('Freelancer/Orders', [
-            'user' => $user,
-            'activeOrders' => $activeOrders,
-            'completedOrders' => $completedOrders,
-            'cancelledOrders' => $cancelledOrders
+            'orders' => $orders,
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+            ],
+            'orderCounts' => $orderCounts
         ]);
     }
     
@@ -964,13 +1115,16 @@ class FreelancerController extends Controller
     public function orderDetail($id)
     {
         $user = Auth::user();
-        $order = Order::with(['client', 'service', 'project', 'reviews'])
+        $order = Order::with(['client', 'service', 'project', 'reviews', 'files'])
             ->findOrFail($id);
             
         // Ensure the order belongs to the user
         if ($order->freelancer_id !== $user->id) {
             return redirect()->route('freelancer.orders')->with('error', 'You do not have access to this order.');
         }
+        
+        // Get all files related to this order
+        $files = $order->files;
         
         // Get messages related to this order
         $messages = Message::where(function($query) use ($user, $order) {
@@ -984,12 +1138,190 @@ class FreelancerController extends Controller
             ->orderBy('created_at')
             ->get();
             
+        // Calculate time remaining if due date exists
+        $timeRemaining = null;
+        if ($order->due_date) {
+            $dueDate = new \DateTime($order->due_date);
+            $now = new \DateTime();
+            $interval = $now->diff($dueDate);
+            
+            if ($dueDate > $now) {
+                $timeRemaining = [
+                    'days' => $interval->d,
+                    'hours' => $interval->h,
+                    'minutes' => $interval->i,
+                    'seconds' => $interval->s,
+                    'invert' => $interval->invert, // 1 if past due date
+                ];
+            }
+        }
+        
+        // Check if freelancer can deliver
+        $canDeliver = in_array($order->status, ['in_progress', 'in-progress']);
+        
+        // Check if there are already deliverable files
+        $hasDeliverableFiles = $order->files()->where('status', 'deliverable')->count() > 0;
+            
         return Inertia::render('Freelancer/OrderDetail', [
             'user' => $user,
             'order' => $order,
-            'messages' => $messages
+            'messages' => $messages,
+            'files' => $files,
+            'timeRemaining' => $timeRemaining,
+            'canDeliver' => $canDeliver,
+            'hasDeliverableFiles' => $hasDeliverableFiles
         ]);
     }
+    
+    /**
+     * Display detail of an order
+     *
+     * @param  int  $id
+     * @return \Inertia\Response
+     */
+    public function showOrder($id)
+    {
+        $user = Auth::user();
+        
+        // Get the order with related data
+        $order = Order::with([
+                'client', 
+                'client.profile',
+                'service', 
+                'service.user', 
+                'service.category',
+                'service.requirement_s',
+                'service.faqs',
+                'project',
+                'project.category',
+                'payments',
+                'files' => function ($query) {
+                    $query->orderBy('created_at', 'desc');
+                },
+                'messages' => function ($query) {
+                    $query->orderBy('created_at', 'asc');
+                }
+            ])
+            ->where('freelancer_id', $user->id)
+            ->findOrFail($id);
+            
+        // If the status uses hyphen instead of underscore, standardize it
+        if ($order->status === 'in-progress') {
+            $order->status = 'in_progress';
+        }
+        
+        // Get the order files
+        $files = $order->files()->orderBy('created_at', 'desc')->get();
+        
+        // Add explicit permission checks for files
+        $files->each(function ($file) use ($user, $order) {
+            // Ensure the freelancer can download client files
+            if ($file->user_id === $order->client_id) {
+                $file->can_download = true; // Freelancers can always download client files
+            } else {
+                // For freelancer's own files (deliverables)
+                $file->can_download = true; // Freelancers can always download their own files
+            }
+            
+            // Add file type and size information for better display
+            $file->file_extension = pathinfo($file->original_name, PATHINFO_EXTENSION);
+            $file->formatted_size = $this->formatFileSize($file->file_size);
+            $file->download_url = route('files.download', ['id' => $file->id]);
+        });
+        
+        // Prepare time remaining data if order is in progress
+        $timeRemaining = null;
+        $expectedDeliveryDate = $order->due_date ?? $order->expected_delivery_date ?? $order->deadline;
+        
+        if (($order->status === 'in_progress' || $order->status === 'pending') && $expectedDeliveryDate) {
+            $deadline = Carbon::parse($expectedDeliveryDate);
+            $now = Carbon::now();
+            
+            if ($now->lt($deadline)) {
+                $diffMinutes = $now->diffInMinutes($deadline, false);
+                $days = floor($diffMinutes / 1440); // 1440 minutes in a day
+                $hours = floor(($diffMinutes % 1440) / 60);
+                $minutes = $diffMinutes % 60;
+                
+                $timeRemaining = [
+                    'days' => $days,
+                    'hours' => $hours,
+                    'minutes' => $minutes,
+                    'deadline_date' => $deadline->format('Y-m-d H:i:s'),
+                ];
+            } else {
+                $timeRemaining = [
+                    'overdue' => true,
+                    'days' => $deadline->diffInDays($now),
+                    'deadline_date' => $deadline->format('Y-m-d H:i:s'),
+                ];
+            }
+        }
+        
+        // Add payment information for the order
+        $paymentInfo = [
+            'has_payment' => false,
+            'payment_status' => null,
+            'payment_method' => null,
+            'payment_date' => null,
+        ];
+        
+        // Check if order has payment
+        if ($order->payments()->exists()) {
+            $latestPayment = $order->payments()->latest()->first();
+            $paymentInfo = [
+                'has_payment' => true,
+                'payment_status' => $latestPayment->status,
+                'payment_method' => $latestPayment->payment_method,
+                'payment_date' => $latestPayment->updated_at,
+                'payment_id' => $latestPayment->id,
+                'payment_amount' => $latestPayment->amount,
+            ];
+        }
+        
+        // Get messages related specifically to this order
+        $messages = Message::where('order_id', $order->id)
+            ->where(function($query) use ($user, $order) {
+                $query->where('sender_id', $user->id)
+                      ->orWhere('recipient_id', $user->id);
+            })
+            ->orderBy('created_at', 'asc') // Ubah ke asc untuk menampilkan dari lama ke baru
+            ->get();
+        
+        // Periksa apakah freelancer dapat mengirim hasil pekerjaan
+        $canDeliver = in_array($order->status, ['in_progress', 'in-progress']);
+        
+        // Periksa apakah sudah ada file hasil pekerjaan yang diunggah
+        $hasDeliverableFiles = $order->files()->where('status', 'deliverable')->count() > 0;
+        
+        return Inertia::render('Freelancer/OrderDetail', [
+            'order' => $order,
+            'files' => $files,
+            'messages' => $messages,
+            'user' => $user,
+            'timeRemaining' => $timeRemaining,
+            'paymentInfo' => $paymentInfo,
+            'canDeliver' => $canDeliver,
+            'hasDeliverableFiles' => $hasDeliverableFiles
+        ]);
+    }
+    
+    /**
+     * Helper method to format file size
+     */
+    private function formatFileSize($size)
+    {
+        if ($size < 1024) {
+            return $size . ' B';
+        } elseif ($size < 1048576) {
+            return round($size / 1024, 2) . ' KB';
+        } elseif ($size < 1073741824) {
+            return round($size / 1048576, 2) . ' MB';
+        } else {
+            return round($size / 1073741824, 2) . ' GB';
+        }
+    }
+    
     
     /**
      * Update an order status.
@@ -1099,43 +1431,21 @@ class FreelancerController extends Controller
             'payment_details' => 'required|string',
         ]);
         
-        // Calculate available balance
-        $totalEarnings = $user->freelancerOrders()
-            ->where('status', 'completed')
-            ->sum('amount');
-            
-        $withdrawnAmount = $user->withdrawals()
-            ->where('status', 'completed')
-            ->sum('amount');
-            
-        $pendingWithdrawals = $user->withdrawals()
-            ->where('status', 'pending')
-            ->sum('amount');
-            
-        $availableBalance = $totalEarnings - $withdrawnAmount - $pendingWithdrawals;
+        // Use the withdrawal service
+        $withdrawalService = app(WithdrawalService::class);
+        $result = $withdrawalService->requestWithdrawal(
+            $user, 
+            $validated['amount'], 
+            $validated['payment_method'], 
+            ['details' => $validated['payment_details']]
+        );
         
-        if ($validated['amount'] > $availableBalance) {
-            return back()->with('error', 'Insufficient balance for withdrawal.');
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
         }
         
-        $withdrawal = Withdrawal::create([
-            'user_id' => $user->id,
-            'amount' => $validated['amount'],
-            'payment_method' => $validated['payment_method'],
-            'payment_details' => $validated['payment_details'],
-            'status' => 'pending',
-        ]);
-        
-        // Record activity
-        Activity::create([
-            'user_id' => $user->id,
-            'type' => 'withdrawal_requested',
-            'description' => "Requested withdrawal of {$validated['amount']}",
-            'subject_id' => $withdrawal->id,
-            'subject_type' => \App\Models\Withdrawal::class,
-        ]);
-        
-        return redirect()->route('freelancer.earnings')->with('success', 'Withdrawal request submitted successfully.');
+        return redirect()->route('freelancer.earnings')
+            ->with('success', 'Withdrawal request submitted successfully.');
     }
     
     /**
@@ -1228,30 +1538,213 @@ class FreelancerController extends Controller
     /**
      * Send a message.
      */
+    // public function sendMessage(Request $request)
+    // {
+    //     $user = Auth::user();
+        
+    //     $validated = $request->validate([
+    //         'recipient_id' => 'required|exists:users,id',
+    //         'content' => 'required|string', // Tetap menggunakan 'content' di form input
+    //         'attachments' => 'nullable|array',
+    //         'attachments.*' => 'file|max:5120',
+    //     ]);
+        
+    //     $message = Message::create([
+    //         'sender_id' => $user->id,
+    //         'recipient_id' => $validated['recipient_id'],
+    //         'message' => $validated['content'],
+    //         'is_read' => false,
+    //     ]);
+        
+    //     // Handle file uploads if any
+    //     if ($request->hasFile('attachments')) {
+    //         // Implementation for file uploads would go here
+    //     }
+        
+    //     return back()->with('success', 'Message sent successfully.');
+    // }
     public function sendMessage(Request $request)
     {
         $user = Auth::user();
         
         $validated = $request->validate([
             'recipient_id' => 'required|exists:users,id',
-            'content' => 'required|string', // Tetap menggunakan 'content' di form input
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:5120',
+            'order_id' => 'nullable|exists:orders,id', // Tambahkan validasi order_id jika pesan terkait order
+            'content' => 'nullable|string', // Bisa nullable jika hanya mengirim file
+            'attachments' => 'nullable|array|max:5', // Batasi 5 file
+            'attachments.*' => 'file|max:5120|mimes:jpeg,png,jpg,gif,pdf,doc,docx,zip', // 5MB per file
         ]);
-        
+
+        // Pastikan ada konten pesan atau attachment
+        if (empty($validated['content']) && !($request->hasFile('attachments') && count($request->file('attachments')) > 0)) {
+            return back()->withErrors(['content' => 'Message content or attachments are required.']);
+        }
+
+        $order = null;
+        if (isset($validated['order_id'])) {
+            $order = Order::find($validated['order_id']);
+            // Pastikan pengirim adalah bagian dari order jika order_id disediakan
+            if (!$order || ($order->client_id !== $user->id && $order->freelancer_id !== $user->id)) {
+                return back()->withErrors(['order_id' => 'Invalid order ID or you are not part of this order.']);
+            }
+        }
+
         $message = Message::create([
             'sender_id' => $user->id,
             'recipient_id' => $validated['recipient_id'],
-            'message' => $validated['content'],
+            'order_id' => $validated['order_id'] ?? null, // Simpan order_id
+            'message' => $validated['content'] ?? null,
             'is_read' => false,
+            // Kolom 'attachments' pada Message Model adalah JSON, akan diisi setelah upload
         ]);
         
-        // Handle file uploads if any
+        $uploadedFilePaths = [];
+        // Handle file uploads if any for messages
         if ($request->hasFile('attachments')) {
-            // Implementation for file uploads would go here
+            foreach ($request->file('attachments') as $attachmentFile) {
+                try {
+                    // Panggil FileService untuk mengunggah attachment pesan
+                    // Status 'active' agar langsung bisa diunduh oleh penerima
+                    $file = $this->fileService->uploadOrderAttachment(
+                        $attachmentFile,
+                        $user,
+                        $order // Teruskan objek order
+                    );
+                    $uploadedFilePaths[] = $file->file_path; // Simpan path untuk kolom attachments di message
+                } catch (\Exception $e) {
+                    Log::error('Failed to upload message attachment: ' . $e->getMessage(), ['file' => $attachmentFile->getClientOriginalName()]);
+                    // Anda bisa memilih untuk menghentikan proses atau melanjutkan dengan error
+                    return back()->withErrors(['attachments' => 'Failed to upload some files.']);
+                }
+            }
+            // Simpan path file yang diunggah ke kolom 'attachments' (JSON) di model Message
+            $message->attachments = $uploadedFilePaths;
+            $message->save(); // Simpan perubahan pada pesan
         }
         
         return back()->with('success', 'Message sent successfully.');
+    }
+    
+    /**
+     * Display a specific conversation (modified to pass order_id if available)
+     */
+    public function showConversation($conversation_id) // Parameter ini sebenarnya adalah other_user_id
+    {
+        $user = Auth::user();
+        $otherUser = User::findOrFail($conversation_id); // Gunakan $conversation_id sebagai $otherUser
+        
+        // Dapatkan pesan-pesan antara kedua user
+        $messages = Message::where(function($query) use ($user, $otherUser) {
+                $query->where('sender_id', $user->id)
+                    ->where('recipient_id', $otherUser->id);
+            })
+            ->orWhere(function($query) use ($user, $otherUser) {
+                $query->where('sender_id', $otherUser->id)
+                    ->where('recipient_id', $user->id);
+            })
+            ->with(['sender:id,name', 'recipient:id,name', 'order:id,order_number']) // Eager load sender, recipient, dan order
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($message) {
+                $attachments = [];
+                if ($message->attachments) {
+                    foreach (json_decode($message->attachments, true) as $filePath) {
+                        // Perlu membuat URL download jika file disimpan di private disk
+                        // Asumsi File model memiliki metode `getDownloadUrl()` atau Anda buat di sini
+                        $file = \App\Models\File::where('file_path', $filePath)->first();
+                        if ($file) {
+                             $attachments[] = [
+                                'id' => $file->id,
+                                'original_name' => $file->original_name,
+                                'url' => route('files.download', $file->id),
+                                'file_extension' => pathinfo($file->original_name, PATHINFO_EXTENSION),
+                                'formatted_size' => $this->formatFileSize($file->file_size), // Pastikan formatFileSize tersedia
+                             ];
+                        }
+                    }
+                }
+                return [
+                    'id' => $message->id,
+                    'sender_id' => $message->sender_id,
+                    'recipient_id' => $message->recipient_id,
+                    'order_id' => $message->order_id,
+                    'message' => $message->message,
+                    'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                    'is_read' => $message->is_read,
+                    'read_at' => $message->read_at?->format('Y-m-d H:i:s'),
+                    'sender_name' => $message->sender->name ?? 'Unknown',
+                    'attachments' => $attachments, // Tambahkan attachments
+                ];
+            });
+
+        // Tandai pesan yang diterima sebagai sudah dibaca
+        Message::where('sender_id', $otherUser->id)
+            ->where('recipient_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
+        return Inertia::render('Freelancer/Messages', [
+            'user' => $user,
+            'otherUser' => $otherUser,
+            'messages' => $messages,
+            'currentChatUserId' => $otherUser->id, // Untuk mengindikasikan chat yang aktif
+        ]);
+    }
+
+    public function getOrderMessages($orderId)
+    {
+        $user = Auth::user();
+        $order = Order::where('freelancer_id', $user->id)->orWhere('client_id', $user->id)->findOrFail($orderId);
+
+        $messages = Message::where('order_id', $order->id)
+            ->where(function ($query) use ($user, $order) {
+                $query->where('sender_id', $user->id)
+                    ->orWhere('recipient_id', $user->id);
+            })
+            ->with(['sender:id,name,profile_photo_url', 'attachments']) // Eager load sender and attachments
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($message) use ($user) {
+                $attachments = [];
+                if ($message->attachments) { // attachments is already JSON decoded by model cast
+                    foreach ($message->attachments as $filePath) {
+                        $file = \App\Models\File::where('file_path', $filePath)->first();
+                        if ($file) {
+                             $attachments[] = [
+                                'id' => $file->id,
+                                'original_name' => $file->original_name,
+                                'url' => route('files.download', $file->id),
+                                'file_extension' => pathinfo($file->original_name, PATHINFO_EXTENSION),
+                                'formatted_size' => $this->formatFileSize($file->file_size),
+                             ];
+                        }
+                    }
+                }
+
+                return [
+                    'id' => $message->id,
+                    'sender_id' => $message->sender_id,
+                    'recipient_id' => $message->recipient_id,
+                    'message' => $message->message,
+                    'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                    'is_mine' => $message->sender_id === $user->id,
+                    'sender_name' => $message->sender->name,
+                    'sender_avatar' => $message->sender->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($message->sender->name) . '&background=8b5cf6&color=fff',
+                    'attachments' => $attachments, // Sertakan attachments
+                ];
+            });
+            
+        // Tandai pesan yang diterima sebagai sudah dibaca
+        Message::where('order_id', $order->id)
+            ->where('sender_id', '!=', $user->id)
+            ->where('recipient_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'messages' => $messages,
+        ]);
     }
     
     /**
@@ -1735,7 +2228,7 @@ class FreelancerController extends Controller
                     'price' => $package->price,
                     'deliveryTime' => $package->delivery_time,
                     'revisions' => $package->revisions,
-                    'features' => json_decode($package->features) ?? []
+                    'features' => is_string($package->features) ? json_decode($package->features) : $package->features ?? []
                 ];
             })->toArray() : [],
             // Only define requirements once to avoid duplication

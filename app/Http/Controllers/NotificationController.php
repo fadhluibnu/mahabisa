@@ -98,4 +98,44 @@ class NotificationController extends Controller
             'message' => 'Failed to mark all notifications as read'
         ], 400);
     }
+    
+    /**
+     * Mark a specific notification as read.
+     *
+     * @param Request $request
+     * @param int $notificationId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function markAsRead(Request $request, $notificationId)
+    {
+        $notification = Activity::where('id', $notificationId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+        
+        $notification->is_read = true;
+        $notification->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification marked as read'
+        ]);
+    }
+    
+    /**
+     * Mark all user's notifications as read.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function markAllAsRead(Request $request)
+    {
+        Activity::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'All notifications marked as read'
+        ]);
+    }
 }

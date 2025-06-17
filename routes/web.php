@@ -5,8 +5,14 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminWithdrawalController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\FreelancerController;
+use App\Http\Controllers\FreelancerWithdrawalController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 
 // Route::get('/', function () {
 //     return view('welcome');
@@ -76,11 +82,13 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/payments/store', [AdminController::class, 'storePayment'])->name('admin.payments.store');
     Route::get('/payments/{id}/edit', [AdminController::class, 'editPayment'])->name('admin.payments.edit');
     Route::put('/payments/{id}', [AdminController::class, 'updatePayment'])->name('admin.payments.update');
+    Route::post('/payments/{id}/confirm', [App\Http\Controllers\OrderController::class, 'adminConfirmPayment'])->name('admin.payments.confirm');
     
     // Withdrawal Management
-    Route::get('/withdrawals', [AdminController::class, 'withdrawals'])->name('admin.withdrawals');
-    Route::put('/withdrawals/{id}/approve', [AdminController::class, 'approveWithdrawal'])->name('admin.withdrawals.approve');
-    Route::put('/withdrawals/{id}/reject', [AdminController::class, 'rejectWithdrawal'])->name('admin.withdrawals.reject');
+    Route::get('/withdrawals', [AdminWithdrawalController::class, 'index'])->name('admin.withdrawals');
+    Route::get('/withdrawals/{id}', [AdminWithdrawalController::class, 'show'])->name('admin.withdrawals.show');
+    Route::post('/withdrawals/{id}/approve', [AdminWithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
+    Route::post('/withdrawals/{id}/reject', [AdminWithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
     
     // Category Management
     Route::get('/categories', [AdminController::class, 'categories'])->name('admin.categories');
@@ -118,10 +126,22 @@ Route::prefix('freelancer')->middleware(['auth', 'role:freelancer'])->group(func
     Route::get('/schedule', [FreelancerController::class, 'schedule'])->name('freelancer.schedule');
     Route::post('/schedule', [FreelancerController::class, 'updateSchedule'])->name('freelancer.schedule.update');
     
-    // Earnings & Withdrawals
+    // Earnings, Payments & Withdrawals - Updated with FreelancerPaymentController
     Route::get('/earnings', [FreelancerController::class, 'earnings'])->name('freelancer.earnings');
-    Route::post('/withdrawals', [FreelancerController::class, 'requestWithdrawal'])->name('freelancer.withdrawals.request');
-    Route::get('/withdrawals', [FreelancerController::class, 'withdrawalHistory'])->name('freelancer.withdrawals.history');
+    Route::get('/orders', [App\Http\Controllers\FreelancerPaymentController::class, 'orders'])->name('freelancer.orders');
+    Route::get('/payments', [App\Http\Controllers\FreelancerPaymentController::class, 'payments'])->name('freelancer.payments');
+    Route::get('/withdrawal', [App\Http\Controllers\FreelancerPaymentController::class, 'withdrawal'])->name('freelancer.withdrawal');
+    Route::post('/withdrawal', [App\Http\Controllers\FreelancerPaymentController::class, 'storeWithdrawal'])->name('freelancer.withdrawal.store');
+    Route::post('/payment-methods', [App\Http\Controllers\FreelancerPaymentController::class, 'storePaymentMethod'])->name('freelancer.payment-methods.store');
+    Route::delete('/payment-methods/{id}', [App\Http\Controllers\FreelancerPaymentController::class, 'deletePaymentMethod'])->name('freelancer.payment-methods.delete');
+    Route::put('/payment-methods/{id}/default', [App\Http\Controllers\FreelancerPaymentController::class, 'setDefaultPaymentMethod'])->name('freelancer.payment-methods.default');
+    
+    // Legacy withdrawal routes - redirected to new controller
+    Route::get('/withdrawals', [App\Http\Controllers\FreelancerPaymentController::class, 'withdrawal'])->name('freelancer.withdrawals');
+    Route::post('/withdrawals', [App\Http\Controllers\FreelancerPaymentController::class, 'storeWithdrawal'])->name('freelancer.withdrawals.request');
+    Route::get('/withdrawals/history', [App\Http\Controllers\FreelancerWithdrawalController::class, 'history'])->name('freelancer.withdrawals.history');
+    Route::get('/withdrawals/{id}', [FreelancerWithdrawalController::class, 'show'])->name('freelancer.withdrawals.show');
+    Route::post('/withdrawals/{id}/cancel', [FreelancerWithdrawalController::class, 'cancel'])->name('freelancer.withdrawals.cancel');
     
     // Messages
     Route::get('/messages', [FreelancerController::class, 'messages'])->name('freelancer.messages');
@@ -170,6 +190,17 @@ Route::prefix('freelancer')->middleware(['auth', 'role:freelancer'])->group(func
     Route::put('/services/{id}/toggle-status', [FreelancerController::class, 'toggleServiceStatus'])->name('freelancer.services.toggle-status');
     Route::get('/services/{id}/orders', [FreelancerController::class, 'serviceOrders'])->name('freelancer.services.orders');
     
+    // Order management
+    Route::get('/orders/{id}', [FreelancerController::class, 'showOrder'])->name('freelancer.orders.show');
+    Route::post('/orders/{id}/accept', [OrderController::class, 'acceptOrder'])->name('freelancer.orders.accept');
+    Route::post('/orders/{id}/deliver', [OrderController::class, 'completeOrder'])->name('freelancer.orders.deliver');
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder'])->name('freelancer.orders.cancel');
+    Route::post('/orders/{id}/request-revision', [OrderController::class, 'requestRevision'])->name('freelancer.orders.request-revision');
+    
+    // File management for order deliverables
+    Route::post('/files/upload/{orderId}', [FileController::class, 'uploadOrderFile'])->name('freelancer.files.upload');
+    Route::get('/files/download/{id}', [FileController::class, 'download'])->name('files.download');
+    
     // Offers
     Route::get('/offers', [FreelancerController::class, 'offers'])->name('freelancer.offers');
     
@@ -203,7 +234,6 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     
     // Messages
     Route::get('/messages', [ClientController::class, 'messages'])->name('client.messages');
-    Route::get('/messages/{conversation_id}', [ClientController::class, 'showConversation'])->name('client.messages.conversation');
     Route::post('/messages', [ClientController::class, 'sendMessage'])->name('client.messages.send');
     
     // Reviews
@@ -215,50 +245,41 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     Route::get('/settings', [ClientController::class, 'settings'])->name('client.settings');
     
     // Services
-    Route::get('/services', [ClientController::class, 'services'])->name('client.services');
+    Route::get('/services', [ClientController::class, 'browseServices'])->name('client.services');
     Route::get('/services/{id}', [ClientController::class, 'showService'])->name('client.services.show');
+    Route::get('/services/{id}/order', [ClientController::class, 'showOrderService'])->name('client.services.order.form');
     Route::post('/services/{id}/order', [ClientController::class, 'orderService'])->name('client.services.order');
+
+    // Orders 
+    Route::get('/orders', [ClientController::class, 'orders'])->name('client.orders'); // Daftar order
+    Route::get('/orders/{id}', [ClientController::class, 'showOrder'])->name('client.orders.show'); // Detail order
+    Route::post('/orders/{id}/cancel', [App\Http\Controllers\OrderController::class, 'clientCancelOrder'])->name('client.orders.cancel'); // Client membatalkan order
     
-    // Freelancer browsing
-    Route::get('/freelancers', [ClientController::class, 'freelancers'])->name('client.freelancers');
-    Route::get('/freelancers/{id}', [ClientController::class, 'showFreelancer'])->name('client.freelancers.show');
-    
-    // Payments
-    Route::get('/payments', [ClientController::class, 'payments'])->name('client.payments');
-    Route::post('/payments', [ClientController::class, 'createPayment'])->name('client.payments.create');
-    Route::get('/payments/{id}', [ClientController::class, 'showPayment'])->name('client.payments.show');
-    
-    // Orders
-    Route::get('/orders', [ClientController::class, 'orders'])->name('client.orders');
-    Route::get('/orders/{id}', [ClientController::class, 'showOrder'])->name('client.orders.show');
-    Route::put('/orders/{id}/status', [ClientController::class, 'updateOrderStatus'])->name('client.orders.update-status');
+    // Order management and payment
+    Route::get('/orders/{id}/payment', [App\Http\Controllers\OrderController::class, 'showPaymentPage'])
+        ->name('client.order.payment');
+    Route::get('/orders/{id}/invoice', [App\Http\Controllers\PaymentController::class, 'showInvoicePage'])
+        ->name('client.order.invoice');
+    Route::get('/orders/{id}/simple-invoice', [App\Http\Controllers\OrderController::class, 'showSimpleInvoice'])
+        ->name('client.order.simple-invoice');
+    Route::post('/orders/{id}/payment/process', [App\Http\Controllers\OrderController::class, 'processPayment'])
+        ->name('client.order.payment.process');
+    Route::get('/orders/{id}/payment/{paymentId}/status', [App\Http\Controllers\OrderController::class, 'checkPaymentStatus'])
+        ->name('client.order.payment.status');
+    Route::get('/payments/{id}/check-status', [App\Http\Controllers\PaymentController::class, 'checkPaymentStatus'])
+        ->name('client.payments.check-status');
+    Route::get('/payments/{id}/simple-check', [App\Http\Controllers\OrderController::class, 'simpleCheckPaymentStatus'])
+        ->name('client.payments.simple-check');
+        
+    // File downloads (only for client - after payment)
+    Route::get('/files/{id}/download', [\App\Http\Controllers\FileController::class, 'download'])
+        ->name('client.files.download');
 });
 
-// Shared routes for authenticated users
-Route::middleware('auth')->group(function () {
-    // Notifications
-    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index']);
-    Route::post('/notifications/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
-    Route::post('/notifications/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
-    
-    // User profile
-    Route::get('/profile', [App\Http\Controllers\UserProfileController::class, 'show']);
-    Route::put('/profile', [App\Http\Controllers\UserProfileController::class, 'update']);
-    
-    // Account settings
-    Route::get('/account/settings', [App\Http\Controllers\UserProfileController::class, 'settings']);
-    Route::put('/account/password', [App\Http\Controllers\UserProfileController::class, 'updatePassword']);
-    
-    // Redirect based on role
-    Route::get('/redirect', function () {
-        if (auth()->user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        } elseif (auth()->user()->isFreelancer()) {
-            return redirect()->route('freelancer.dashboard');
-        } else {
-            return redirect()->route('client.dashboard');
-        }
-    })->name('redirect');
+// Message Routes
+Route::middleware(['auth'])->group(function () {
+    Route::post('/messages/send', [App\Http\Controllers\MessageController::class, 'send'])->name('messages.send');
+    Route::get('/messages/order/{orderId}', [App\Http\Controllers\MessageController::class, 'getOrderMessages'])->name('messages.order');
 });
 
 // Catch-all route for 404 errors

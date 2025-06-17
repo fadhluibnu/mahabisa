@@ -55,31 +55,50 @@ class HomeController extends Controller
     public function explore(Request $request)
     {
         // Get search params
-        $search = $request->query('search');
-        $categoryId = $request->query('kategori_id');
-        $categoryName = $request->query('kategori');
-        $minPrice = $request->query('min_price');
-        $maxPrice = $request->query('max_price');
-        $sortBy = $request->query('sort_by', 'newest'); // Default sort by newest
+        $search = $request->input('search');
+        $categoryId = $request->input('category_id');
+        $categorySlug = $request->input('category');
+        $minPrice = $request->input('min_price');
+        $maxPrice = $request->input('max_price');
+        $rating = $request->input('rating');
+        $sortBy = $request->input('sort_by', 'newest'); // Default sort by newest
         
         // Start query
-        $query = Service::with(['user', 'user.profile', 'category'])
-            ->where('is_active', true);
+        $query = Service::with([
+                'user', 
+                'user.profile', 
+                'category',
+                'reviews',
+                'galleries' => function($q) {
+                    $q->orderBy('order');
+                }
+            ])
+            ->where('is_active', true)
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
             
-        // Apply search filters
+        // Apply search filters - improved search functionality
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+            $searchTerms = explode(' ', $search);
+            $query->where(function($q) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    if (strlen($term) >= 2) { // Only search for terms with at least 2 characters
+                        $q->where(function($subq) use ($term) {
+                            $subq->where('title', 'like', "%{$term}%")
+                                ->orWhere('description', 'like', "%{$term}%");
+                        });
+                    }
+                }
             });
         }
         
-        // Filter by category
+        // Filter by category - improved with better handling
         if ($categoryId) {
             $query->where('category_id', $categoryId);
-        } elseif ($categoryName) {
-            $query->whereHas('category', function($q) use ($categoryName) {
-                $q->where('name', 'like', "%{$categoryName}%");
+        } elseif ($categorySlug) {
+            $query->whereHas('category', function($q) use ($categorySlug) {
+                $q->where('name', 'like', "%{$categorySlug}%")
+                  ->orWhere('id', $categorySlug);
             });
         }
         
@@ -92,35 +111,104 @@ class HomeController extends Controller
             $query->where('price', '<=', $maxPrice);
         }
         
-        // Apply sorting
-        if ($sortBy === 'price_low') {
-            $query->orderBy('price', 'asc');
-        } elseif ($sortBy === 'price_high') {
-            $query->orderBy('price', 'desc');
-        } elseif ($sortBy === 'rating') {
-            $query->orderBy('avg_rating', 'desc');
-        } else {
-            $query->orderBy('created_at', 'desc'); // newest
+        // Filter by rating
+        if ($rating) {
+            $query->having('reviews_avg_rating', '>=', $rating);
+        }
+        
+        // Apply sorting with improved performance
+        switch ($sortBy) {
+            case 'price_low':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'rating':
+                $query->orderByRaw('COALESCE(reviews_avg_rating, 0) DESC');
+                break;
+            case 'popular':
+                $query->orderByRaw('COALESCE(view_count, 0) DESC');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
         }
         
         // Paginate services
         $services = $query->paginate(12)->withQueryString();
+        
+        // Transform services data to include badge for popular/trending services
+        $services->getCollection()->transform(function ($service) {
+            $badge = null;
+            
+            // Add badge for popular services (high view count)
+            if ($service->view_count > 100) {
+                $badge = 'popular';
+            }
+            
+            // Add badge for trending services (recently created with good rating)
+            if ($service->created_at->isAfter(now()->subDays(30)) && ($service->reviews_avg_rating >= 4.5)) {
+                $badge = 'trending';
+            }
+            
+            // Add new badge for recently created services
+            if ($service->created_at->isAfter(now()->subDays(7))) {
+                $badge = 'new';
+            }
+            
+            // Convert thumbnail path to full URL if necessary
+            if ($service->thumbnail) {
+                $service->thumbnail = str_replace('storage/', '/storage/', $service->thumbnail);
+            }
+            
+            // Apply the same conversion to gallery images
+            if ($service->galleries) {
+                foreach ($service->galleries as $gallery) {
+                    if ($gallery->image_path) {
+                        $gallery->image_path = str_replace('storage/', '/storage/', $gallery->image_path);
+                    }
+                }
+            }
+            
+            $service->badge = $badge;
+            return $service;
+        });
         
         // Get all categories for filter
         $categories = Category::where('is_active', true)
             ->withCount('services')
             ->orderBy('name')
             ->get();
+            
+        // Get price ranges for filter
+        $priceRanges = [
+            ['id' => 'low', 'name' => '< Rp100rb', 'min' => 0, 'max' => 100000],
+            ['id' => 'medium', 'name' => 'Rp100rb - Rp300rb', 'min' => 100000, 'max' => 300000],
+            ['id' => 'high', 'name' => 'Rp300rb - Rp500rb', 'min' => 300000, 'max' => 500000],
+            ['id' => 'premium', 'name' => 'Rp500rb+', 'min' => 500000, 'max' => null]
+        ];
+        
+        // Get rating options for filter
+        $ratingOptions = [
+            ['value' => 4.5, 'label' => '4.5+'],
+            ['value' => 4.0, 'label' => '4.0+'],
+            ['value' => 3.5, 'label' => '3.5+']
+        ];
         
         return Inertia::render('Explore/Explore', [
             'services' => $services,
             'categories' => $categories,
+            'priceRanges' => $priceRanges,
+            'ratingOptions' => $ratingOptions,
             'filters' => [
                 'search' => $search,
                 'categoryId' => $categoryId,
-                'categoryName' => $categoryName,
+                'category' => $categorySlug,
                 'minPrice' => $minPrice,
                 'maxPrice' => $maxPrice,
+                'rating' => $rating,
                 'sortBy' => $sortBy
             ]
         ]);
@@ -135,8 +223,14 @@ class HomeController extends Controller
         $service = Service::with([
             'user', 
             'user.profile', 
+            'user.skills',
             'category',
-            'reviews.client'
+            'reviews.client',
+            'packages',
+            'requirement_s',
+            'faqs',
+            'skills',
+            'galleries'
         ])
         ->findOrFail($id);
         
@@ -167,8 +261,14 @@ class HomeController extends Controller
             ->take(4)
             ->get();
         
+        // Modify service data to provide requirements field from requirement_s for frontend compatibility
+        $serviceData = $service->toArray();
+        if (isset($serviceData['requirement_s'])) {
+            $serviceData['requirements'] = $serviceData['requirement_s'];
+        }
+        
         return Inertia::render('Jasa/ServiceDetail', [
-            'service' => $service,
+            'service' => $serviceData,
             'reviewStats' => $reviewStats,
             'similarServices' => $similarServices
         ]);
@@ -180,22 +280,43 @@ class HomeController extends Controller
     public function talents(Request $request)
     {
         // Get search params
-        $search = $request->query('search');
-        $categoryId = $request->query('kategori_id');
-        $skillId = $request->query('skill_id');
-        $sortBy = $request->query('sort_by', 'rating'); // Default sort by rating
+        $search = $request->input('search');
+        $categoryId = $request->input('categoryId');
+        $skillId = $request->input('skillId');
+        $rating = $request->input('rating');
+        $verified = $request->input('verified');
+        $sortBy = $request->input('sortBy', 'rating'); // Default sort by rating
         
         // Start query for freelancers
-        $query = User::with(['profile', 'skills', 'services', 'educations'])
-            ->where('role', 'freelancer');
+        $query = User::with([
+                'profile', 
+                'skills', 
+                'services', 
+                'educations',
+                'receivedReviews',
+                'completedOrders'
+            ])
+            ->where('role', 'freelancer')
+            ->withCount('services')
+            ->withCount('completedOrders');
         
-        // Apply search filters
+        // Apply search filters with improved search functionality
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhereHas('profile', function($q2) use ($search) {
-                      $q2->where('bio', 'like', "%{$search}%");
-                  });
+            $searchTerms = explode(' ', $search);
+            $query->where(function($q) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    if (strlen($term) >= 2) { // Only search for terms with at least 2 characters
+                        $q->where(function($subq) use ($term) {
+                            $subq->where('name', 'like', "%{$term}%")
+                              ->orWhereHas('profile', function($q2) use ($term) {
+                                  $q2->where('bio', 'like', "%{$term}%");
+                              })
+                              ->orWhereHas('skills', function($q3) use ($term) {
+                                  $q3->where('skills.name', 'like', "%{$term}%");
+                              });
+                        });
+                    }
+                }
             });
         }
         
@@ -213,18 +334,42 @@ class HomeController extends Controller
             });
         }
         
+        // Filter by verification status
+        if ($verified === 'verified') {
+            $query->whereHas('profile', function($q) {
+                $q->where('is_verified', true);
+            });
+        } elseif ($verified === 'unverified') {
+            $query->whereHas('profile', function($q) {
+                $q->where('is_verified', false);
+            });
+        }
+        
         // Add review stats
         $query->withCount(['receivedReviews as avg_rating' => function ($q) {
             $q->select(DB::raw('coalesce(avg(rating),0)'));
         }]);
         
-        // Apply sorting
-        if ($sortBy === 'newest') {
-            $query->orderBy('created_at', 'desc');
-        } elseif ($sortBy === 'oldest') {
-            $query->orderBy('created_at', 'asc');
-        } else {
-            $query->orderBy('avg_rating', 'desc'); // rating
+        // Filter by rating
+        if ($rating) {
+            $query->having('avg_rating', '>=', $rating);
+        }
+        
+        // Apply sorting with improved performance
+        switch ($sortBy) {
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'orders_count':
+                $query->orderBy('completed_orders_count', 'desc');
+                break;
+            case 'rating':
+            default:
+                $query->orderByRaw('COALESCE(avg_rating, 0) DESC');
+                break;
         }
         
         // Paginate freelancers
@@ -235,7 +380,11 @@ class HomeController extends Controller
             ->orderBy('name')
             ->get();
             
-        $skills = \App\Models\Skill::orderBy('name')->get();
+        // Get skills with freelancer counts
+        $skills = \App\Models\Skill::withCount('freelancers')
+            ->having('freelancers_count', '>', 0)
+            ->orderBy('name')
+            ->get();
         
         return Inertia::render('Talenta/Talenta', [
             'freelancers' => $freelancers,
@@ -245,6 +394,8 @@ class HomeController extends Controller
                 'search' => $search,
                 'categoryId' => $categoryId,
                 'skillId' => $skillId,
+                'rating' => $rating,
+                'verified' => $verified,
                 'sortBy' => $sortBy
             ]
         ]);

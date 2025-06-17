@@ -130,4 +130,34 @@ class Service extends Model
     {
         return $this->hasMany(ServiceFaq::class);
     }
+    
+    /**
+     * Get the image attribute to use for display
+     */
+    public function getImageAttribute()
+    {
+        return $this->thumbnail ?: null;
+    }
+    
+    /**
+     * Get additional images from gallery
+     */
+    public function getAdditionalImagesAttribute()
+    {
+        // If using gallery JSON field
+        if ($this->gallery) {
+            return $this->gallery;
+        }
+        
+        // If using galleries relation
+        return $this->galleries()->pluck('image_path')->toArray();
+    }
+    
+    /**
+     * Get gallery images associated with this service.
+     */
+    public function galleries()
+    {
+        return $this->hasMany(ServiceGallery::class)->orderBy('order');
+    }
 }

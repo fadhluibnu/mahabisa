@@ -42,6 +42,17 @@ class Skill extends Model
     }
 
     /**
+     * Get the freelancers that have this skill.
+     */
+    public function freelancers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_skills')
+                   ->where('role', 'freelancer')
+                   ->withPivot('proficiency_level')
+                   ->withTimestamps();
+    }
+
+    /**
      * Get the services that use this skill.
      */
     public function services(): BelongsToMany

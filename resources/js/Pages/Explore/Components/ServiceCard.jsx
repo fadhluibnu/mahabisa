@@ -29,6 +29,10 @@ const ServiceCard = ({ service }) => {
           <img
             src={service.image}
             alt={service.title}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/assets/img/service-placeholder.jpg';
+            }}
             className='w-full h-full object-cover transition-transform duration-300 hover:scale-105'
           />
 

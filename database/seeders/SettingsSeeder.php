@@ -31,8 +31,8 @@ class SettingsSeeder extends Seeder
         
         // Payment settings
         Setting::set('enable_midtrans', true, 'payment', 'boolean', 'Enable Midtrans payment gateway');
-        Setting::set('midtrans_client_key', 'SB-Mid-client-xxxxxxxxxxxxxxxx', 'payment', 'string', 'Midtrans client key');
-        Setting::set('midtrans_server_key', 'SB-Mid-server-xxxxxxxxxxxxxxxx', 'payment', 'string', 'Midtrans server key');
+        Setting::set('midtrans_client_key', 'SB-Mid-client-WntGntyuU5ryOlW7', 'payment', 'string', 'Midtrans client key');
+        Setting::set('midtrans_server_key', 'SB-Mid-server-q5DTSIlBs3rH0Oem2daMIoWe', 'payment', 'string', 'Midtrans server key');
         Setting::set('midtrans_sandbox', true, 'payment', 'boolean', 'Use Midtrans sandbox mode');
         Setting::set('enable_qris', true, 'payment', 'boolean', 'Enable QRIS payments');
         

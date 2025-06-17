@@ -1,0 +1,5 @@
+139:    Route::get('/messages/{conversation_id}', [FreelancerController::class, 'showConversation'])->name('freelancer.messages.conversation');
+222:    Route::get('/messages/{conversation_id}', [ClientController::class, 'showConversation'])->name('client.messages.conversation');
+302:    Route::get('/messages/{conversation_id}', [ClientController::class, 'showConversation'])->name('client.messages.conversation');
+361:    Route::get('/messages/{conversation_id}', [FreelancerController::class, 'showConversation'])->name('freelancer.messages.conversation');
+444:    Route::get('/messages/{conversation_id}', [ClientController::class, 'showConversation'])->name('client.messages.conversation');

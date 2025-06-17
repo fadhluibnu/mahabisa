@@ -53,10 +53,36 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Get security settings from admin configuration
+        $passwordMinLength = \App\Models\Setting::get('password_min_length', 8);
+        $requireUppercase = \App\Models\Setting::get('password_require_uppercase', true);
+        $requireLowercase = \App\Models\Setting::get('password_require_lowercase', true);
+        $requireNumbers = \App\Models\Setting::get('password_require_numbers', true);
+        $requireSpecialChars = \App\Models\Setting::get('password_require_special', false);
+        
+        // Build dynamic password validation rules
+        $passwordRules = ['required', 'string', "min:{$passwordMinLength}", 'confirmed'];
+        
+        if ($requireUppercase) {
+            $passwordRules[] = 'regex:/[A-Z]/';
+        }
+        
+        if ($requireLowercase) {
+            $passwordRules[] = 'regex:/[a-z]/';
+        }
+        
+        if ($requireNumbers) {
+            $passwordRules[] = 'regex:/[0-9]/';
+        }
+        
+        if ($requireSpecialChars) {
+            $passwordRules[] = 'regex:/[^A-Za-z0-9]/';
+        }
+            
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => $passwordRules,
             'role' => 'required|in:client,freelancer',
             'university' => 'nullable|string|max:255',
         ]);

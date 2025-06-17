@@ -12,21 +12,24 @@ use App\Models\Payment;
 use App\Models\Message;
 use App\Models\Activity;
 use App\Models\Category;
+use App\Models\Setting;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Services\FileService;
+use App\Services\OrderService;
 
 class ClientController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     */
-    public function __construct()
+    protected $fileService;
+    protected $orderService;
+
+    public function __construct(FileService $fileService, OrderService $orderService) // Inject services
     {
-        // No middleware registration needed here
-        // The middleware is applied at the route level with 'auth' and 'role:client'
+        $this->fileService = $fileService;
+        $this->orderService = $orderService;
     }
 
     /**
@@ -355,35 +358,35 @@ class ClientController extends Controller
     /**
      * Display client's orders.
      */
-    public function orders()
-    {
-        $user = Auth::user();
+    // public function orders()
+    // {
+    //     $user = Auth::user();
         
-        $activeOrders = $user->clientOrders()
-            ->whereIn('status', ['pending', 'in-progress', 'revision'])
-            ->with(['freelancer', 'service', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+    //     $activeOrders = $user->clientOrders()
+    //         ->whereIn('status', ['pending', 'in-progress', 'revision'])
+    //         ->with(['freelancer', 'service', 'project'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->paginate(10);
             
-        $completedOrders = $user->clientOrders()
-            ->where('status', 'completed')
-            ->with(['freelancer', 'service', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+    //     $completedOrders = $user->clientOrders()
+    //         ->where('status', 'completed')
+    //         ->with(['freelancer', 'service', 'project'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->paginate(10);
             
-        $cancelledOrders = $user->clientOrders()
-            ->where('status', 'cancelled')
-            ->with(['freelancer', 'service', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+    //     $cancelledOrders = $user->clientOrders()
+    //         ->where('status', 'cancelled')
+    //         ->with(['freelancer', 'service', 'project'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->paginate(10);
             
-        return Inertia::render('Client/Orders', [
-            'user' => $user,
-            'activeOrders' => $activeOrders,
-            'completedOrders' => $completedOrders,
-            'cancelledOrders' => $cancelledOrders
-        ]);
-    }
+    //     return Inertia::render('Client/Orders', [
+    //         'user' => $user,
+    //         'activeOrders' => $activeOrders,
+    //         'completedOrders' => $completedOrders,
+    //         'cancelledOrders' => $cancelledOrders
+    //     ]);
+    // }
     
     /**
      * Show details for a specific order.
@@ -571,32 +574,122 @@ class ClientController extends Controller
     
     /**
      * Display the client's messages.
+     * Handles listing conversations and displaying an active chat session.
      */
-    public function messages()
+    public function messages(Request $request)
     {
-        $user = Auth::user();
-        
-        // Get unique conversations
-        $conversations = Message::where('sender_id', $user->id)
-            ->orWhere('recipient_id', $user->id)
-            ->orderBy('created_at', 'desc')
+        $currentUser = Auth::user()->load('profile');
+
+        // 1. Fetch conversation list (sidebar)
+        $participantIds = Message::where('sender_id', $currentUser->id)
+            ->orWhere('recipient_id', $currentUser->id)
+            ->selectRaw('CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id', [$currentUser->id])
+            ->distinct()
+            ->pluck('other_user_id');
+
+        $conversationsData = User::whereIn('id', $participantIds)
+            ->with('profile') // Eager load profile for other users
             ->get()
-            ->map(function ($message) use ($user) {
-                $otherUserId = $message->sender_id == $user->id ? $message->recipient_id : $message->sender_id;
+            ->map(function ($otherUser) use ($currentUser) {
+                $lastMessage = Message::where(function ($query) use ($currentUser, $otherUser) {
+                    $query->where('sender_id', $currentUser->id)->where('recipient_id', $otherUser->id);
+                })->orWhere(function ($query) use ($currentUser, $otherUser) {
+                    $query->where('sender_id', $otherUser->id)->where('recipient_id', $currentUser->id);
+                })->orderBy('created_at', 'desc')->first();
+
+                $unreadCount = Message::where('sender_id', $otherUser->id)
+                                    ->where('recipient_id', $currentUser->id)
+                                    ->where('is_read', false)
+                                    ->count();
+                
+                $profilePhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($otherUser->name) . '&background=8b5cf6&color=fff';
+                if ($otherUser->profile && $otherUser->profile->profile_photo_url) {
+                    $profilePhotoUrl = $otherUser->profile->profile_photo_url;
+                } elseif ($otherUser->profile_photo_url) { // Fallback if profile_photo_url is directly on user
+                    $profilePhotoUrl = $otherUser->profile_photo_url;
+                }
+
                 return [
-                    'id' => $message->id,
-                    'other_user_id' => $otherUserId,
-                    'last_message' => $message->message,
-                    'timestamp' => $message->created_at,
-                    'user' => User::find($otherUserId),
+                    'user' => [
+                        'id' => $otherUser->id,
+                        'name' => $otherUser->name,
+                        'profile_photo_url' => $profilePhotoUrl,
+                    ],
+                    'last_message' => $lastMessage ? $lastMessage->message : null,
+                    'timestamp' => $lastMessage ? $lastMessage->created_at : null,
+                    'unread_count' => $unreadCount,
                 ];
             })
-            ->unique('other_user_id')
+            ->sortByDesc('timestamp')
             ->values();
-            
+
+        // 2. Handle active conversation (main panel)
+        $activeChatOtherUser = null;
+        $activeChatMessages = collect();
+        $activeChatUserId = $request->input('with'); // Expects ?with=USER_ID in URL
+
+        $loadedActiveChatOtherUser = null;
+        if ($activeChatUserId) {
+            $loadedActiveChatOtherUser = User::with('profile')->find($activeChatUserId);
+            if ($loadedActiveChatOtherUser) {
+                $activeChatOtherUserProfilePhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($loadedActiveChatOtherUser->name) . '&background=8b5cf6&color=fff';
+                if ($loadedActiveChatOtherUser->profile && $loadedActiveChatOtherUser->profile->profile_photo_url) {
+                    $activeChatOtherUserProfilePhotoUrl = $loadedActiveChatOtherUser->profile->profile_photo_url;
+                } elseif ($loadedActiveChatOtherUser->profile_photo_url) {
+                     $activeChatOtherUserProfilePhotoUrl = $loadedActiveChatOtherUser->profile_photo_url;
+                }
+
+                $activeChatOtherUser = [
+                     'id' => $loadedActiveChatOtherUser->id,
+                     'name' => $loadedActiveChatOtherUser->name,
+                     'profile_photo_url' => $activeChatOtherUserProfilePhotoUrl,
+                ];
+
+                $activeChatMessages = Message::where(function($query) use ($currentUser, $loadedActiveChatOtherUser) {
+                    $query->where('sender_id', $currentUser->id)
+                          ->where('recipient_id', $loadedActiveChatOtherUser->id);
+                })
+                ->orWhere(function($query) use ($currentUser, $loadedActiveChatOtherUser) {
+                    $query->where('sender_id', $loadedActiveChatOtherUser->id)
+                          ->where('recipient_id', $currentUser->id);
+                })
+                ->with('sender:id,name') 
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(function($message) use ($currentUser) {
+                    return [
+                        'id' => $message->id,
+                        'content' => $message->message, 
+                        'created_at' => $message->created_at,
+                        'is_mine' => $message->sender_id === $currentUser->id,
+                        'sender_name' => $message->sender->name,
+                    ];
+                });
+
+                Message::where('sender_id', $loadedActiveChatOtherUser->id)
+                    ->where('recipient_id', $currentUser->id)
+                    ->where('is_read', false)
+                    ->update(['is_read' => true, 'read_at' => now()]);
+            }
+        }
+        
+        $currentUserProfilePhotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($currentUser->name) . '&background=8b5cf6&color=fff';
+        if ($currentUser->profile && $currentUser->profile->profile_photo_url) {
+            $currentUserProfilePhotoUrl = $currentUser->profile->profile_photo_url;
+        } elseif ($currentUser->profile_photo_url) {
+            $currentUserProfilePhotoUrl = $currentUser->profile_photo_url;
+        }
+
         return Inertia::render('Client/Messages', [
-            'user' => $user,
-            'conversations' => $conversations
+            'auth_user' => [
+                'id' => $currentUser->id,
+                'name' => $currentUser->name,
+                'profile_photo_url' => $currentUserProfilePhotoUrl,
+            ],
+            'conversations' => $conversationsData,
+            'active_chat_other_user' => $activeChatOtherUser,
+            'active_chat_messages' => $activeChatMessages,
+            'initial_active_user_id' => $activeChatUserId ? (int)$activeChatUserId : null,
         ]);
     }
     
@@ -605,58 +698,101 @@ class ClientController extends Controller
      */
     public function conversation($userId)
     {
-        $user = Auth::user();
-        $otherUser = User::findOrFail($userId);
-        
-        // Get all messages between the two users
-        $messages = Message::where(function($query) use ($user, $otherUser) {
-                $query->where('sender_id', $user->id)
-                    ->where('recipient_id', $otherUser->id);
-            })
-            ->orWhere(function($query) use ($user, $otherUser) {
-                $query->where('sender_id', $otherUser->id)
-                    ->where('recipient_id', $user->id);
-            })
-            ->orderBy('created_at')
-            ->get();
-            
-        // Mark unread messages as read
-        Message::where('sender_id', $otherUser->id)
-            ->where('recipient_id', $user->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true, 'read_at' => now()]);
-            
-        return Inertia::render('Client/Conversation', [
-            'user' => $user,
-            'otherUser' => $otherUser,
-            'messages' => $messages
-        ]);
+        // Redirect to the main messages page with the specified user conversation active
+        return redirect()->route('client.messages', ['with' => $userId]);
     }
     
     /**
-     * Send a message.
+     * Show a specific conversation.
+     *
+     * @param int $conversation_id
+     * @return \Illuminate\Http\RedirectResponse
      */
+    public function showConversation($conversation_id)
+    {
+        // Redirect to the main messages page with the specified user conversation active
+        return redirect()->route('client.messages', ['with' => $conversation_id]);
+    }
+    
+    /**
+     * Update the send message function to redirect back to the dynamic message page
+     */
+    // public function sendMessage(Request $request)
+    // {
+    //     $user = Auth::user();
+        
+    //     $validated = $request->validate([
+    //         'recipient_id' => 'required|exists:users,id',
+    //         'content' => 'required|string', // Tetap menggunakan 'content' di form input
+    //         'attachments' => 'nullable|array',
+    //         'attachments.*' => 'file|max:5120',
+    //     ]);
+        
+    //     $message = Message::create([
+    //         'sender_id' => $user->id,
+    //         'recipient_id' => $validated['recipient_id'],
+    //         'message' => $validated['content'],
+    //         'is_read' => false,
+    //     ]);
+        
+    //     // Handle file uploads if any
+    //     if ($request->hasFile('attachments')) {
+    //         // Implementation for file uploads would go here
+    //     }
+        
+    //     // Redirect back to the messages page with the current conversation active
+    //     return redirect()->route('client.messages', ['with' => $validated['recipient_id']])->with('success', 'Message sent successfully.');
+    // }
+
     public function sendMessage(Request $request)
     {
         $user = Auth::user();
         
         $validated = $request->validate([
             'recipient_id' => 'required|exists:users,id',
-            'content' => 'required|string', // Tetap menggunakan 'content' di form input
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:5120',
+            'order_id' => 'nullable|exists:orders,id',
+            'content' => 'nullable|string',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'file|max:5120|mimes:jpeg,png,jpg,gif,pdf,doc,docx,zip',
         ]);
-        
+
+        if (empty($validated['content']) && !($request->hasFile('attachments') && count($request->file('attachments')) > 0)) {
+            return back()->withErrors(['content' => 'Message content or attachments are required.']);
+        }
+
+        $order = null;
+        if (isset($validated['order_id'])) {
+            $order = Order::find($validated['order_id']);
+            if (!$order || ($order->client_id !== $user->id && $order->freelancer_id !== $user->id)) {
+                return back()->withErrors(['order_id' => 'Invalid order ID or you are not part of this order.']);
+            }
+        }
+
         $message = Message::create([
             'sender_id' => $user->id,
             'recipient_id' => $validated['recipient_id'],
-            'message' => $validated['content'],
+            'order_id' => $validated['order_id'] ?? null,
+            'message' => $validated['content'] ?? null,
             'is_read' => false,
         ]);
         
-        // Handle file uploads if any
+        $uploadedFilePaths = [];
         if ($request->hasFile('attachments')) {
-            // Implementation for file uploads would go here
+            foreach ($request->file('attachments') as $attachmentFile) {
+                try {
+                    $file = $this->fileService->uploadOrderAttachment(
+                        $attachmentFile,
+                        $user,
+                        $order
+                    );
+                    $uploadedFilePaths[] = $file->file_path;
+                } catch (\Exception $e) {
+                    Log::error('Failed to upload message attachment from client: ' . $e->getMessage(), ['file' => $attachmentFile->getClientOriginalName()]);
+                    return back()->withErrors(['attachments' => 'Failed to upload some files.']);
+                }
+            }
+            $message->attachments = $uploadedFilePaths;
+            $message->save();
         }
         
         return back()->with('success', 'Message sent successfully.');
@@ -716,49 +852,122 @@ class ClientController extends Controller
     }
     
     /**
-     * Order a service.
+     * Show form to order a service.
+     */
+    public function showOrderService($id)
+    {
+        $user = Auth::user();
+        $service = Service::with(['user', 'packages', 'category'])
+            ->findOrFail($id);
+            
+        // Get the selected package if provided in query string
+        $packageId = request()->query('package_id');
+        $selectedPackage = null;
+        
+        if ($packageId && $service->packages) {
+            $selectedPackage = $service->packages->firstWhere('id', $packageId);
+        }
+        
+        // If no package selected and packages exist, select the first one
+        if (!$selectedPackage && $service->packages && $service->packages->count() > 0) {
+            $selectedPackage = $service->packages->first();
+        }
+        
+        return Inertia::render('Client/Services/OrderService', [
+            'user' => $user,
+            'service' => $service,
+            'selectedPackage' => $selectedPackage
+        ]);
+    }
+    
+    /**
+     * Process service order.
      */
     public function orderService(Request $request, $serviceId)
     {
+        // dd($request->hasFile('attachments'));
         $user = Auth::user();
-        $service = Service::findOrFail($serviceId);
+        $service = Service::with(['packages'])
+            ->findOrFail($serviceId);
+        
+        // Get package if package_id is provided
+        $packageId = $request->input('package_id');
+        $package = null;
+        
+        // Default to service's base price and delivery time
+        $orderAmount = $service->price;
+        $deliveryTimeDays = $service->delivery_time; // Assuming 'delivery_time' is in days for services
+        // $revisions = $service->revisions ?? 0; // Revisions are not directly stored in the order in this new flow
+
+        if ($packageId && $service->packages) {
+            $package = $service->packages->firstWhere('id', $packageId);
+            if ($package) {
+                $orderAmount = $package->price;
+                $deliveryTimeDays = $package->delivery_time; // Assuming 'delivery_time' is in days for packages
+                // $revisions = $package->revisions;
+            }
+        }
         
         $validated = $request->validate([
             'requirements' => 'required|string|min:10',
-            'delivery_date' => 'nullable|date|after:today',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:5120',
+            // 'delivery_date' => 'nullable|date|after:today', // Due date is now calculated by OrderService
+            // 'attachments' => 'nullable|array',
+            'attachments.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         ]);
         
-        // Create the order
-        $order = Order::create([
-            'client_id' => $user->id,
-            'freelancer_id' => $service->user_id,
+        // Create the order using OrderService
+        $orderData = [
             'service_id' => $service->id,
-            'amount' => $service->price,
-            'delivery_time' => $service->delivery_time,
-            'status' => 'pending',
+            'package_id' => $packageId, // Will be null if no package selected
             'requirements' => $validated['requirements'],
-            'expected_delivery_date' => $validated['delivery_date'] ?? Carbon::now()->addDays($service->delivery_time),
-        ]);
+            'amount' => $orderAmount, // Pass the determined amount (service or package price)
+            'delivery_time_days' => $deliveryTimeDays, // Pass the determined delivery time
+        ];
         
+        $orderService = app(\App\Services\OrderService::class); // Corrected line
+        $order = $orderService->createOrderFromService($orderData, $user);
+        
+        \Illuminate\Support\Facades\Log::info('Order created with ID: ' . $order->id);
+
         // Handle file uploads if any
         if ($request->hasFile('attachments')) {
-            // Implementation for file uploads would go here
+            $fileService = app(\App\Services\FileService::class);
+            foreach ($request->file('attachments') as $attachmentFile) { // Renamed to avoid confusion
+                $fileService->uploadOrderAttachment( // Use the specific method
+                    $attachmentFile,
+                    $user,
+                    $order
+                );
+            }
         }
         
-        // Record activity
-        Activity::create([
-            'user_id' => $user->id,
-            'activity_type' => 'service_ordered',
-            'description' => "Ordered service: {$service->title}",
-            'reference_id' => $order->id,
-            'reference_type' => 'order',
+        // Send notification to the freelancer about new order
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->notifyFreelancer(
+            $service->user,
+            $order,
+            'new_order',
+            'You have received a new order for your service',
+            route('freelancer.orders.show', $order->id)
+        );
+        
+        // Create initial message to freelancer
+        Message::create([
+            'sender_id' => $user->id,
+            'recipient_id' => $service->user_id,
+            'order_id' => $order->id,
+            'message' => "Hi, I've just ordered your service. Please check my requirements and let me know if you have any questions.",
+            'is_read' => false,
         ]);
         
-        return redirect()->route('client.orders')->with('success', 'Service ordered successfully.');
+        \Illuminate\Support\Facades\Log::info('Initial message created for order ID: ' . $order->id);
+
+        // Client will pay after project completion, so no immediate payment redirect.
+        // Redirect to messages to facilitate communication with the freelancer.
+        \Illuminate\Support\Facades\Log::info('Redirecting to client.messages for user ID: ' . $user->id . ' after order ' . $order->id . ' creation.');
+        return \Inertia\Inertia::location(route('client.messages', ['with' => $service->user_id]));
     }
-    
+        
     /**
      * Browse available freelancers.
      */
@@ -834,4 +1043,225 @@ class ClientController extends Controller
             'paymentMethods' => $paymentMethods
         ]);
     }
+
+    /**
+     * Display a list of orders placed by the client.
+     *
+     */
+    public function orders(Request $request)
+    {
+        $user = Auth::user();
+        $status = $request->get('status', 'all'); // Mengambil filter status dari request
+        $search = $request->get('search', ''); // Mengambil filter search dari request
+
+        $query = $user->clientOrders()
+            ->with(['freelancer', 'service', 'project']) // Eager load freelancer, service, project
+            ->orderBy('created_at', 'desc');
+
+        // Apply status filter
+        if ($status !== 'all') {
+            // Menangani inkonsistensi 'in-progress' dan 'in_progress'
+            if ($status === 'in_progress') {
+                $query->where(function($q) {
+                    $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+                });
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        // Apply search filter
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'LIKE', "%{$search}%")
+                  ->orWhereHas('freelancer', function($q) use ($search) {
+                      $q->where('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('service', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('project', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+        
+        $orders = $query->paginate(10)->appends($request->all()); // Paginate hasil
+
+        // Mendapatkan hitungan order untuk setiap tab status
+        $orderCounts = [
+            'all' => $user->clientOrders()->count(),
+            'pending' => $user->clientOrders()->where('status', 'pending')->count(),
+            'in_progress' => $user->clientOrders()->where(function($q) {
+                $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+            })->count(),
+            'delivered' => $user->clientOrders()->where('status', 'delivered')->count(),
+            'completed' => $user->clientOrders()->where('status', 'completed')->count(),
+            'cancelled' => $user->clientOrders()->where('status', 'cancelled')->count(),
+            'pending_payment' => $user->clientOrders()->where('status', 'pending_payment')->count(),
+            'revision' => $user->clientOrders()->where('status', 'revision')->count(),
+        ];
+            
+        return Inertia::render('Client/Orders', [
+            'user' => $user,
+            'orders' => $orders,
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+            ],
+            'orderCounts' => $orderCounts,
+        ]);
+    }
+
+    /**
+     * Show details for a specific order placed by the client.
+     *
+     */
+    public function showOrder($id)
+    {
+        $user = Auth::user();
+        $order = Order::with([
+            'freelancer.profile', // Eager load freelancer dan profilnya
+            'service', // Eager load service
+            'project', // Eager load project
+            'payments', // Eager load payments
+            'files' => function ($query) { // Eager load files, diurutkan berdasarkan created_at
+                $query->orderBy('created_at', 'desc');
+            },
+            'messages' => function ($query) { // Eager load messages, diurutkan
+                $query->orderBy('created_at', 'asc');
+            },
+            'review', // Eager load review
+        ])
+        ->where('client_id', $user->id) // Pastikan order milik klien yang sedang login
+        ->findOrFail($id);
+
+        // Normalize status to use underscore for consistency
+        if ($order->status === 'in-progress') {
+            $order->status = 'in_progress';
+        }
+
+        // Process files to add download permissions and formatting
+        $orderFiles = $order->files->map(function ($file) use ($user, $order) {
+            $file->can_download = $this->fileService->canDownload($file, $user); // Menggunakan FileService
+            $file->file_extension = pathinfo($file->original_name, PATHINFO_EXTENSION); // Menambahkan ekstensi file
+            $file->formatted_size = $this->formatFileSize($file->file_size); // Menambahkan ukuran terformat
+            $file->download_url = route('files.download', ['id' => $file->id]); // Menambahkan URL download
+            return $file;
+        });
+
+        // Prepare time remaining data (similar to Freelancer's order detail)
+        $timeRemaining = null;
+        $expectedDeliveryDate = $order->due_date ?? null;
+        
+        if (($order->status === 'in_progress' || $order->status === 'pending') && $expectedDeliveryDate) {
+            $deadline = Carbon::parse($expectedDeliveryDate);
+            $now = Carbon::now();
+            
+            if ($now->lt($deadline)) {
+                $diffMinutes = $now->diffInMinutes($deadline, false);
+                $days = floor($diffMinutes / 1440); // 1440 minutes in a day
+                $hours = floor(($diffMinutes % 1440) / 60);
+                $minutes = $diffMinutes % 60;
+                
+                $timeRemaining = [
+                    'days' => $days,
+                    'hours' => $hours,
+                    'minutes' => $minutes,
+                    'deadline_date' => $deadline->format('Y-m-d H:i:s'),
+                ];
+            } else {
+                $timeRemaining = [
+                    'overdue' => true,
+                    'days' => $deadline->diffInDays($now),
+                    'deadline_date' => $deadline->format('Y-m-d H:i:s'),
+                ];
+            }
+        }
+
+        // Prepare payment information
+        $paymentInfo = [
+            'has_payment' => $order->payments()->exists(),
+            'payment_status' => $order->payments()->exists() ? $order->payments()->latest()->first()->status : 'unpaid',
+            'payment_method' => $order->payments()->exists() ? $order->payments()->latest()->first()->payment_method : null,
+            'payment_date' => $order->payments()->exists() ? $order->payments()->latest()->first()->updated_at : null,
+            'payment_id' => $order->payments()->exists() ? $order->payments()->latest()->first()->id : null,
+            'payment_amount' => $order->payments()->exists() ? $order->payments()->latest()->first()->amount : null,
+        ];
+        
+        // Prepare messages for chat display
+        $messages = Message::where('order_id', $order->id)
+            ->where(function ($query) use ($user, $order) {
+                $query->where('sender_id', $user->id)
+                    ->orWhere('recipient_id', $user->id);
+            })
+            ->with(['sender:id,name,profile_photo_url']) // Eager load sender untuk avatar dan nama
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($message) use ($user, $order) {
+                $attachments = [];
+                // Jika pesan memiliki lampiran, ambil detailnya dari model File
+                if ($message->attachments) {
+                    foreach ($message->attachments as $filePath) {
+                        $file = \App\Models\File::where('file_path', $filePath)->first();
+                        if ($file) {
+                             $attachments[] = [
+                                'id' => $file->id,
+                                'original_name' => $file->original_name,
+                                'url' => route('files.download', $file->id),
+                                'file_extension' => pathinfo($file->original_name, PATHINFO_EXTENSION),
+                                'formatted_size' => $this->formatFileSize($file->file_size),
+                             ];
+                        }
+                    }
+                }
+
+                return [
+                    'id' => $message->id,
+                    'sender_id' => $message->sender_id,
+                    'recipient_id' => $message->recipient_id,
+                    'message' => $message->message,
+                    'created_at' => $message->created_at->format('Y-m-d H:i:s'),
+                    'is_mine' => $message->sender_id === $user->id,
+                    'sender_name' => $message->sender->name,
+                    'sender_avatar' => $message->sender->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($message->sender->name) . '&background=8b5cf6&color=fff',
+                    'attachments' => $attachments, // Sertakan attachments
+                ];
+            });
+            
+        // Tandai pesan yang diterima sebagai sudah dibaca
+        Message::where('order_id', $order->id)
+            ->where('sender_id', '!=', $user->id)
+            ->where('recipient_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
+        return Inertia::render('Client/OrderDetail', [
+            'order' => $order,
+            'files' => $orderFiles, // Mengirim file yang sudah diproses
+            'messages' => $messages, // Mengirim pesan yang sudah diproses
+            'user' => $user,
+            'timeRemaining' => $timeRemaining,
+            'paymentInfo' => $paymentInfo,
+        ]);
+    }
+
+    /**
+     * Helper method to format file size.
+     *
+     */
+    private function formatFileSize($size)
+    {
+        if ($size < 1024) {
+            return $size . ' B';
+        } elseif ($size < 1048576) {
+            return round($size / 1024, 2) . ' KB';
+        } elseif ($size < 1073741824) {
+            return round($size / 1048576, 2) . ' MB';
+        } else {
+            return round($size / 1073741824, 2) . ' GB';
+        }
+    }
+
+
 }

@@ -2,6 +2,7 @@ import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import React from 'react';
+import ToastProvider from './Components/Toast';
 
 createInertiaApp({
   resolve: name => {
@@ -9,7 +10,11 @@ createInertiaApp({
     return pages[`./Pages/${name}.jsx`];
   },
   setup({ el, App, props }) {
-    createRoot(el).render(<App {...props} />);
+    createRoot(el).render(
+      <ToastProvider>
+        <App {...props} />
+      </ToastProvider>
+    );
   },
   // Tambahkan ini untuk menangani URL eksternal dengan lebih baik
   progress: {

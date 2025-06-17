@@ -26,8 +26,10 @@ class Order extends Model
         'proposal_id',
         'amount',
         'platform_fee',
+        'platform_fee_percentage', // Add if you added this column
         'tax',
         'total_amount',
+        'freelancer_earning', // Add this line
         'requirements',
         'due_date',
         'status',
@@ -36,6 +38,7 @@ class Order extends Model
         'dispute_status',
         'deliverables',
         'revisions',
+        'payment_completed_at',
     ];
     
     /**
@@ -51,6 +54,7 @@ class Order extends Model
         'due_date' => 'date',
         'deliverables' => 'json',
         'revisions' => 'json',
+        'payment_completed_at' => 'datetime',
     ];
     
     /**
@@ -102,6 +106,22 @@ class Order extends Model
     }
     
     /**
+     * Get the files attached to this order
+     */
+    public function files()
+    {
+        return $this->morphMany(File::class, 'fileable');
+    }
+    
+    /**
+     * Get deliverable files for this order
+     */
+    public function deliverables()
+    {
+        return $this->morphMany(File::class, 'fileable')->where('status', 'deliverable');
+    }
+    
+    /**
      * Get the main payment associated with this order.
      */
     public function payment(): HasOne
@@ -123,5 +143,72 @@ class Order extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+    
+    /**
+     * Check if payment has been completed for this order
+     *
+     * @return bool
+     */
+    public function isPaymentCompleted(): bool
+    {
+        // Check if payment_completed_at is set
+        if ($this->payment_completed_at !== null) {
+            return true;
+        }
+        
+        // Otherwise check if there's a completed payment
+        return $this->payments()->where('status', 'completed')->exists();
+    }
+    
+    /**
+     * Mark payment as completed
+     *
+     * @return bool
+     */
+    public function markPaymentCompleted(): bool
+    {
+        if ($this->payment_completed_at === null) {
+            $this->payment_completed_at = now();
+            return $this->save();
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Generate a unique order number
+     */
+    public static function generateOrderNumber()
+    {
+        $prefix = 'ORD';
+        $date = now()->format('ymd');
+        $suffix = mt_rand(100, 999);
+        
+        $orderNumber = $prefix . $date . $suffix;
+        
+        // Check if the order number already exists
+        while (self::where('order_number', $orderNumber)->exists()) {
+            $suffix = mt_rand(100, 999);
+            $orderNumber = $prefix . $date . $suffix;
+        }
+        
+        return $orderNumber;
+    }
+    
+    /**
+     * Get deliverable files only
+     */
+    public function deliverableFiles()
+    {
+        return $this->files()->where('file_type', 'deliverable');
+    }
+    
+    /**
+     * Get attachment files only
+     */
+    public function attachmentFiles()
+    {
+        return $this->files()->where('file_type', 'attachment');
     }
 }

@@ -8,200 +8,23 @@ import SellerSection from './Components/SellerSection';
 import RelatedServiceCard from './Components/RelatedServiceCard';
 import ImageGallery from './Components/ImageGallery';
 
-const ServiceDetail = ({ id }) => {
+const ServiceDetail = ({ service, reviewStats, similarServices }) => {
+  console.log(service)
   const { auth } = usePage().props;
-  // State untuk menyimpan data jasa
-  const [service, setService] = useState({
-    id: id || 1,
-    title: 'Web Development dengan React & Laravel',
-    description: 'Membuat website modern dengan React di frontend dan Laravel di backend. Termasuk responsive design dan optimasi kinerja untuk pengalaman pengguna yang maksimal.',
-    longDescription: `
-      <p>Saya menawarkan jasa pembuatan website modern menggunakan teknologi terkini yaitu React.js untuk frontend dan Laravel untuk backend. Kombinasi teknologi ini akan menghasilkan website yang cepat, responsif, dan mudah dikelola.</p>
-      
-      <p>Website yang dibuat akan memiliki tampilan yang menarik, responsif (mobile-friendly), dan performa yang optimal. Selain itu, website juga akan dilengkapi dengan fitur SEO dasar untuk membantu meningkatkan peringkat di mesin pencari.</p>
-      
-      <p>Layanan ini cocok untuk:</p>
-      <ul>
-        <li>Perusahaan yang ingin memiliki website profesional</li>
-        <li>Startup yang membutuhkan landing page menarik</li>
-        <li>Toko online yang ingin meningkatkan pengalaman pengguna</li>
-        <li>Portfolio personal dengan tampilan profesional</li>
-      </ul>
-    `,
-    price: 2500000,
-    deliveryTime: 14,
-    revisions: 3,
-    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    additionalImages: [
-      'https://images.unsplash.com/photo-1547658719-da2b51169166?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    ],
-    status: 'active',
-    featured: true,
-    category: 'Web Development',
-    tags: ['React', 'Laravel', 'Web Development', 'Responsive Design', 'SEO'],
-    seller: {
-      id: 1,
-      name: 'Ahmad Rizky',
-      avatar: 'https://randomuser.me/api/portraits/men/42.jpg',
-      title: 'Full Stack Developer',
-      university: 'Universitas Indonesia',
-      rating: 4.9,
-      reviews: 38,
-      completedProjects: 42,
-      memberSince: 'Januari 2022',
-      responseTime: '1 jam',
-      skills: ['React', 'Laravel', 'Node.js', 'MySQL', 'Tailwind CSS'],
-      description: 'Full Stack Developer dengan pengalaman 3 tahun dalam pengembangan aplikasi web menggunakan React.js dan Laravel. Mahasiswa Ilmu Komputer di Universitas Indonesia.'
-    },
-    packages: [
-      {
-        id: 1,
-        name: 'Paket Dasar',
-        price: 2500000,
-        deliveryTime: 14,
-        revisions: 3,
-        features: [
-          'Website dengan 5 halaman',
-          'Responsive design',
-          'Form kontak',
-          'Integrasi dengan sosial media',
-          'Optimasi SEO dasar',
-        ],
-      },
-      {
-        id: 2,
-        name: 'Paket Standar',
-        price: 4000000,
-        deliveryTime: 21,
-        revisions: 5,
-        features: [
-          'Website dengan 10 halaman',
-          'Responsive design',
-          'Form kontak & newsletter',
-          'Integrasi dengan sosial media',
-          'Optimasi SEO lengkap',
-          'Blog section',
-          'Admin dashboard',
-        ],
-      },
-      {
-        id: 3,
-        name: 'Paket Premium',
-        price: 6500000,
-        deliveryTime: 30,
-        revisions: 7,
-        features: [
-          'Website dengan 15+ halaman',
-          'Responsive design',
-          'Form kontak & newsletter',
-          'Integrasi dengan sosial media',
-          'Optimasi SEO lengkap',
-          'Blog section',
-          'Admin dashboard',
-          'E-commerce functionality',
-          'Payment gateway integration',
-          'Custom animations',
-          'Performance optimization',
-        ],
-      },
-    ],
-    requirements: [
-      'Detail tentang tujuan website',
-      'Brand guideline jika ada',
-      'Konten yang akan ditampilkan di website',
-      'Referensi website yang disukai',
-      'Akses hosting (jika sudah memiliki)',
-    ],
-    faqs: [
-      {
-        question: 'Apakah termasuk biaya hosting dan domain?',
-        answer: 'Tidak, biaya hosting dan domain tidak termasuk dalam paket. Namun, saya dapat membantu Anda dalam proses pemilihan dan setup hosting yang sesuai dengan kebutuhan website Anda.',
-      },
-      {
-        question: 'Apakah website yang dibuat mobile friendly?',
-        answer: 'Ya, semua website yang saya kembangkan bersifat responsive dan dapat diakses dengan baik pada perangkat mobile, tablet, maupun desktop.',
-      },
-      {
-        question: 'Apakah bisa melakukan penambahan fitur di luar paket?',
-        answer: 'Ya, bisa. Penambahan fitur akan dikenakan biaya tambahan sesuai dengan kompleksitas fitur yang diminta.',
-      },
-      {
-        question: 'Apakah ada garansi untuk website yang dibuat?',
-        answer: 'Ya, saya memberikan garansi perbaikan bug selama 1 bulan setelah website selesai dikembangkan.',
-      },
-    ],
-    reviews: [
-      {
-        id: 1,
-        user: {
-          name: 'Budi Santoso',
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-        },
-        rating: 5,
-        date: '12 Mei 2023',
-        comment: 'Sangat puas dengan hasil kerja Ahmad. Website yang dibuat sangat sesuai dengan kebutuhan dan ekspektasi saya. Proses komunikasi juga lancar dan responsif.',
-      },
-      {
-        id: 2,
-        user: {
-          name: 'Citra Puspita',
-          avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-        },
-        rating: 4,
-        date: '3 April 2023',
-        comment: 'Website yang dibuat sangat bagus dan responsif. Namun, ada beberapa revisi kecil yang diperlukan. Ahmad dengan cepat menanggapi dan memperbaiki sesuai dengan permintaan saya.',
-      },
-      {
-        id: 3,
-        user: {
-          name: 'Dodi Prakoso',
-          avatar: 'https://randomuser.me/api/portraits/men/62.jpg',
-        },
-        rating: 5,
-        date: '17 Maret 2023',
-        comment: 'Luar biasa! Hasil kerjanya melampaui ekspektasi saya. Website yang dibuat tidak hanya menarik secara visual tetapi juga cepat dan fungsional. Sangat merekomendasikan jasa Ahmad!',
-      },
-    ],
-    relatedServices: [
-      {
-        id: 2,
-        title: 'UI/UX Design untuk Website & Mobile App',
-        image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-        seller: 'Anisa Widya',
-        rating: 4.8,
-        reviews: 24,
-        price: 1800000,
-      },
-      {
-        id: 3,
-        title: 'Mobile App Development dengan React Native',
-        image: 'https://images.unsplash.com/photo-1526498460520-4c246339dccb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-        seller: 'Budi Santoso',
-        rating: 4.7,
-        reviews: 19,
-        price: 3500000,
-      },
-      {
-        id: 4,
-        title: 'WordPress Website Development',
-        image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-        seller: 'Citra Puspita',
-        rating: 4.9,
-        reviews: 31,
-        price: 1500000,
-      },
-    ],
-  });
-
-  // State untuk paket yang dipilih
-  const [selectedPackage, setSelectedPackage] = useState(1);
+  
+  // State untuk paket yang dipilih (default ke paket pertama jika ada)
+  const [selectedPackage, setSelectedPackage] = useState(
+    service.packages && service.packages.length > 0 ? service.packages[0].id : null
+  );
+  
   // State untuk gambar yang dipilih
-  const [selectedImage, setSelectedImage] = useState(service.image);
+  const [selectedImage, setSelectedImage] = useState(
+    service.image || 'https://via.placeholder.com/800x600?text=Tidak+ada+gambar'
+  );
+  
   // State untuk tab yang aktif
   const [activeTab, setActiveTab] = useState('description');
-
+  
   // Helper function untuk format harga ke Rupiah
   const formatRupiah = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -265,8 +88,8 @@ const ServiceDetail = ({ id }) => {
               Eksplorasi
             </Link>
             <span className="mx-2">/</span>
-            <Link href={`/eksplorasi?category=${service.category}`} className="hover:text-gray-700">
-              {service.category}
+            <Link href={`/eksplorasi?category=${service.category?.name || 'all'}`} className="hover:text-gray-700">
+              {service.category?.name || 'Semua Kategori'}
             </Link>
             <span className="mx-2">/</span>
             <span className="text-gray-900">{service.title}</span>
@@ -274,11 +97,16 @@ const ServiceDetail = ({ id }) => {
 
           {/* Service Detail Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Service Images & Details */}            <div className="lg:col-span-2">
+            {/* Left Column - Service Images & Details */}
+            <div className="lg:col-span-2">
               {/* Image Gallery */}
               <ImageGallery 
-                mainImage={service.image}
-                additionalImages={service.additionalImages}
+                mainImage={service.image || service.thumbnail || 'https://via.placeholder.com/800x600?text=Tidak+ada+gambar'}
+                additionalImages={
+                  service.galleries && service.galleries.length > 0 
+                    ? service.galleries.map(gallery => gallery.image_path) 
+                    : (service.additional_images || [])
+                }
                 selectedImage={selectedImage}
                 setSelectedImage={setSelectedImage}
                 title={service.title}
@@ -339,23 +167,25 @@ const ServiceDetail = ({ id }) => {
                     </h2>
                     <div 
                       className="prose prose-sm max-w-none text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: service.longDescription }}
+                      dangerouslySetInnerHTML={{ __html: service.description }}
                     />
                     
-                    {/* Tags */}
-                    <div className="mt-6">
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Tags:</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {service.tags.map((tag, index) => (
-                          <span 
-                            key={index}
-                            className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                    {/* Skills/Tags */}
+                    {service.skills && service.skills.length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">Skills:</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {service.skills.map((skill, index) => (
+                            <span 
+                              key={index}
+                              className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
+                            >
+                              {skill.name}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 
@@ -367,16 +197,20 @@ const ServiceDetail = ({ id }) => {
                     <p className="text-gray-700 mb-4">
                       Untuk memberikan hasil terbaik, harap sediakan informasi berikut saat memesan jasa ini:
                     </p>
-                    <ul className="space-y-3">
-                      {service.requirements.map((req, index) => (
-                        <li key={index} className="flex items-start">
-                          <svg className="h-5 w-5 text-[#7C3AED] mt-0.5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-gray-700">{req}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {service.requirements && service.requirements.length > 0 ? (
+                      <ul className="space-y-3">
+                        {service.requirements.map((req, index) => (
+                          <li key={index} className="flex items-start">
+                            <svg className="h-5 w-5 text-[#7C3AED] mt-0.5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-gray-700">{req.description || req.question}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500 italic">Tidak ada persyaratan khusus yang ditentukan oleh penyedia jasa.</p>
+                    )}
                   </div>
                 )}
 
@@ -385,59 +219,94 @@ const ServiceDetail = ({ id }) => {
                     <h2 className="text-xl font-bold text-gray-900 mb-4">
                       Pertanyaan yang Sering Diajukan (FAQ)
                     </h2>
-                    <div className="space-y-4">
-                      {service.faqs.map((faq, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                          <div className="p-4 bg-gray-50 border-b border-gray-200">
-                            <h3 className="text-md font-medium text-gray-900">
-                              {faq.question}
-                            </h3>
+                    {service.faqs && service.faqs.length > 0 ? (
+                      <div className="space-y-4">
+                        {service.faqs.map((faq, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="p-4 bg-gray-50 border-b border-gray-200">
+                              <h3 className="text-md font-medium text-gray-900">
+                                {faq.question}
+                              </h3>
+                            </div>
+                            <div className="p-4">
+                              <p className="text-gray-700">{faq.answer}</p>
+                            </div>
                           </div>
-                          <div className="p-4">
-                            <p className="text-gray-700">{faq.answer}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">Tidak ada FAQ untuk jasa ini.</p>
+                    )}
                   </div>
-                )}                {activeTab === 'reviews' && (
+                )}
+
+                {activeTab === 'reviews' && (
                   <ReviewSection 
-                    reviews={service.reviews} 
-                    averageRating={service.reviews.reduce((acc, review) => acc + review.rating, 0) / service.reviews.length}
+                    reviews={service.reviews || []} 
+                    averageRating={reviewStats?.average || 0}
                     renderStars={renderStars}
                   />
                 )}
-              </div>              {/* Related Services */}
-              <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Jasa Terkait
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {service.relatedServices.map((relService) => (
-                    <RelatedServiceCard 
-                      key={relService.id} 
-                      service={relService} 
-                      formatRupiah={formatRupiah} 
-                    />
-                  ))}
-                </div>
               </div>
+              
+              {/* Related Services */}
+              {similarServices && similarServices.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    Jasa Terkait
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {similarServices.map((relService) => (
+                      <RelatedServiceCard 
+                        key={relService.id} 
+                        service={{
+                          id: relService.id,
+                          title: relService.title,
+                          image: relService.image || 'https://via.placeholder.com/300x200?text=Tidak+ada+gambar',
+                          seller: relService.user?.name || 'Freelancer',
+                          rating: reviewStats?.average || 0,
+                          reviews: reviewStats?.count || 0,
+                          price: relService.price
+                        }} 
+                        formatRupiah={formatRupiah} 
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Column - Order Box */}            <div className="lg:col-span-1">
+            {/* Right Column - Order Box */}
+            <div className="lg:col-span-1">
               {/* Package Section */}
               <div className="mb-6">
                 <PackageSection 
-                  packages={service.packages}
+                  packages={service.packages || []}
                   selectedPackage={selectedPackage}
                   setSelectedPackage={setSelectedPackage}
                   formatRupiah={formatRupiah}
+                  serviceId={service.id}
+                  isAuthenticated={auth.user ? true : false}
+                  isClient={auth.user?.role === 'client'}
                 />
               </div>
 
               {/* Seller Info */}
               <SellerSection
-                seller={service.seller}
+                seller={{
+                  id: service.user?.id,
+                  name: service.user?.name || 'Freelancer',
+                  avatar: service.user?.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(service.user?.name || 'User')}&background=7C3AED&color=fff`,
+                  title: service.user?.profile?.title || 'MahaBisa Freelancer',
+                  university: service.user?.profile?.education || '',
+                  rating: reviewStats?.average || 0,
+                  reviews: reviewStats?.count || 0,
+                  completedProjects: service.user?.completed_orders_count || 0,
+                  memberSince: service.user?.created_at ? new Date(service.user.created_at).toLocaleDateString('id-ID', {month: 'long', year: 'numeric'}) : '',
+                  responseTime: service.user?.profile?.response_time || 'Tidak tersedia',
+                  skills: service.user?.skills?.map(skill => skill.name) || [],
+                  description: service.user?.profile?.bio || 'Tidak ada deskripsi.'
+                }}
                 renderStars={renderStars}
               />
             </div>

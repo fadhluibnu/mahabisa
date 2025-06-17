@@ -1,6 +1,6 @@
 import React from 'react';
 
-const FilterSection = ({ filters, onFilterChange }) => {
+const FilterSection = ({ filters, onFilterChange, categories, priceRanges, ratingOptions }) => {
   return (
     <section className='py-6'>
       <div className='container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
@@ -12,16 +12,15 @@ const FilterSection = ({ filters, onFilterChange }) => {
               </label>
               <select
                 className='w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-violet-600'
-                value={filters.category}
+                value={filters.category || ''}
                 onChange={e => onFilterChange('category', e.target.value)}
               >
                 <option value=''>Semua Kategori</option>
-                <option value='design'>Design Grafis</option>
-                <option value='web'>Web Development</option>
-                <option value='video'>Video & Animasi</option>
-                <option value='writing'>Penulisan & Translasi</option>
-                <option value='marketing'>Digital Marketing</option>
-                <option value='music'>Musik & Audio</option>
+                {categories && categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name} ({category.services_count})
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -31,31 +30,33 @@ const FilterSection = ({ filters, onFilterChange }) => {
               </label>
               <select
                 className='w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-violet-600'
-                value={filters.budget}
-                onChange={e => onFilterChange('budget', e.target.value)}
+                value={getPriceRangeId(filters.min_price, filters.max_price, priceRanges)}
+                onChange={e => onFilterChange('price_range', e.target.value)}
               >
                 <option value=''>Semua Harga</option>
-                <option value='low'>{'< Rp100rb'}</option>
-                <option value='medium'>Rp100rb - Rp300rb</option>
-                <option value='high'>Rp300rb - Rp500rb</option>
-                <option value='premium'>Rp500rb+</option>
+                {priceRanges && priceRanges.map(range => (
+                  <option key={range.id} value={range.id}>
+                    {range.name}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className='space-y-2'>
-              {' '}
               <label className='block text-sm font-medium text-slate-700'>
                 Rating
               </label>
               <select
                 className='w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-violet-600'
-                value={filters.rating}
+                value={filters.rating || ''}
                 onChange={e => onFilterChange('rating', e.target.value)}
               >
                 <option value=''>Semua Rating</option>
-                <option value='4.5'>4.5+</option>
-                <option value='4.0'>4.0+</option>
-                <option value='3.5'>3.5+</option>
+                {ratingOptions && ratingOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -65,13 +66,13 @@ const FilterSection = ({ filters, onFilterChange }) => {
               </label>
               <select
                 className='w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-600 focus:border-violet-600'
-                value={filters.sort}
-                onChange={e => onFilterChange('sort', e.target.value)}
+                value={filters.sort_by || 'newest'}
+                onChange={e => onFilterChange('sort_by', e.target.value)}
               >
-                <option value='recommended'>Direkomendasikan</option>
                 <option value='newest'>Terbaru</option>
-                <option value='price-low'>Harga Terendah</option>
-                <option value='price-high'>Harga Tertinggi</option>
+                <option value='popular'>Terpopuler</option>
+                <option value='price_low'>Harga Terendah</option>
+                <option value='price_high'>Harga Tertinggi</option>
                 <option value='rating'>Rating Tertinggi</option>
               </select>
             </div>
@@ -80,6 +81,19 @@ const FilterSection = ({ filters, onFilterChange }) => {
       </div>
     </section>
   );
+};
+
+// Helper function to determine which price range is currently selected
+const getPriceRangeId = (minPrice, maxPrice, priceRanges) => {
+  if (!minPrice && !maxPrice) return '';
+  
+  for (const range of priceRanges || []) {
+    if (range.min === parseInt(minPrice) && range.max === (maxPrice ? parseInt(maxPrice) : null)) {
+      return range.id;
+    }
+  }
+  
+  return '';
 };
 
 export default FilterSection;

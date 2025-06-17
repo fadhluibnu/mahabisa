@@ -14,6 +14,15 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
     console.log('Active tab changed to:', activeTab);
   }, [activeTab]);
   
+  // Debug service data coming from server
+  useEffect(() => {
+    console.log('Service initial data:', {
+      service: initialService,
+      requirements: initialService.requirement_s,
+      requirements_parsed: parseRequirements(initialService.requirement_s || [])
+    });
+  }, [initialService]);
+  
   // Improved tab navigation with better state preservation
   const changeTab = (tabName) => {
     console.log('Changing to tab:', tabName);
@@ -128,6 +137,11 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
   };
   
   // Initialize service state from props
+  // Initialize gallery images state
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [removedGalleryImages, setRemovedGalleryImages] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
+  
   const [service, setService] = useState({
     id: initialService.id,
     title: initialService.title || '',
@@ -139,9 +153,10 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
     skills: initialService.skills ? initialService.skills.map(skill => typeof skill === 'object' ? skill.id : skill) : [],
     status: initialService.status || 'active',
     image_url: initialService.thumbnail || initialService.image_url || initialService.image || '',
-    requirements: parseRequirements(initialService.requirements || []),
+    requirements: parseRequirements(initialService.requirement_s || []),
     faqs: parseFaqs(initialService.faqs || []),
-    packages: processServicePackages(initialService)
+    packages: processServicePackages(initialService),
+    galleries: initialService.galleries || []
   });
 
   // Initialize image preview from service image
@@ -269,6 +284,66 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
       reader.readAsDataURL(file);
     }
   };
+  
+  // Handle gallery images upload
+  const handleGalleryImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Validate file type and size
+      const validFiles = files.filter(file => {
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+          alert(`File "${file.name}" bukan format gambar yang valid`);
+          return false;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File "${file.name}" terlalu besar (max 5MB)`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      if (validFiles.length > 0) {
+        // Create object URLs for preview
+        const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+        
+        // Update state with new files and previews
+        setGalleryImages([...galleryImages, ...validFiles]);
+        setGalleryPreviews([...galleryPreviews, ...newPreviews]);
+      }
+    }
+  };
+  
+  // Remove a gallery image that was just uploaded (not yet saved)
+  const removeNewGalleryImage = (index) => {
+    const updatedImages = [...galleryImages];
+    const updatedPreviews = [...galleryPreviews];
+    
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(updatedPreviews[index]);
+    
+    // Remove the image and preview from arrays
+    updatedImages.splice(index, 1);
+    updatedPreviews.splice(index, 1);
+    
+    setGalleryImages(updatedImages);
+    setGalleryPreviews(updatedPreviews);
+  };
+  
+  // Remove an existing gallery image
+  const removeExistingGalleryImage = (galleryId) => {
+    // Add the ID to list of images to be removed on the server
+    setRemovedGalleryImages([...removedGalleryImages, galleryId]);
+    
+    // Update the service state to remove this gallery item from UI
+    const updatedGalleries = service.galleries.filter(g => g.id !== galleryId);
+    setService({
+      ...service,
+      galleries: updatedGalleries
+    });
+  };
 
   // Handle package changes
   const handlePackageChange = (index, field, value) => {
@@ -297,6 +372,43 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
     setService({
       ...service,
       packages: updatedPackages,
+    });
+  };
+
+  // Add new package
+  const addPackage = () => {
+    const lastPackage = service.packages[service.packages.length - 1];
+    const newId = lastPackage ? parseInt(lastPackage.id) + 1 : 1;
+    
+    const newPackage = {
+      id: newId,
+      name: 'Paket Baru',
+      price: 0,
+      deliveryTime: 7,
+      revisions: 1,
+      features: ['Fitur utama']
+    };
+    
+    setService({
+      ...service,
+      packages: [...service.packages, newPackage]
+    });
+  };
+
+  // Delete a package
+  const deletePackage = (packageIndex) => {
+    // Don't allow deleting if only one package exists
+    if (service.packages.length <= 1) {
+      alert('Layanan harus memiliki minimal satu paket');
+      return;
+    }
+    
+    const updatedPackages = [...service.packages];
+    updatedPackages.splice(packageIndex, 1);
+    
+    setService({
+      ...service,
+      packages: updatedPackages
     });
   };
 
@@ -392,8 +504,12 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
     // Validate form before submission
     const { isValid, errors: validationErrors } = validateForm();
     if (!isValid) {
-      // Show validation errors
-      alert('Mohon perbaiki kesalahan pada formulir');
+      // Show validation errors with more detail
+      let errorMessage = 'Mohon perbaiki kesalahan pada formulir:\n';
+      Object.entries(validationErrors).forEach(([field, message]) => {
+        errorMessage += `- ${field}: ${message}\n`;
+      });
+      alert(errorMessage);
       
       console.error('Validation errors:', validationErrors);
       return;
@@ -419,7 +535,7 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
       });
     }
     
-    // Add requirements as structured data
+    // Add requirements as structured data - we keep the field name "requirements" to match controller
     const filteredRequirements = service.requirements.filter(req => req.trim() !== '');
     if (filteredRequirements.length > 0) {
       filteredRequirements.forEach((req, index) => {
@@ -451,12 +567,17 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
         if (pkg.features && pkg.features.length > 0) {
           const filteredFeatures = pkg.features.filter(feature => feature.trim() !== '');
           if (filteredFeatures.length > 0) {
-            formData.append(`packages[${index}][features]`, JSON.stringify(filteredFeatures));
+            // Send features as an array using brackets in the key name
+            filteredFeatures.forEach((feature, featureIndex) => {
+              formData.append(`packages[${index}][features][${featureIndex}]`, feature);
+            });
           } else {
-            formData.append(`packages[${index}][features]`, JSON.stringify(['Basic service']));
+            // Add at least one basic feature
+            formData.append(`packages[${index}][features][0]`, 'Basic service');
           }
         } else {
-          formData.append(`packages[${index}][features]`, JSON.stringify(['Basic service']));
+          // Add a default feature if none exists
+          formData.append(`packages[${index}][features][0]`, 'Basic service');
         }
       });
     }
@@ -471,6 +592,29 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
       console.log('Keeping existing image URL:', service.image_url);
     }
     
+    // Add new gallery images
+    if (galleryImages.length > 0) {
+      galleryImages.forEach((image, index) => {
+        formData.append(`gallery[${index}]`, image);
+        console.log('Adding new gallery image:', image.name);
+      });
+    }
+    
+    // Add removed gallery images
+    if (removedGalleryImages.length > 0) {
+      removedGalleryImages.forEach(id => {
+        formData.append('removed_gallery_images[]', id);
+      });
+      console.log('Gallery images to remove:', removedGalleryImages);
+    }
+    
+    // Add gallery order information
+    if (service.galleries && service.galleries.length > 0) {
+      service.galleries.forEach((gallery, index) => {
+        formData.append(`gallery_order[${index}]`, gallery.id);
+      });
+    }
+    
     console.log('Submitting service update with data:', {
       title: service.title,
       description: service.description.substring(0, 30) + '...',
@@ -482,6 +626,10 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
       faqs: service.faqs.length
     });
     
+    // Debugging before submission
+    console.log('Gallery images to upload:', galleryImages.length);
+    console.log('Gallery images to remove:', removedGalleryImages);
+    
     // Use Inertia to submit the form
     router.post(`/freelancer/services/${service.id}`, formData, {
       forceFormData: true,
@@ -492,7 +640,18 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
       },
       onError: (errors) => {
         console.error('Service update errors:', errors);
-        alert('Terjadi kesalahan saat memperbarui layanan: ' + Object.values(errors).join(', '));
+        let errorMessage = 'Terjadi kesalahan saat memperbarui layanan:';
+        
+        if (typeof errors === 'object' && errors !== null) {
+          Object.entries(errors).forEach(([field, message]) => {
+            errorMessage += `\n- ${field}: ${message}`;
+          });
+        } else {
+          errorMessage += ' ' + errors;
+        }
+        
+        alert(errorMessage);
+        setIsSubmitting(false);
       },
       onFinish: () => {
         setIsSubmitting(false);
@@ -971,6 +1130,109 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
                       Jika gambar tidak muncul, silakan upload gambar baru dengan ukuran maksimal 5MB.
                     </p>
                   </div>
+
+                  {/* Gallery Images Section */}
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Galeri Gambar Layanan
+                    </label>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Upload gambar tambahan untuk ditampilkan dalam galeri layanan (opsional, maksimal 5 gambar).
+                    </p>
+                    
+                    {/* Existing Gallery Images */}
+                    {service.galleries && service.galleries.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Galeri Saat Ini</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                          {service.galleries.map((gallery) => (
+                            <div key={gallery.id} className="relative group">
+                              <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
+                                <img
+                                  src={gallery.image_path.startsWith('http') ? gallery.image_path : `/storage/${gallery.image_path}`}
+                                  alt={`Gallery image ${gallery.id}`}
+                                  className="h-full w-full object-cover object-center"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeExistingGalleryImage(gallery.id)}
+                                  className="absolute top-2 right-2 bg-white rounded-full p-1.5 text-red-500 opacity-80 hover:opacity-100 transition-opacity"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* New Gallery Image Previews */}
+                    {galleryPreviews.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Gambar Baru</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {galleryPreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
+                                <img
+                                  src={preview}
+                                  alt={`New gallery image ${index + 1}`}
+                                  className="h-full w-full object-cover object-center"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeNewGalleryImage(index)}
+                                  className="absolute top-2 right-2 bg-white rounded-full p-1.5 text-red-500 opacity-80 hover:opacity-100 transition-opacity"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Gallery Upload Button */}
+                    {(service.galleries?.length || 0) + galleryPreviews.length < 5 && (
+                      <div className="mt-1 flex flex-col items-center justify-center pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-md">
+                        <div className="space-y-1 text-center">
+                          <svg className="mx-auto h-10 w-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <div className="flex text-sm text-gray-600">
+                            <label
+                              htmlFor="gallery-upload"
+                              className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none"
+                            >
+                              <span>Upload gallery images</span>
+                              <input
+                                id="gallery-upload"
+                                name="gallery-upload"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="sr-only"
+                                onChange={handleGalleryImagesChange}
+                              />
+                            </label>
+                          </div>
+                          <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(service.galleries?.length || 0) + galleryPreviews.length >= 5 && (
+                      <p className="text-sm text-yellow-600">
+                        Maksimum 5 gambar galeri diperbolehkan. Hapus beberapa gambar jika Anda ingin mengunggah lebih banyak.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -992,19 +1254,27 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
                     }`}
                   >
                     <div
-                      className={`p-4 ${
-                        pkg.name === 'Paket Standar'
-                          ? 'bg-indigo-50 border-b border-indigo-100'
-                          : 'bg-white border-b border-gray-100'
+                      className={`p-4 ${                      pkg.name === 'Paket Standar'
+                        ? 'bg-indigo-50 border-b border-indigo-100'
+                        : 'bg-white border-b border-gray-100'
                       }`}
                     >
-                      <input
-                        type="text"
-                        value={pkg.name}
-                        onChange={(e) => handlePackageChange(packageIndex, 'name', e.target.value)}
-                        className="block w-full text-lg font-medium bg-transparent border-0 p-0 focus:ring-0 focus:border-0"
-                        placeholder="Nama Paket"
-                      />
+                      <div className="flex justify-between items-center">
+                        <input
+                          type="text"
+                          value={pkg.name}
+                          onChange={(e) => handlePackageChange(packageIndex, 'name', e.target.value)}
+                          className="block w-full text-lg font-medium bg-transparent border-0 p-0 focus:ring-0 focus:border-0"
+                          placeholder="Nama Paket"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => deletePackage(packageIndex)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <FaTrash className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="p-4 space-y-4">
                       <div>
@@ -1091,6 +1361,30 @@ const ServiceEdit = ({ user, service: initialService, categories, skills }) => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Add Package Button */}
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={addPackage}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <FaPlus className="mr-2 -ml-1 h-4 w-4" />
+                  Tambah Paket Baru
+                </button>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={addPackage}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <FaPlus className="mr-1 h-3 w-3" />
+                  Tambah Paket
+                </button>
               </div>
             </div>
           )}

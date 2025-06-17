@@ -15,7 +15,8 @@ class ServiceRequirement extends Model
     protected $fillable = [
         'service_id',
         'question',
-        'required'
+        'required',
+        'description'
     ];
 
     /**
@@ -24,5 +25,14 @@ class ServiceRequirement extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class, 'service_id');
+    }
+    
+    /**
+     * Get the description attribute
+     * For backward compatibility with front-end
+     */
+    public function getDescriptionAttribute()
+    {
+        return $this->question;
     }
 }

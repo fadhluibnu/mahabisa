@@ -36,6 +36,11 @@ Route::prefix('v1')->group(function () {
     Route::get('/projects/{id}', [App\Http\Controllers\API\ProjectController::class, 'show']);
 });
 
+// Payment status check for client
+Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
+    Route::get('/{id}/check-status', [App\Http\Controllers\OrderController::class, 'checkPaymentStatus']);
+});
+
 // Protected API endpoints
 // Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 //     // User profile
