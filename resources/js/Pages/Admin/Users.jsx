@@ -172,6 +172,8 @@ const Users = ({ users, user, stats, flash }) => {
   // Handle delete user
   const handleDeleteClick = (user, e) => {
     e.stopPropagation(); // Prevent row click event
+    e.preventDefault(); // Prevent any default action
+    console.log('Delete clicked for user:', user); // Add logging
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
@@ -417,26 +419,7 @@ const Users = ({ users, user, stats, flash }) => {
               Filter
             </button>
 
-            <button
-              onClick={() => setShowAddModal(true)}
-              className='flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700'
-            >
-              <svg
-                className='w-5 h-5 mr-2'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-                xmlns='http://www.w3.org/2000/svg'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 6v6m0 0v6m0-6h6m-6 0H6'
-                />
-              </svg>
-              Tambah Pengguna
-            </button>
+            {/* Add User button removed */}
           </div>
         </div>
 
@@ -794,19 +777,13 @@ const Users = ({ users, user, stats, flash }) => {
               </div>
             </div>
 
-            <div className='flex justify-end mt-6 gap-3'>
+            <div className='flex justify-end mt-6'>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50'
               >
                 Tutup
               </button>
-              <Link
-                href={`/admin/users/${selectedUser.id}/edit`}
-                className='px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700'
-              >
-                Edit Pengguna
-              </Link>
             </div>
           </div>
         </div>
@@ -819,7 +796,10 @@ const Users = ({ users, user, stats, flash }) => {
             className='fixed inset-0 bg-black opacity-50'
             onClick={() => setShowDeleteModal(false)}
           ></div>
-          <div className='bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10'>
+          <div
+            className='bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10'
+            onClick={e => e.stopPropagation()}
+          >
             <div className='flex items-center justify-center mb-6'>
               <div className='w-12 h-12 rounded-full bg-red-100 flex items-center justify-center'>
                 <svg
@@ -851,14 +831,24 @@ const Users = ({ users, user, stats, flash }) => {
 
             <div className='flex justify-center gap-3'>
               <button
-                onClick={() => setShowDeleteModal(false)}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50'
+                type='button'
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowDeleteModal(false);
+                }}
+                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
               >
                 Batal
               </button>
               <button
-                onClick={handleConfirmDelete}
-                className='px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700'
+                type='button'
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleConfirmDelete();
+                }}
+                className='px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
               >
                 Hapus
               </button>
@@ -868,21 +858,16 @@ const Users = ({ users, user, stats, flash }) => {
       )}
 
       {/* Modal Tambah Pengguna */}
-      {showAddModal && (
+      {/* Add User Modal removed */}
+      {false && (
         <div className='fixed inset-0 flex items-center justify-center z-50'>
-          <div
-            className='fixed inset-0 bg-black opacity-50'
-            onClick={() => setShowAddModal(false)}
-          ></div>
+          <div className='fixed inset-0 bg-black opacity-50'></div>
           <div className='bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10'>
             <div className='flex justify-between items-center mb-4'>
               <h3 className='font-bold text-lg text-gray-900'>
-                Tambah Pengguna Baru
+                Tambah Pengguna Baru (Disabled)
               </h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className='text-gray-400 hover:text-gray-600'
-              >
+              <button className='text-gray-400 hover:text-gray-600'>
                 <svg
                   className='w-6 h-6'
                   fill='none'

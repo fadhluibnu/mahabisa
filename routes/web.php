@@ -145,7 +145,6 @@ Route::prefix('freelancer')->middleware(['auth', 'role:freelancer'])->group(func
     
     // Messages
     Route::get('/messages', [FreelancerController::class, 'messages'])->name('freelancer.messages');
-    Route::get('/messages/{conversation_id}', [FreelancerController::class, 'showConversation'])->name('freelancer.messages.conversation');
     Route::post('/messages', [FreelancerController::class, 'sendMessage'])->name('freelancer.messages.send');
     
     // Reviews

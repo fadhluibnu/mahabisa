@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Activity;
 use App\Models\Review;
 use App\Models\Service;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Project;
 use App\Models\Setting;
 use App\Models\Withdrawal;
@@ -369,17 +370,59 @@ class AdminController extends Controller
      */
     public function deleteUser($id)
     {
-        $user = User::findOrFail($id);
-        
-        // Prevent deleting yourself
-        if ($user->id === Auth::id()) {
-            return redirect()->route('admin.users')->with('error', 'You cannot delete your own account');
+        try {
+            $user = User::findOrFail($id);
+            
+            // Prevent deleting yourself
+            if ($user->id === Auth::id()) {
+                return redirect()->route('admin.users')->with('error', 'You cannot delete your own account');
+            }
+            
+            // Check for related records before deleting
+            // Check if profile exists and delete
+            if ($user->profile) {
+                $user->profile->delete();
+            }
+            
+            // Use DB schema builder to check if tables exist before deleting relations
+            $schema = \Schema::connection($user->getConnectionName());
+            
+            // Delete the user's relations only if the tables exist
+            if ($schema->hasTable('activities')) {
+                $user->activities()->delete();
+            }
+            
+            if ($schema->hasTable('messages')) {
+                $user->sentMessages()->delete();
+                $user->receivedMessages()->delete();
+            }
+            
+            if ($schema->hasTable('portfolios')) {
+                $user->portfolios()->delete();
+            }
+            
+            // These tables don't seem to exist in the current database schema
+            // So we'll skip them safely
+            // if ($schema->hasTable('educations')) {
+            //     $user->educations()->delete();
+            // }
+            
+            // if ($schema->hasTable('experiences')) {
+            //     $user->experiences()->delete();
+            // }
+            
+            if ($schema->hasTable('skills') && $schema->hasTable('user_skills')) {
+                $user->skills()->detach();
+            }
+            
+            // Finally delete the user
+            $user->delete();
+            
+            return redirect()->route('admin.users')->with('success', 'User deleted successfully');
+        } catch (\Exception $e) {
+            \Log::error('Error deleting user: ' . $e->getMessage());
+            return redirect()->route('admin.users')->with('error', 'Failed to delete user: ' . $e->getMessage());
         }
-        
-        // Delete the user
-        $user->delete();
-        
-        return redirect()->route('admin.users')->with('success', 'User deleted successfully');
     }
 
     /**
