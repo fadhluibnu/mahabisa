@@ -81,7 +81,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 3890,
+    port: 4854,
     strictPort: true,
     hmr: {
       host: localIP,
@@ -91,6 +91,6 @@ export default defineConfig({
       usePolling: true,
     },
     cors: true,
-    origin: `http://${localIP}:3890`,
+    origin: `http://${localIP}:4854`,
   },
 }); 

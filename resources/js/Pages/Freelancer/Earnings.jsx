@@ -4,79 +4,23 @@ import FreelancerLayout from './Components/FreelancerLayout';
 import EarningsCard from './Components/EarningsCard';
 import Chart from 'chart.js/auto';
 
-const Earnings = () => {
+const Earnings = ({ 
+  totalEarnings, 
+  formattedTotalEarnings,
+  availableBalance, 
+  formattedAvailableBalance,
+  pendingBalance, 
+  formattedPendingBalance,
+  earnings = [], 
+  pendingPayments = [],
+  monthLabels = [],
+  monthlyEarningsData = [],
+  recentWithdrawals = []
+}) => {
   const chartRef = useRef(null);
   const [chartInstance, setChartInstance] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  // Dummy data for earnings
-  const earnings = [
-    {
-      id: 1,
-      client: 'PT Maju Bersama',
-      project: 'Redesain Website E-commerce',
-      amount: 'Rp1.500.000',
-      date: '10 Jun 2023',
-      status: 'paid',
-      image:
-        'https://ui-avatars.com/api/?name=PT+Maju+Bersama&background=6366f1&color=fff',
-    },
-    {
-      id: 2,
-      client: 'StartUp Inovasi',
-      project: 'Pengembangan Aplikasi Mobile',
-      amount: 'Rp3.000.000',
-      date: '5 Jun 2023',
-      status: 'paid',
-      image:
-        'https://ui-avatars.com/api/?name=StartUp+Inovasi&background=ec4899&color=fff',
-    },
-    {
-      id: 3,
-      client: 'CV Digital Kreatif',
-      project: 'Landing Page untuk Peluncuran Produk',
-      amount: 'Rp2.800.000',
-      date: '1 Jun 2023',
-      status: 'paid',
-      image:
-        'https://ui-avatars.com/api/?name=CV+Digital+Kreatif&background=10b981&color=fff',
-    },
-    {
-      id: 4,
-      client: 'PT Solusi Teknologi',
-      project: 'Pembuatan Dashboard Admin',
-      amount: 'Rp5.500.000',
-      date: '25 Mei 2023',
-      status: 'paid',
-      image:
-        'https://ui-avatars.com/api/?name=PT+Solusi+Teknologi&background=f59e0b&color=fff',
-    },
-  ];
-
-  // Dummy data for pending payments
-  const pendingPayments = [
-    {
-      id: 5,
-      client: 'Toko Online Sejahtera',
-      project: 'Integrasi Payment Gateway',
-      amount: 'Rp3.200.000',
-      date: '20 Jun 2023',
-      status: 'pending',
-      image:
-        'https://ui-avatars.com/api/?name=Toko+Online+Sejahtera&background=8b5cf6&color=fff',
-    },
-    {
-      id: 6,
-      client: 'PT Edukasi Digital',
-      project: 'Platform E-learning',
-      amount: 'Rp6.000.000',
-      date: '15 Jul 2023',
-      status: 'pending',
-      image:
-        'https://ui-avatars.com/api/?name=PT+Edukasi+Digital&background=3b82f6&color=fff',
-    },
-  ];
 
   // Combined payments for filtering
   const allPayments = [...earnings, ...pendingPayments];
@@ -94,11 +38,11 @@ const Earnings = () => {
 
   // Chart data
   const monthlyData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+    labels: monthLabels,
     datasets: [
       {
         label: 'Penghasilan Bulanan',
-        data: [3500000, 4200000, 3800000, 5100000, 4800000, 5800000],
+        data: monthlyEarningsData,
         borderColor: '#8b5cf6',
         backgroundColor: 'rgba(139, 92, 246, 0.1)',
         borderWidth: 2,
@@ -110,7 +54,7 @@ const Earnings = () => {
 
   // Initialize the chart
   useEffect(() => {
-    if (chartRef.current) {
+    if (chartRef.current && monthLabels && monthLabels.length > 0) {
       if (chartInstance) {
         chartInstance.destroy();
       }
@@ -160,7 +104,7 @@ const Earnings = () => {
         chartInstance.destroy();
       }
     };
-  }, []);
+  }, [monthLabels, monthlyEarningsData]);
 
   return (
     <FreelancerLayout
@@ -173,7 +117,7 @@ const Earnings = () => {
           <h3 className='text-sm font-medium text-gray-500 mb-1'>
             Total Penghasilan
           </h3>
-          <p className='text-2xl font-bold text-gray-800'>Rp12.800.000</p>
+          <p className='text-2xl font-bold text-gray-800'>{formattedTotalEarnings}</p>
           <div className='mt-2 flex items-center text-green-600'>
             <svg
               className='w-4 h-4 mr-1'
@@ -192,22 +136,20 @@ const Earnings = () => {
         </div>
 
         <div className='bg-white rounded-xl shadow-sm p-6'>
-          <h3 className='text-sm font-medium text-gray-500 mb-1'>Bulan Ini</h3>
-          <p className='text-2xl font-bold text-gray-800'>Rp5.800.000</p>
-          <div className='mt-2 flex items-center text-green-600'>
-            <svg
-              className='w-4 h-4 mr-1'
-              fill='currentColor'
-              viewBox='0 0 20 20'
-              xmlns='http://www.w3.org/2000/svg'
+          <div className='flex justify-between items-center mb-1'>
+            <h3 className='text-sm font-medium text-gray-500'>Dana Tersedia</h3>
+            <Link
+              href='/freelancer/withdraw'
+              className='text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-1 px-2 rounded-md'
             >
-              <path
-                fillRule='evenodd'
-                d='M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z'
-                clipRule='evenodd'
-              />
-            </svg>
-            <span className='text-sm font-medium'>+20.8% dari bulan lalu</span>
+              Tarik Dana
+            </Link>
+          </div>
+          <p className='text-2xl font-bold text-gray-800'>{formattedAvailableBalance}</p>
+          <div className='mt-2 flex items-center text-gray-500'>
+            <span className='text-sm font-medium'>
+              Dana tersedia untuk ditarik
+            </span>
           </div>
         </div>
 
@@ -215,9 +157,9 @@ const Earnings = () => {
           <h3 className='text-sm font-medium text-gray-500 mb-1'>
             Pembayaran Tertunda
           </h3>
-          <p className='text-2xl font-bold text-gray-800'>Rp8.000.000</p>
+          <p className='text-2xl font-bold text-gray-800'>{formattedPendingBalance}</p>
           <div className='mt-2 flex items-center text-gray-500'>
-            <span className='text-sm font-medium'>2 pembayaran tertunda</span>
+            <span className='text-sm font-medium'>{pendingPayments.length} pembayaran tertunda</span>
           </div>
         </div>
 
@@ -225,7 +167,15 @@ const Earnings = () => {
           <h3 className='text-sm font-medium text-gray-500 mb-1'>
             Rata-rata Bulanan
           </h3>
-          <p className='text-2xl font-bold text-gray-800'>Rp4.500.000</p>
+          <p className='text-2xl font-bold text-gray-800'>
+            {monthlyEarningsData && monthlyEarningsData.length > 0
+              ? 'Rp' + 
+                Number(
+                  monthlyEarningsData.reduce((sum, amount) => sum + amount, 0) / 
+                  monthlyEarningsData.length
+                ).toLocaleString('id-ID', { maximumFractionDigits: 0 })
+              : 'Rp0'}
+          </p>
           <div className='mt-2 flex items-center text-green-600'>
             <svg
               className='w-4 h-4 mr-1'
@@ -389,11 +339,11 @@ const Earnings = () => {
                       )}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right'>
-                      {payment.amount}
+                      {payment.formatted_amount}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                       <Link
-                        href={`/freelancer/earnings/${payment.id}`}
+                        href={payment.status === 'paid' ? `/freelancer/orders/${payment.id}` : `/freelancer/orders/${payment.id}`}
                         className='text-indigo-600 hover:text-indigo-900'
                       >
                         Detail
@@ -429,6 +379,105 @@ const Earnings = () => {
           </div>
         )}
       </div>
+      
+      {/* Withdrawals history */}
+      {recentWithdrawals && recentWithdrawals.length > 0 && (
+        <div className='bg-white rounded-xl shadow-sm overflow-hidden mb-8'>
+          <div className='p-6 border-b border-gray-100'>
+            <h2 className='text-lg font-bold text-gray-800'>Riwayat Penarikan Dana</h2>
+          </div>
+          
+          <div className='overflow-x-auto'>
+            <table className='min-w-full divide-y divide-gray-200'>
+              <thead className='bg-gray-50'>
+                <tr>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    ID Transaksi
+                  </th>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    Tanggal
+                  </th>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    Metode
+                  </th>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    Jumlah
+                  </th>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    Biaya Admin
+                  </th>
+                  <th
+                    scope='col'
+                    className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    Diterima
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {recentWithdrawals.map((withdrawal) => (
+                  <tr key={withdrawal.id}>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <div className='text-sm text-gray-900'>#{withdrawal.id}</div>
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <div className='text-sm text-gray-900'>{withdrawal.created_at}</div>
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <div className='text-sm text-gray-900'>{withdrawal.payment_method}</div>
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      {withdrawal.status === 'completed' ? (
+                        <span className='px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800'>
+                          Berhasil
+                        </span>
+                      ) : withdrawal.status === 'processing' ? (
+                        <span className='px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800'>
+                          Diproses
+                        </span>
+                      ) : (
+                        <span className='px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800'>
+                          Tertunda
+                        </span>
+                      )}
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500'>
+                      {withdrawal.formatted_amount}
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500'>
+                      {withdrawal.formatted_fee}
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+                      {withdrawal.formatted_net_amount}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </FreelancerLayout>
   );
 };

@@ -1388,32 +1388,139 @@ class FreelancerController extends Controller
             ->where('status', 'completed')
             ->sum('amount');
             
-        $availableBalance = $totalEarnings - $user->withdrawals()
+        $totalWithdrawn = $user->withdrawals()
             ->where('status', 'completed')
             ->sum('amount');
+            
+        $availableBalance = $totalEarnings - $totalWithdrawn;
             
         $pendingBalance = $user->freelancerOrders()
             ->where('status', 'in-progress')
             ->sum('amount');
             
-        // Get recent earnings
-        $recentEarnings = $user->freelancerOrders()
+        // Get earnings history with client details
+        $earnings = $user->freelancerOrders()
             ->where('status', 'completed')
-            ->with(['client', 'service', 'project'])
-            ->orderBy('completed_at', 'desc')
-            ->paginate(10);
+            ->with(['client.profile', 'service', 'project', 'payment'])
+            ->orderBy('payment_completed_at', 'desc')
+            ->orderBy('updated_at', 'desc')  // Fallback to updated_at if payment_completed_at is null
+            ->get()
+            ->map(function($order) {
+                $clientName = $order->client->name;
+                $clientImage = $order->client->profile && $order->client->profile->profile_photo_url 
+                    ? $order->client->profile->profile_photo_url
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($clientName) . '&background=6366f1&color=fff';
+                
+                $projectTitle = $order->service 
+                    ? $order->service->title 
+                    : ($order->project ? $order->project->title : 'Custom Order');
+                
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'client' => $clientName,
+                    'client_id' => $order->client_id,
+                    'project' => $projectTitle,
+                    'amount' => $order->amount,
+                    'formatted_amount' => 'Rp' . number_format($order->amount, 0, ',', '.'),
+                    'date' => $order->payment_completed_at ? $order->payment_completed_at->format('d M Y') : $order->updated_at->format('d M Y'),
+                    'status' => 'paid',
+                    'image' => $clientImage,
+                ];
+            });
             
+        // Get pending payments (ongoing orders)
+        $pendingPayments = $user->freelancerOrders()
+            ->where('status', 'in-progress')
+            ->with(['client.profile', 'service', 'project'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($order) {
+                $clientName = $order->client->name;
+                $clientImage = $order->client->profile && $order->client->profile->profile_photo_url 
+                    ? $order->client->profile->profile_photo_url
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($clientName) . '&background=6366f1&color=fff';
+                
+                $projectTitle = $order->service 
+                    ? $order->service->title 
+                    : ($order->project ? $order->project->title : 'Custom Order');
+                
+                $dueDate = $order->due_date ? $order->due_date->format('d M Y') : 'Not set';
+                
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'client' => $clientName,
+                    'client_id' => $order->client_id,
+                    'project' => $projectTitle,
+                    'amount' => $order->amount,
+                    'formatted_amount' => 'Rp' . number_format($order->amount, 0, ',', '.'),
+                    'date' => $dueDate,
+                    'status' => 'pending',
+                    'image' => $clientImage,
+                ];
+            });
+            
+        // Get monthly earnings data for the chart (last 6 months)
+        $monthlyEarningsData = [];
+        $monthLabels = [];
+        
+        // Get start and end dates for the last 6 months
+        $endDate = now();
+        $startDate = now()->subMonths(5)->startOfMonth();
+        
+        // Format for the chart
+        for($date = $startDate->copy(); $date <= $endDate; $date->addMonth()) {
+            $monthLabels[] = $date->format('M Y');
+            
+            $monthEarnings = $user->freelancerOrders()
+                ->where('status', 'completed')
+                ->where(function($query) use ($date) {
+                    $query->whereYear('payment_completed_at', $date->year)
+                          ->whereMonth('payment_completed_at', $date->month)
+                          ->orWhere(function($q) use ($date) {
+                              $q->whereNull('payment_completed_at')
+                                ->whereYear('updated_at', $date->year)
+                                ->whereMonth('updated_at', $date->month);
+                          });
+                })
+                ->sum('amount');
+                
+            $monthlyEarningsData[] = $monthEarnings;
+        }
+        
         // Get recent withdrawals
         $recentWithdrawals = $user->withdrawals()
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->get()
+            ->map(function($withdrawal) {
+                return [
+                    'id' => $withdrawal->id,
+                    'amount' => $withdrawal->amount,
+                    'formatted_amount' => 'Rp' . number_format($withdrawal->amount, 0, ',', '.'),
+                    'fee' => $withdrawal->fee,
+                    'formatted_fee' => 'Rp' . number_format($withdrawal->fee, 0, ',', '.'),
+                    'net_amount' => $withdrawal->net_amount,
+                    'formatted_net_amount' => 'Rp' . number_format($withdrawal->net_amount, 0, ',', '.'),
+                    'status' => $withdrawal->status,
+                    'payment_method' => $withdrawal->payment_method,
+                    'created_at' => $withdrawal->created_at->format('d M Y'),
+                    'processed_at' => $withdrawal->processed_at ? $withdrawal->processed_at->format('d M Y') : null,
+                ];
+            });
             
         return Inertia::render('Freelancer/Earnings', [
             'user' => $user,
             'totalEarnings' => $totalEarnings,
+            'formattedTotalEarnings' => 'Rp' . number_format($totalEarnings, 0, ',', '.'),
             'availableBalance' => $availableBalance,
+            'formattedAvailableBalance' => 'Rp' . number_format($availableBalance, 0, ',', '.'),
             'pendingBalance' => $pendingBalance,
-            'recentEarnings' => $recentEarnings,
+            'formattedPendingBalance' => 'Rp' . number_format($pendingBalance, 0, ',', '.'),
+            'earnings' => $earnings,
+            'pendingPayments' => $pendingPayments,
+            'monthLabels' => $monthLabels,
+            'monthlyEarningsData' => $monthlyEarningsData,
             'recentWithdrawals' => $recentWithdrawals
         ]);
     }
