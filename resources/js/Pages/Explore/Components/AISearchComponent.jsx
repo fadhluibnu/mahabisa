@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AISearchComponent = ({ onSearchResults, onLoading, initialData, filters }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  
+  // Reset loading state when component mounts or when filters change
+  useEffect(() => {
+    onLoading(false);
+    setIsButtonDisabled(false);
+  }, [filters]);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     setError(null);
   };
-
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     
@@ -18,8 +24,11 @@ const AISearchComponent = ({ onSearchResults, onLoading, initialData, filters })
     }
 
     try {
-      // Indicate loading state
-      onLoading(true);      // Convert filters to the format expected by AISearchController
+      // Disable button and set loading state
+      setIsButtonDisabled(true);
+      onLoading(true);
+      
+      // Convert filters to the format expected by AISearchController
       const formattedFilters = {
         kategori: filters.category || '',
         harga: filters.min_price ? 
@@ -61,9 +70,9 @@ const AISearchComponent = ({ onSearchResults, onLoading, initialData, filters })
       } else {
         // Something happened in setting up the request
         setError('Terjadi kesalahan saat melakukan pencarian AI.');
-      }
-    } finally {
-      // Stop loading state
+      }    } finally {
+      // Re-enable button and stop loading state
+      setIsButtonDisabled(false);
       onLoading(false);
     }
   };
@@ -91,19 +100,17 @@ const AISearchComponent = ({ onSearchResults, onLoading, initialData, filters })
             </div>
             <input
               type="text"
-              className="w-full py-4 pl-12 pr-4 bg-white border border-slate-200 rounded-xl shadow-md focus:ring-2 focus:ring-violet-600 focus:border-violet-600 focus:outline-none transition-all"
-              placeholder="Cari dengan AI (contoh: jasa desain logo modern untuk bisnis kuliner)"
+              className="w-full py-4 pl-12 pr-4 bg-white border border-slate-200 rounded-xl shadow-md focus:ring-2 focus:ring-violet-600 focus:border-violet-600 focus:outline-none transition-all"              placeholder="Cari dengan AI (contoh: jasa desain logo modern untuk bisnis kuliner)"
               value={searchQuery}
               onChange={handleSearchChange}
-              disabled={onLoading}
+              disabled={isButtonDisabled}
             />
-          </div>
-          <button
+          </div>          <button
             type="submit"
-            className={`px-6 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 flex items-center justify-center ${onLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
-            disabled={onLoading}
+            className={`px-6 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 flex items-center justify-center ${isButtonDisabled ? 'opacity-75 cursor-not-allowed' : ''}`}
+            disabled={isButtonDisabled}
           >
-            {onLoading ? (
+            {isButtonDisabled ? (
               <>
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

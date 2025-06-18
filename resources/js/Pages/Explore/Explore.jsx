@@ -30,7 +30,7 @@ const Explore = ({
   });
   const [aiSearchResults, setAISearchResults] = useState(null);
   const [isAISearchActive, setIsAISearchActive] = useState(false);
-  const [isAISearchLoading, setIsAISearchLoading] = useState(false);
+  const [isAISearchLoading, setIsAISearchLoading] = useState();
 
   const { auth } = usePage().props;
 
@@ -141,7 +141,13 @@ const Explore = ({
   const resetAISearch = () => {
     setAISearchResults(null);
     setIsAISearchActive(false);
+    setIsAISearchLoading(false);
   };
+  
+  // Reset loading state when component mounts or filters change
+  useEffect(() => {
+    setIsAISearchLoading(false);
+  }, [currentFilters]);
 
   return (
     <div className='min-h-screen bg-slate-50'>

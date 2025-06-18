@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AISearchComponent from './AISearchComponent';
 
 const ExploreHero = ({ 
@@ -13,14 +13,28 @@ const ExploreHero = ({
   const [isAISearch, setIsAISearch] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const toggleSearchMode = () => {
-    setIsAISearch(!isAISearch);
+  const toggleSearchMode = (mode) => {
+    // Set to specific mode rather than toggling
+    setIsAISearch(mode);
+    // Always reset loading state when switching modes
+    setIsLoading(false);
+    onAISearchLoading(false);
   };
 
   const handleAILoading = (loading) => {
-    setIsLoading(loading);
+    // Only set loading to true if not already true
+    // This prevents duplicate loading states
+    setIsLoading(false);
     onAISearchLoading(loading);
   };
+  
+  // Make sure loading state is reset when component re-renders
+  useEffect(() => {
+    if (!isAISearch) {
+      setIsLoading(false);
+      onAISearchLoading(false);
+    }
+  }, [isAISearch, onAISearchLoading]);
 
   return (
     <section className='py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200'>
@@ -39,14 +53,18 @@ const ExploreHero = ({
         <div className="mb-6 flex justify-center">
           <div className="flex rounded-lg overflow-hidden bg-slate-100 p-1">
             <button 
+              type="button"
               className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${!isAISearch ? 'bg-white shadow-sm text-violet-700' : 'text-slate-600 hover:bg-slate-200'}`}
-              onClick={() => setIsAISearch(false)}
+              onClick={() => !isLoading && toggleSearchMode(false)}
+              disabled={isLoading}
             >
               Pencarian Biasa
             </button>
             <button 
-              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center ${isAISearch ? 'bg-white shadow-sm text-violet-700' : 'text-slate-600 hover:bg-slate-200'}`}
-              onClick={() => setIsAISearch(true)}
+              type="button"
+              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center ${isAISearch ? 'bg-white shadow-sm text-violet-700' : 'text-slate-600 hover:bg-slate-200'} ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              onClick={() => !isLoading && toggleSearchMode(true)}
+              disabled={isLoading}
             >
               <span>Pencarian AI</span>
               <span className="ml-1 bg-indigo-100 text-indigo-700 text-xs px-1.5 py-0.5 rounded-full">Baru</span>
