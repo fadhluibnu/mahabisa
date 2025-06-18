@@ -13,6 +13,7 @@ use App\Http\Controllers\FreelancerWithdrawalController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AISearchController;
 
 // Route::get('/', function () {
 //     return view('welcome');
@@ -25,6 +26,8 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('ho
 
 // Broadcasting Authentication
 Broadcast::routes(['middleware' => ['web', 'auth']]);
+// AI Search endpoint
+Route::post('/search/ai', [AISearchController::class, 'search']);
 
 // Authentication Routes
 Route::get('/auth', function () {

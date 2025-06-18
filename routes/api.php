@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\SearchController;
+use App\Http\Controllers\AISearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,7 @@ Route::prefix('v1')->group(function () {
     // Search endpoints
     Route::get('/search/services', [SearchController::class, 'services']);
     Route::get('/search/freelancers', [SearchController::class, 'freelancers']);
+    // Route::post('/search/ai', [AISearchController::class, 'search']); // Moved to web.php
     Route::get('/categories', [SearchController::class, 'categories']);
     
     // Service details
