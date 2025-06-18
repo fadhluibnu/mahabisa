@@ -92,6 +92,27 @@ class Service extends Model
     }
     
     /**
+     * Scope a query to search for services that match the given query
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $searchTerm
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, $searchTerm)
+    {
+        $terms = explode(' ', $searchTerm);
+        
+        return $query->where(function($q) use ($terms) {
+            foreach ($terms as $term) {
+                if (strlen($term) >= 3) {
+                    $q->orWhere('title', 'like', "%{$term}%")
+                      ->orWhere('description', 'like', "%{$term}%");
+                }
+            }
+        });
+    }
+    
+    /**
      * Get the reviews associated with this service.
      */
     public function reviews(): HasMany

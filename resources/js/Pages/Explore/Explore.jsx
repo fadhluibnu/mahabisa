@@ -28,6 +28,9 @@ const Explore = ({
     rating: filters.rating || '',
     sort_by: filters.sortBy || 'newest',
   });
+  const [aiSearchResults, setAISearchResults] = useState(null);
+  const [isAISearchActive, setIsAISearchActive] = useState(false);
+  const [isAISearchLoading, setIsAISearchLoading] = useState(false);
 
   const { auth } = usePage().props;
 
@@ -123,6 +126,23 @@ const Explore = ({
     });
   };
 
+  // Handler for AI search results
+  const handleAISearchResults = (results) => {
+    setAISearchResults(results);
+    setIsAISearchActive(true);
+  };
+
+  // Handler for AI search loading state
+  const handleAISearchLoading = (isLoading) => {
+    setIsAISearchLoading(isLoading);
+  };
+
+  // Reset AI search
+  const resetAISearch = () => {
+    setAISearchResults(null);
+    setIsAISearchActive(false);
+  };
+
   return (
     <div className='min-h-screen bg-slate-50'>
       <Head title='MahaBisa | Eksplorasi Jasa' />
@@ -133,7 +153,34 @@ const Explore = ({
           searchValue={searchValue}
           onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
+          initialData={services.data}
+          filters={currentFilters}
+          onAISearchResults={handleAISearchResults}
+          onAISearchLoading={handleAISearchLoading}
         />
+        
+        {isAISearchActive && (
+          <div className='container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-4'>
+            <div className='bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-center justify-between'>
+              <div className='flex items-center'>
+                <svg className='h-5 w-5 text-yellow-500 mr-2' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+                </svg>
+                <span className='text-yellow-700'>Menampilkan hasil pencarian AI {aiSearchResults && `(${aiSearchResults.length} hasil)`}</span>
+              </div>
+              <button 
+                onClick={resetAISearch}
+                className='text-yellow-700 hover:text-yellow-900 font-medium flex items-center'
+              >
+                <span>Kembali ke Hasil Normal</span>
+                <svg className="ml-1 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+        
         <FilterSection
           filters={currentFilters}
           onFilterChange={handleFilterChange}
@@ -146,7 +193,10 @@ const Explore = ({
           onCategoryClick={handleCategoryClick}
           categories={categories}
         />
-        <ServicesGrid services={services} />
+        <ServicesGrid 
+          services={isAISearchActive ? { data: aiSearchResults } : services} 
+          isLoading={isAISearchLoading}
+        />
       </div>
       <Footer />
     </div>
