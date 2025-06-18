@@ -9,6 +9,7 @@ const Invoice = ({
   payment,
   deliverableFiles,
   midtransToken,
+  midtransUrl,
   user,
   paymentSettings,
 }) => {
@@ -41,32 +42,76 @@ const Invoice = ({
     }).format(amount);
   };
 
-  // Load Midtrans script on component mount
+  // Check for payment status on component mount
   useEffect(() => {
-    // Load Midtrans script if not already loaded
-    if (!document.getElementById('midtrans-script')) {
-      const script = document.createElement('script');
-      script.src = paymentSettings.midtransSandbox
-        ? 'https://app.sandbox.midtrans.com/snap/snap.js'
-        : 'https://app.midtrans.com/snap/snap.js';
-      script.setAttribute('data-client-key', paymentSettings.midtransClientKey);
-      script.id = 'midtrans-script';
-      script.async = true;
-      document.body.appendChild(script);
-
-      // Check if there's a token and it's a pending payment
-      if (midtransToken && payment && payment.status === 'pending') {
-        // Start checking payment status
-        startPollingPaymentStatus();
-      }
-
-      return () => {
-        // Clean up interval when component unmounts
-        if (checkingInterval) {
-          clearInterval(checkingInterval);
-        }
-      };
+    // Check if we're returning from a Midtrans redirect
+    const pendingPaymentOrderId = localStorage.getItem('pendingPaymentOrderId');
+    const pendingPaymentId = localStorage.getItem('pendingPaymentId');
+    
+    // Check for parameters in URL from Midtrans redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusParam = urlParams.get('status');
+    const transactionParam = urlParams.get('transaction_id');
+    const orderIdParam = urlParams.get('order_id');
+    
+    // Log parameters if they exist
+    if (statusParam || transactionParam || orderIdParam) {
+      console.log('Return URL parameters:', {
+        status: statusParam,
+        transaction_id: transactionParam,
+        order_id: orderIdParam
+      });
     }
+    
+    const isReturningFromMidtrans = (pendingPaymentOrderId && pendingPaymentId && 
+        pendingPaymentOrderId === order.id.toString() && 
+        pendingPaymentId === payment.id.toString()) || 
+        (orderIdParam && orderIdParam === order.order_number);
+    
+    // If this is our order and we're returning from redirect
+    if (isReturningFromMidtrans) {
+      // Clear the localStorage variables
+      localStorage.removeItem('pendingPaymentOrderId');
+      localStorage.removeItem('pendingPaymentId');
+      
+      // Show appropriate message based on status parameter
+      if (statusParam === 'error') {
+        showToast('There was an issue with your payment. Checking status...', 'error');
+      } else if (statusParam === 'pending') {
+        showToast('Your payment is being processed. Checking status...', 'info');
+      } else {
+        showToast('Payment recorded, verifying status...', 'info');
+      }
+      
+      // Check payment status immediately multiple times with shorter intervals
+      // since Midtrans might take a moment to update the status
+      checkPaymentStatus(); // First check
+      
+      // Set up more aggressive polling immediately after returning from Midtrans
+      const checkIntervals = [2000, 4000, 8000]; // Check after 2s, 4s, and 8s
+      
+      checkIntervals.forEach((interval, index) => {
+        setTimeout(() => {
+          checkPaymentStatus();
+          // Start regular polling after the last quick check
+          if (index === checkIntervals.length - 1) {
+            startPollingPaymentStatus();
+          }
+        }, interval);
+      });
+    }
+    // Check if there's a pending payment that we should poll for
+    else if (payment && payment.status === 'pending') {
+      // Start checking payment status
+      startPollingPaymentStatus();
+    }
+
+    return () => {
+      // Clean up interval when component unmounts
+      if (checkingInterval) {
+        clearInterval(checkingInterval);
+      }
+    };
   }, []);
 
   // Start polling for payment status
@@ -100,35 +145,66 @@ const Invoice = ({
     if (!payment || !payment.id) return;
 
     try {
+      console.log('Checking payment status for payment ID:', payment.id);
+      // Using the enhanced check endpoint for better status handling
       const response = await axios.get(
-        `/client/payments/${payment.id}/simple-check`
+        `/client/payments/${payment.id}/enhanced-check`
       );
 
       if (response.data.success) {
-        setPaymentStatus(response.data.status);
+        const previousStatus = paymentStatus;
+        const newStatus = response.data.status;
+        console.log('Payment status response:', response.data);
+        
+        // Display detailed debug info in console
+        if (response.data.debug_info) {
+          console.log('Payment debug info:', response.data.debug_info);
+          
+          // If there's Midtrans status info, show it
+          if (response.data.debug_info.midtrans_status) {
+            console.log('Midtrans status data:', response.data.debug_info.midtrans_status);
+          }
+        }
+        
+        setPaymentStatus(newStatus);
         setCanDownload(response.data.can_download);
 
-        // If payment is completed, stop polling and redirect after a delay
-        if (
-          response.data.status === 'completed' ||
-          response.data.status === 'settlement'
-        ) {
-          stopPollingPaymentStatus();
-          showToast('Payment has been completed!', 'success');
-
-          setTimeout(() => {
-            window.location.href = `/client/orders/${order.id}`;
-          }, 3000);
+        // Only show status change messages if status actually changed
+        if (previousStatus !== newStatus) {
+          if (newStatus === 'completed' || newStatus === 'settlement') {
+            showToast('Payment has been completed successfully!', 'success');
+            
+            // Store a flag in localStorage to trigger status check on order page
+            localStorage.setItem('checkOrderStatus', 'true');
+            
+            // Stop polling and redirect to order page after a delay with query parameter
+            stopPollingPaymentStatus();
+            setTimeout(() => {
+              window.location.href = `/client/orders/${order.id}?from_payment=true`;
+            }, 3000);
+          } else if (newStatus === 'failed' || newStatus === 'denied') {
+            showToast('Payment failed. Please try again or contact support.', 'error');
+            stopPollingPaymentStatus();
+          } else if (newStatus === 'expired') {
+            showToast('Payment session expired. Please try again.', 'error');
+            stopPollingPaymentStatus();
+          } else if (newStatus === 'pending') {
+            // Only show pending message once when status changes to pending
+            if (previousStatus !== 'pending') {
+              showToast('Your payment is being processed. Please wait...', 'info');
+            }
+          }
         }
       }
     } catch (error) {
       console.error('Error checking payment status:', error);
+      // Don't show error toast on every failed check to avoid spamming user
     }
   };
 
-  // Handle payment button click
+  // Handle payment button click with redirect method
   const handlePaymentClick = () => {
-    if (!midtransToken || !window.snap) {
+    if (!midtransToken || !midtransUrl) {
       showToast(
         'Payment system is not ready yet. Please try again in a moment.',
         'error'
@@ -137,28 +213,17 @@ const Invoice = ({
     }
 
     setIsProcessingPayment(true);
-
-    // Open Midtrans Snap popup
-    window.snap.pay(midtransToken, {
-      onSuccess: function (result) {
-        setPaymentStatus('completed');
-        showToast('Payment successful!', 'success');
-        checkPaymentStatus();
-      },
-      onPending: function (result) {
-        setPaymentStatus('pending');
-        showToast('Payment is being processed', 'info');
-        startPollingPaymentStatus();
-      },
-      onError: function (result) {
-        showToast('Payment failed', 'error');
-        console.error('Payment error:', result);
-      },
-      onClose: function () {
-        setIsProcessingPayment(false);
-        checkPaymentStatus();
-      },
-    });
+    showToast('Preparing secure payment page...', 'info');
+    
+    // Store order ID and payment ID in localStorage to check status after redirect back
+    localStorage.setItem('pendingPaymentOrderId', order.id);
+    localStorage.setItem('pendingPaymentId', payment.id);
+    
+    // Small delay before redirect to show the user something is happening
+    setTimeout(() => {
+      // Redirect to Midtrans payment page
+      window.location.href = midtransUrl;
+    }, 800);
   };
 
   return (
@@ -352,14 +417,14 @@ const Invoice = ({
               <button
                 ref={snapButtonRef}
                 onClick={handlePaymentClick}
-                disabled={isProcessingPayment || !midtransToken}
+                disabled={isProcessingPayment || !midtransToken || !midtransUrl}
                 className={`bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-md ${
-                  isProcessingPayment || !midtransToken
+                  isProcessingPayment || !midtransToken || !midtransUrl
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
                 }`}
               >
-                {isProcessingPayment ? 'Processing...' : 'Pay Now'}
+                {isProcessingPayment ? 'Redirecting to Payment...' : 'Pay Now'}
               </button>
             </div>
           )}

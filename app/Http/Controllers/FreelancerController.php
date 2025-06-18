@@ -459,7 +459,7 @@ class FreelancerController extends Controller
                 'price' => $service->price,
                 'deliveryTime' => $service->delivery_time,
                 'revisions' => $service->revisions ?? 0,
-                'image' => $service->thumbnail ? asset('storage/' . $service->thumbnail) : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+                'image' => $service->thumbnail ? "/" . $service->thumbnail : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
                 'status' => $service->is_active ? 'active' : 'draft',
                 'featured' => false, // Add this field if you decide to implement it later
                 'category' => $service->category ? $service->category->name : 'Uncategorized',
@@ -1794,6 +1794,12 @@ class FreelancerController extends Controller
             'is_read' => false,
             // Kolom 'attachments' pada Message Model adalah JSON, akan diisi setelah upload
         ]);
+        
+        // Broadcast the message for real-time updates
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
+        
+        // Update unread message count for the recipient
+        \App\Http\Controllers\MessageNotificationController::updateUnreadCount($validated['recipient_id']);
         
         $uploadedFilePaths = [];
         // Handle file uploads if any for messages

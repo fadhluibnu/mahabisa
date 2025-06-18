@@ -2,8 +2,8 @@ import React from 'react';
 import ServiceCard from './ServiceCard';
 import { usePage } from '@inertiajs/react';
 
-const ServicesGrid = ({ services }) => {
-  const { data: servicesData, meta, links } = services;
+const ServicesGrid = ({ services, isLoading }) => {
+  const { data: servicesData = [], meta, links } = services || { data: [] };
 
   // All filtering and sorting is done on the server side now
 
@@ -13,11 +13,20 @@ const ServicesGrid = ({ services }) => {
     <section className='py-8 mb-16'>
       <div className='container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
         <h2 className='text-lg font-medium text-slate-900 mb-6'>
-          {meta?.total || 0} jasa ditemukan
+          {servicesData.length} jasa ditemukan
         </h2>
 
+        {/* Loading Indicator */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-600"></div>
+            <span className="ml-3 text-lg text-violet-600 font-medium">Mencari dengan AI...</span>
+          </div>
+        )}
+
         {/* Services Grid */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12'>
+        {!isLoading && (
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12'>
           {servicesData.map(service => (
             <ServiceCard
               key={service.id}
@@ -41,10 +50,11 @@ const ServicesGrid = ({ services }) => {
               }}
             />
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Empty State */}
-        {servicesData.length === 0 && (
+        {!isLoading && servicesData.length === 0 && (
           <div className='text-center py-12'>
             <h3 className='text-lg font-medium text-slate-800 mb-2'>
               Tidak ada jasa yang ditemukan
@@ -55,8 +65,8 @@ const ServicesGrid = ({ services }) => {
           </div>
         )}
 
-        {/* Pagination */}
-        {meta?.last_page > 1 && (
+        {/* Pagination - only show for regular search (not AI search) */}
+        {!isLoading && meta?.last_page > 1 && (
           <div className='flex justify-center'>
             <div className='flex space-x-2'>
               {links.prev && (

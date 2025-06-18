@@ -512,7 +512,11 @@ const Services = ({
         <div
           className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`}
         >
+          {filteredServices.map(service => {
+            console.log(service)
+          })}
           {filteredServices.map(service => (
+            
             <div
               key={service.id}
               className='bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200 transition-all duration-300 transform hover:shadow-md'
@@ -524,7 +528,7 @@ const Services = ({
             >
               <div className='relative'>
                 <img
-                  src={service.image}
+                  src={'/storage/' + service.image}
                   alt={service.title}
                   className='h-48 w-full object-cover'
                 />

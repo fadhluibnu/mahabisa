@@ -180,51 +180,17 @@ const Users = ({ users, user, stats, flash }) => {
 
   // Handle confirm delete
   const handleConfirmDelete = () => {
-    console.log('Confirm delete clicked for user:', selectedUser); // Add logging
-
-    if (!selectedUser || !selectedUser.id) {
-      alert('Error: No user selected for deletion');
-      setShowDeleteModal(false);
-      return;
-    }
-
-    // Get CSRF token from meta tag for security
-    const csrfToken = document
-      .querySelector('meta[name="csrf-token"]')
-      .getAttribute('content');
-
-    // Use direct form submission as a backup in case there are issues with Inertia
-    try {
-      // Create a form element
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/admin/users/${selectedUser.id}`;
-      form.style.display = 'none';
-
-      // Add method and CSRF token fields
-      const methodField = document.createElement('input');
-      methodField.type = 'hidden';
-      methodField.name = '_method';
-      methodField.value = 'DELETE';
-      form.appendChild(methodField);
-
-      const csrfField = document.createElement('input');
-      csrfField.type = 'hidden';
-      csrfField.name = '_token';
-      csrfField.value = csrfToken;
-      form.appendChild(csrfField);
-
-      // Append to body and submit
-      document.body.appendChild(form);
-      form.submit();
-
-      // Close modal - though page will reload anyway
-      setShowDeleteModal(false);
-    } catch (error) {
-      console.error('Error during form submission:', error);
-      alert('Error deleting user: ' + error.message);
-      setShowDeleteModal(false);
-    }
+    // Use Inertia for the delete request
+    window.Inertia.delete(`/admin/users/${selectedUser.id}`, {
+      onSuccess: () => {
+        setShowDeleteModal(false);
+        // The page will refresh with updated data from the backend
+      },
+      onError: errors => {
+        alert('Error deleting user: ' + (errors.message || 'Unknown error'));
+        setShowDeleteModal(false);
+      },
+    });
   };
 
   // Format date to readable format
@@ -560,12 +526,29 @@ const Users = ({ users, user, stats, flash }) => {
                           />
                         </svg>
                       </button>
-                      {/* Edit button removed */}
+                      <Link
+                        href={`/admin/users/${user.id}/edit`}
+                        className='p-1 rounded hover:bg-gray-100'
+                        onClick={e => e.stopPropagation()} // Prevent row click
+                      >
+                        <svg
+                          className='w-5 h-5 text-blue-600'
+                          fill='none'
+                          stroke='currentColor'
+                          viewBox='0 0 24 24'
+                          xmlns='http://www.w3.org/2000/svg'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+                          />
+                        </svg>
+                      </Link>
                       <button
-                        type='button'
-                        className='p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500'
+                        className='p-1 rounded hover:bg-gray-100'
                         onClick={e => handleDeleteClick(user, e)}
-                        title='Hapus pengguna'
                       >
                         <svg
                           className='w-5 h-5 text-red-600'

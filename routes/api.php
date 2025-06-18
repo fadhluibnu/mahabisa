@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\SearchController;
+use App\Http\Controllers\AISearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,7 @@ Route::prefix('v1')->group(function () {
     // Search endpoints
     Route::get('/search/services', [SearchController::class, 'services']);
     Route::get('/search/freelancers', [SearchController::class, 'freelancers']);
+    // Route::post('/search/ai', [AISearchController::class, 'search']); // Moved to web.php
     Route::get('/categories', [SearchController::class, 'categories']);
     
     // Service details
@@ -42,19 +44,20 @@ Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
 });
 
 // Protected API endpoints
-// Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
-//     // User profile
-//     Route::get('/profile', [App\Http\Controllers\API\ProfileController::class, 'show']);
-//     Route::put('/profile', [App\Http\Controllers\API\ProfileController::class, 'update']);
+Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
+    // User profile
+    // Route::get('/profile', [App\Http\Controllers\API\ProfileController::class, 'show']);
+    // Route::put('/profile', [App\Http\Controllers\API\ProfileController::class, 'update']);
     
-//     // Dashboard stats
-//     Route::get('/dashboard/stats', [App\Http\Controllers\API\DashboardController::class, 'stats']);
-    
-//     // Notifications
-//     Route::get('/notifications', [App\Http\Controllers\API\NotificationController::class, 'index']);
-//     Route::post('/notifications/{id}/read', [App\Http\Controllers\API\NotificationController::class, 'markAsRead']);
-//     Route::post('/notifications/read-all', [App\Http\Controllers\API\NotificationController::class, 'markAllAsRead']);
-// });
+    // Dashboard stats
+    // Route::get('/dashboard/stats', [App\Http\Controllers\API\DashboardController::class, 'stats']);
+});
+
+// Messages API
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/messages/mark-read', [\App\Http\Controllers\MessageNotificationController::class, 'markAsRead']);
+    Route::get('/messages/unread-count', [\App\Http\Controllers\MessageNotificationController::class, 'getUnreadCount']);
+});
 
 // Admin API endpoints
 Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {

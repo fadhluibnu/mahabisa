@@ -14,8 +14,10 @@ use App\Models\Activity;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Models\Skill;
+use App\Events\MessageSent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use App\Services\FileService;
@@ -106,16 +108,212 @@ class ClientController extends Controller
             ->count();
             
         return Inertia::render('Client/Dashboard', [
-            'user' => $user,
             'stats' => $stats,
             'activities' => $activities,
             'recentOrders' => $recentOrders,
             'activeProjects' => $activeProjects,
             'recommendedServices' => $recommendedServices,
-            'unreadMessagesCount' => $unreadMessagesCount
         ]);
     }
-
+    
+    /**
+     * Display the client profile page.
+     */
+    public function profile()
+    {
+        $user = Auth::user()->load(['profile', 'skills']);
+        
+        // If there's no profile yet, create an empty one
+        if (!$user->profile) {
+            $user->profile()->create([
+                'user_id' => $user->id
+            ]);
+            $user->load('profile'); // Reload the relation
+        }
+        
+        // Get reviews received by the client (if any)
+        $reviews = Review::where('client_id', $user->id)
+            ->with('freelancer')
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Get completed orders
+        $completedOrders = Order::where('client_id', $user->id)
+            ->where('status', 'completed')
+            ->with(['service', 'freelancer'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+            
+        return Inertia::render('Client/Profile', [
+            'userProfile' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->profile->phone ?? $user->profile->phone_number ?? null,
+                'location' => $user->profile->location ?? ($user->profile->city ? $user->profile->city . ', ' . ($user->profile->province ?? 'Indonesia') : null),
+                'bio' => $user->profile->bio ?? null,
+                'company' => $user->profile->company ?? null,
+                'position' => $user->profile->position ?? null,
+                'website' => $user->profile->website ?? null,
+                'profile_photo_url' => $user->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=8b5cf6&color=fff',
+                'created_at' => $user->created_at->format('d M Y'),
+            ],
+            'skills' => $user->skills->map(function($skill) {
+                return [
+                    'id' => $skill->id,
+                    'name' => $skill->name
+                ];
+            }),
+            'reviews' => $reviews->map(function($review) {
+                return [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at->format('d M Y'),
+                    'freelancer' => [
+                        'id' => $review->freelancer->id,
+                        'name' => $review->freelancer->name,
+                        'profile_photo_url' => $review->freelancer->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($review->freelancer->name) . '&background=8b5cf6&color=fff',
+                    ]
+                ];
+            }),
+            'completedOrders' => $completedOrders->map(function($order) {
+                return [
+                    'id' => $order->id,
+                    'title' => $order->service ? $order->service->title : 'Kustom Order',
+                    'amount' => $order->amount,
+                    'completed_date' => Carbon::parse($order->updated_at)->format('d M Y'),
+                    'freelancer' => [
+                        'id' => $order->freelancer->id,
+                        'name' => $order->freelancer->name
+                    ]
+                ];
+            }),
+        ]);
+    }
+    
+    /**
+     * Show form to edit client profile.
+     */
+    public function editProfile()
+    {
+        $user = Auth::user()->load(['profile', 'skills']);
+        
+        // If there's no profile yet, create an empty one
+        if (!$user->profile) {
+            $user->profile()->create([
+                'user_id' => $user->id
+            ]);
+            $user->load('profile'); // Reload the relation
+        }
+        
+        return Inertia::render('Client/EditProfile', [
+            'userProfile' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->profile->phone ?? $user->profile->phone_number ?? null,
+                'title' => $user->profile->title ?? null,
+                'location' => $user->profile->location ?? ($user->profile->city ? $user->profile->city . ', ' . ($user->profile->province ?? 'Indonesia') : null),
+                'bio' => $user->profile->bio ?? null,
+                'company' => $user->profile->company ?? null,
+                'position' => $user->profile->position ?? null,
+                'website' => $user->profile->website ?? null,
+                'profile_photo_url' => $user->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=8b5cf6&color=fff',
+            ],
+            'skills' => $user->skills->map(function($skill) {
+                return [
+                    'id' => $skill->id,
+                    'name' => $skill->name
+                ];
+            }),
+        ]);
+    }
+    
+    /**
+     * Update client profile information.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+            'title' => 'nullable|string|max:100',
+            'location' => 'nullable|string|max:100',
+            'bio' => 'nullable|string|max:1000',
+            'company' => 'nullable|string|max:100',
+            'position' => 'nullable|string|max:100',
+            'website' => 'nullable|url|max:100',
+            'profile_photo' => 'nullable|image|max:2048', // Max 2MB
+            'skills' => 'nullable|array',
+            'skills.*' => 'exists:skills,id',
+        ]);
+        
+        // Update user record
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->save();
+        
+        // Handle profile photo upload
+        if ($request->hasFile('profile_photo')) {
+            $path = $request->file('profile_photo')->store('profile-photos', 'public');
+            $user->profile_photo_url = asset('storage/' . $path);
+            $user->save();
+        }
+        
+        // Extract city and province from location if possible
+        $city = null;
+        $province = null;
+        if (!empty($validated['location'])) {
+            $locationParts = explode(',', $validated['location']);
+            if (count($locationParts) > 0) {
+                $city = trim($locationParts[0]);
+                if (count($locationParts) > 1) {
+                    $province = trim($locationParts[1]);
+                }
+            }
+        }
+        
+        // Update or create user profile
+        $profileData = [
+            'phone' => $validated['phone'] ?? null,
+            'phone_number' => $validated['phone'] ?? null, // Update both fields for compatibility
+            'title' => $validated['title'] ?? null,
+            'location' => $validated['location'] ?? null,
+            'city' => $city,
+            'province' => $province,
+            'bio' => $validated['bio'] ?? null,
+            'company' => $validated['company'] ?? null,
+            'position' => $validated['position'] ?? null,
+            'website' => $validated['website'] ?? null,
+        ];
+        
+        $user->profile()->updateOrCreate(
+            ['user_id' => $user->id],
+            $profileData
+        );
+        
+        // Update skills if provided
+        if (isset($validated['skills'])) {
+            $user->skills()->sync($validated['skills']);
+        }
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'profile_updated', // Add the required field
+            'activity_type' => 'profile_updated',
+            'description' => 'Updated profile information',
+            'reference_id' => $user->id,
+            'reference_type' => 'user',
+        ]);
+        
+        return redirect()->route('client.profile')->with('success', 'Profil berhasil diperbarui');
+    }
+    
     /**
      * Display a list of projects created by the client.
      */
@@ -358,161 +556,72 @@ class ClientController extends Controller
     /**
      * Display client's orders.
      */
-    // public function orders()
-    // {
-    //     $user = Auth::user();
-        
-    //     $activeOrders = $user->clientOrders()
-    //         ->whereIn('status', ['pending', 'in-progress', 'revision'])
-    //         ->with(['freelancer', 'service', 'project'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate(10);
-            
-    //     $completedOrders = $user->clientOrders()
-    //         ->where('status', 'completed')
-    //         ->with(['freelancer', 'service', 'project'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate(10);
-            
-    //     $cancelledOrders = $user->clientOrders()
-    //         ->where('status', 'cancelled')
-    //         ->with(['freelancer', 'service', 'project'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate(10);
-            
-    //     return Inertia::render('Client/Orders', [
-    //         'user' => $user,
-    //         'activeOrders' => $activeOrders,
-    //         'completedOrders' => $completedOrders,
-    //         'cancelledOrders' => $cancelledOrders
-    //     ]);
-    // }
-    
-    /**
-     * Show details for a specific order.
-     */
-    public function orderDetail($id)
+    public function orders(Request $request)
     {
+        \Log::info('ClientController@orders called', [
+            'user_id' => auth()->id(),
+            'request' => $request->all()
+        ]);
+        
         $user = Auth::user();
-        $order = Order::with(['freelancer', 'service', 'project', 'reviews'])
-            ->findOrFail($id);
-            
-        // Ensure the order belongs to the user
-        if ($order->client_id !== $user->id) {
-            return redirect()->route('client.orders')->with('error', 'You do not have access to this order.');
+        $status = $request->get('status', 'all'); // Get status filter from request
+        $search = $request->get('search', ''); // Get search filter from request
+
+        $query = $user->clientOrders()
+            ->with(['freelancer', 'service', 'project']) // Eager load freelancer, service, project
+            ->orderBy('created_at', 'desc');
+
+        // Apply status filter
+        if ($status !== 'all') {
+            // Handle inconsistency between 'in-progress' and 'in_progress'
+            if ($status === 'in_progress') {
+                $query->where(function($q) {
+                    $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+                });
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        // Apply search filter
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'LIKE', "%{$search}%")
+                  ->orWhereHas('freelancer', function($q) use ($search) {
+                      $q->where('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('service', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('project', function($q) use ($search) {
+                      $q->where('title', 'LIKE', "%{$search}%");
+                  });
+            });
         }
         
-        // Get messages related to this order
-        $messages = Message::where(function($query) use ($user, $order) {
-                $query->where('sender_id', $user->id)
-                    ->where('recipient_id', $order->freelancer_id);
-            })
-            ->orWhere(function($query) use ($user, $order) {
-                $query->where('sender_id', $order->freelancer_id)
-                    ->where('recipient_id', $user->id);
-            })
-            ->orderBy('created_at')
-            ->get();
-            
-        return Inertia::render('Client/OrderDetail', [
-            'user' => $user,
-            'order' => $order,
-            'messages' => $messages
+        $orders = $query->paginate(10)->appends($request->all()); // Paginate results
+
+        // Get count of orders for each status tab
+        $orderCounts = [
+            'all' => $user->clientOrders()->count(),
+            'pending' => $user->clientOrders()->where('status', 'pending')->count(),
+            'in_progress' => $user->clientOrders()->where(function($q) {
+                $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+            })->count(),
+            'delivered' => $user->clientOrders()->where('status', 'delivered')->count(),
+            'completed' => $user->clientOrders()->where('status', 'completed')->count(),
+            'revision' => $user->clientOrders()->where('status', 'revision')->count(),
+            'cancelled' => $user->clientOrders()->where('status', 'cancelled')->count(),
+        ];
+
+        return Inertia::render('Client/Orders', [
+            'orders' => $orders,
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+            ],
+            'orderCounts' => $orderCounts
         ]);
-    }
-    
-    /**
-     * Update an order status (for client approval or requesting revisions).
-     */
-    public function updateOrderStatus(Request $request, $id)
-    {
-        $user = Auth::user();
-        $order = Order::findOrFail($id);
-        
-        // Ensure the order belongs to the user
-        if ($order->client_id !== $user->id) {
-            return redirect()->route('client.orders')->with('error', 'You do not have access to this order.');
-        }
-        
-        $validated = $request->validate([
-            'status' => 'required|in:revision,completed',
-            'notes' => 'nullable|string',
-        ]);
-        
-        // Only allow certain status transitions
-        if ($order->status !== 'in-progress' && $order->status !== 'revision') {
-            return back()->with('error', 'Invalid status transition.');
-        }
-        
-        $order->status = $validated['status'];
-        $order->notes = $validated['notes'] ?? $order->notes;
-        
-        if ($validated['status'] === 'completed') {
-            $order->completed_at = now();
-        }
-        
-        $order->save();
-        
-        // Record activity
-        Activity::create([
-            'user_id' => $user->id,
-            'activity_type' => 'order_status_updated',
-            'description' => "Updated order #{$order->id} status to {$order->status}",
-            'reference_id' => $order->id,
-            'reference_type' => 'order',
-        ]);
-        
-        return redirect()->route('client.order.detail', $order->id)->with('success', 'Order status updated successfully.');
-    }
-    
-    /**
-     * Submit a review for a completed order.
-     */
-    public function submitReview(Request $request, $orderId)
-    {
-        $user = Auth::user();
-        $order = Order::findOrFail($orderId);
-        
-        // Ensure the order belongs to the user and is completed
-        if ($order->client_id !== $user->id) {
-            return redirect()->route('client.orders')->with('error', 'You do not have access to this order.');
-        }
-        
-        if ($order->status !== 'completed') {
-            return redirect()->route('client.order.detail', $order->id)
-                ->with('error', 'You can only review completed orders.');
-        }
-        
-        // Check if review already exists
-        if (Review::where('order_id', $order->id)->exists()) {
-            return redirect()->route('client.order.detail', $order->id)
-                ->with('error', 'You have already submitted a review for this order.');
-        }
-        
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|min:10',
-        ]);
-        
-        $review = Review::create([
-            'client_id' => $user->id,
-            'freelancer_id' => $order->freelancer_id,
-            'order_id' => $order->id,
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'],
-        ]);
-        
-        // Record activity
-        Activity::create([
-            'user_id' => $user->id,
-            'activity_type' => 'review_submitted',
-            'description' => "Submitted a {$review->rating}-star review for order #{$order->id}",
-            'reference_id' => $review->id,
-            'reference_type' => 'review',
-        ]);
-        
-        return redirect()->route('client.order.detail', $order->id)
-            ->with('success', 'Review submitted successfully.');
     }
     
     /**
@@ -775,6 +884,12 @@ class ClientController extends Controller
             'message' => $validated['content'] ?? null,
             'is_read' => false,
         ]);
+        
+        // Broadcast the message for real-time updates
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
+        
+        // Update unread message count for the recipient
+        \App\Http\Controllers\MessageNotificationController::updateUnreadCount($validated['recipient_id']);
         
         $uploadedFilePaths = [];
         if ($request->hasFile('attachments')) {
@@ -1045,223 +1160,308 @@ class ClientController extends Controller
     }
 
     /**
-     * Display a list of orders placed by the client.
-     *
+     * Update account settings.
      */
-    public function orders(Request $request)
+    public function updateAccountSettings(Request $request)
     {
         $user = Auth::user();
-        $status = $request->get('status', 'all'); // Mengambil filter status dari request
-        $search = $request->get('search', ''); // Mengambil filter search dari request
-
-        $query = $user->clientOrders()
-            ->with(['freelancer', 'service', 'project']) // Eager load freelancer, service, project
-            ->orderBy('created_at', 'desc');
-
-        // Apply status filter
-        if ($status !== 'all') {
-            // Menangani inkonsistensi 'in-progress' dan 'in_progress'
-            if ($status === 'in_progress') {
-                $query->where(function($q) {
-                    $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
-                });
-            } else {
-                $query->where('status', $status);
-            }
-        }
-
-        // Apply search filter
-        if (!empty($search)) {
-            $query->where(function($q) use ($search) {
-                $q->where('order_number', 'LIKE', "%{$search}%")
-                  ->orWhereHas('freelancer', function($q) use ($search) {
-                      $q->where('name', 'LIKE', "%{$search}%");
-                  })
-                  ->orWhereHas('service', function($q) use ($search) {
-                      $q->where('title', 'LIKE', "%{$search}%");
-                  })
-                  ->orWhereHas('project', function($q) use ($search) {
-                      $q->where('title', 'LIKE', "%{$search}%");
-                  });
-            });
-        }
         
-        $orders = $query->paginate(10)->appends($request->all()); // Paginate hasil
-
-        // Mendapatkan hitungan order untuk setiap tab status
-        $orderCounts = [
-            'all' => $user->clientOrders()->count(),
-            'pending' => $user->clientOrders()->where('status', 'pending')->count(),
-            'in_progress' => $user->clientOrders()->where(function($q) {
-                $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
-            })->count(),
-            'delivered' => $user->clientOrders()->where('status', 'delivered')->count(),
-            'completed' => $user->clientOrders()->where('status', 'completed')->count(),
-            'cancelled' => $user->clientOrders()->where('status', 'cancelled')->count(),
-            'pending_payment' => $user->clientOrders()->where('status', 'pending_payment')->count(),
-            'revision' => $user->clientOrders()->where('status', 'revision')->count(),
-        ];
-            
-        return Inertia::render('Client/Orders', [
-            'user' => $user,
-            'orders' => $orders,
-            'filters' => [
-                'status' => $status,
-                'search' => $search,
-            ],
-            'orderCounts' => $orderCounts,
+        $validated = $request->validate([
+            'phone' => 'nullable|string|max:20',
+            'language' => 'nullable|string|in:id,en',
+            'timezone' => 'nullable|string',
         ]);
+        
+        // Update or create user profile
+        $user->profile()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'phone' => $validated['phone'] ?? null,
+                'phone_number' => $validated['phone'] ?? null, // Update both fields for compatibility
+                'language' => $validated['language'] ?? 'id',
+                'timezone' => $validated['timezone'] ?? 'Asia/Jakarta',
+            ]
+        );
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'settings_updated',
+            'activity_type' => 'settings_updated',
+            'description' => 'Updated account settings',
+            'reference_id' => $user->id,
+            'reference_type' => 'user',
+        ]);
+        
+        return back()->with('success', 'Pengaturan akun berhasil diperbarui');
     }
-
+    
     /**
-     * Show details for a specific order placed by the client.
+     * Update security settings.
+     */
+    public function updateSecuritySettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'currentPassword' => 'required|current_password',
+            'newPassword' => 'required|string|min:8|confirmed',
+            'newPassword_confirmation' => 'required|string|min:8',
+        ]);
+        
+        // Update password
+        $user->password = bcrypt($validated['newPassword']);
+        $user->save();
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'password_updated',
+            'activity_type' => 'password_updated',
+            'description' => 'Updated account password',
+            'reference_id' => $user->id,
+            'reference_type' => 'user',
+        ]);
+        
+        return back()->with('success', 'Password berhasil diperbarui');
+    }
+    
+    /**
+     * Update notification settings.
+     */
+    public function updateNotificationSettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Extract notification settings from the request
+        $emailSettings = $request->input('email', []);
+        $siteSettings = $request->input('site', []);
+        
+        // Update or create notification settings
+        $user->notificationSettings()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'email_project_updates' => $emailSettings['projectUpdates'] ?? false,
+                'email_messages' => $emailSettings['messages'] ?? false,
+                'email_promotions' => $emailSettings['promotions'] ?? false,
+                'email_newsletter' => $emailSettings['newsletter'] ?? false,
+                'site_project_updates' => $siteSettings['projectUpdates'] ?? false,
+                'site_messages' => $siteSettings['messages'] ?? false,
+                'site_promotions' => $siteSettings['promotions'] ?? false,
+                'site_newsletter' => $siteSettings['newsletter'] ?? false,
+            ]
+        );
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'notification_settings_updated',
+            'activity_type' => 'notification_settings_updated',
+            'description' => 'Updated notification settings',
+            'reference_id' => $user->id,
+            'reference_type' => 'user',
+        ]);
+        
+        return back()->with('success', 'Pengaturan notifikasi berhasil diperbarui');
+    }
+    
+    /**
+     * Update privacy settings.
+     */
+    public function updatePrivacySettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'profileVisibility' => 'required|string|in:public,contacts,private',
+            'showOnlineStatus' => 'required|boolean',
+            'allowMessages' => 'required|boolean',
+        ]);
+        
+        // Store privacy settings in the user's privacy_settings column (assuming it's a JSON column)
+        $user->privacy_settings = [
+            'profile_visibility' => $validated['profileVisibility'],
+            'show_online_status' => $validated['showOnlineStatus'],
+            'allow_messages' => $validated['allowMessages'],
+        ];
+        $user->save();
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'privacy_settings_updated',
+            'activity_type' => 'privacy_settings_updated',
+            'description' => 'Updated privacy settings',
+            'reference_id' => $user->id,
+            'reference_type' => 'user',
+        ]);
+        
+        return back()->with('success', 'Pengaturan privasi berhasil diperbarui');
+    }
+    
+    /**
+     * Update billing information.
+     */
+    public function updateBillingSettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'company' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'postalCode' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
+            'taxId' => 'nullable|string|max:50',
+        ]);
+        
+        // Update user's name
+        $user->name = $validated['name'];
+        $user->save();
+        
+        // Update or create billing information in profile
+        $user->profile()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'company' => $validated['company'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'postal_code' => $validated['postalCode'] ?? null,
+                'country' => $validated['country'] ?? 'Indonesia',
+                'tax_id' => $validated['taxId'] ?? null,
+            ]
+        );
+        
+        // Record activity
+        Activity::create([
+            'user_id' => $user->id,
+            'type' => 'billing_info_updated',
+            'activity_type' => 'billing_info_updated',
+            'description' => 'Updated billing information',
+            'reference_id' => $user->id,
+            'reference_type' => 'user',
+        ]);
+        
+        return back()->with('success', 'Informasi penagihan berhasil diperbarui');
+    }
+    
+    /**
+     * Display details of a specific order.
      *
+     * @param  int  $id
+     * @return \Inertia\Response
      */
     public function showOrder($id)
     {
-        $user = Auth::user();
-        $order = Order::with([
-            'freelancer.profile', // Eager load freelancer dan profilnya
-            'service', // Eager load service
-            'project', // Eager load project
-            'payments', // Eager load payments
-            'files' => function ($query) { // Eager load files, diurutkan berdasarkan created_at
-                $query->orderBy('created_at', 'desc');
-            },
-            'messages' => function ($query) { // Eager load messages, diurutkan
-                $query->orderBy('created_at', 'asc');
-            },
-            'review', // Eager load review
-        ])
-        ->where('client_id', $user->id) // Pastikan order milik klien yang sedang login
-        ->findOrFail($id);
-
-        // Normalize status to use underscore for consistency
-        if ($order->status === 'in-progress') {
-            $order->status = 'in_progress';
-        }
-
-        // Process files to add download permissions and formatting
-        $orderFiles = $order->files->map(function ($file) use ($user, $order) {
-            $file->can_download = $this->fileService->canDownload($file, $user); // Menggunakan FileService
-            $file->file_extension = pathinfo($file->original_name, PATHINFO_EXTENSION); // Menambahkan ekstensi file
-            $file->formatted_size = $this->formatFileSize($file->file_size); // Menambahkan ukuran terformat
-            $file->download_url = route('files.download', ['id' => $file->id]); // Menambahkan URL download
-            return $file;
-        });
-
-        // Prepare time remaining data (similar to Freelancer's order detail)
-        $timeRemaining = null;
-        $expectedDeliveryDate = $order->due_date ?? null;
+        \Log::info('ClientController@showOrder called', [
+            'user_id' => auth()->id(),
+            'order_id' => $id
+        ]);
         
-        if (($order->status === 'in_progress' || $order->status === 'pending') && $expectedDeliveryDate) {
-            $deadline = Carbon::parse($expectedDeliveryDate);
-            $now = Carbon::now();
+        $user = Auth::user();
+        
+        // Get the order and make sure it belongs to the current client
+        $order = $user->clientOrders()
+            ->with(['freelancer', 'freelancer.profile', 'service', 'project', 'reviews', 'deliveries', 'payments'])
+            ->findOrFail($id);
+        
+        // Check if order has payments and needs status refresh (after payment redirection)
+        if ($order->payments()->exists()) {
+            // Get the latest payment
+            $payment = $order->payments()->latest()->first();
             
-            if ($now->lt($deadline)) {
-                $diffMinutes = $now->diffInMinutes($deadline, false);
-                $days = floor($diffMinutes / 1440); // 1440 minutes in a day
-                $hours = floor(($diffMinutes % 1440) / 60);
-                $minutes = $diffMinutes % 60;
+            // If the payment is in pending status, check with payment handler
+            if ($payment->status === 'pending') {
+                $paymentHandler = app(\App\Services\MidtransPaymentHandler::class);
+                $paymentHandler->processPaymentStatus($payment, $user);
                 
-                $timeRemaining = [
-                    'days' => $days,
-                    'hours' => $hours,
-                    'minutes' => $minutes,
-                    'deadline_date' => $deadline->format('Y-m-d H:i:s'),
-                ];
-            } else {
-                $timeRemaining = [
-                    'overdue' => true,
-                    'days' => $deadline->diffInDays($now),
-                    'deadline_date' => $deadline->format('Y-m-d H:i:s'),
-                ];
+                // Refresh the order data to get updated status
+                $order = $user->clientOrders()
+                    ->with(['freelancer', 'freelancer.profile', 'service', 'project', 'reviews', 'deliveries', 'payments'])
+                    ->findOrFail($id);
             }
         }
-
-        // Prepare payment information
-        $paymentInfo = [
-            'has_payment' => $order->payments()->exists(),
-            'payment_status' => $order->payments()->exists() ? $order->payments()->latest()->first()->status : 'unpaid',
-            'payment_method' => $order->payments()->exists() ? $order->payments()->latest()->first()->payment_method : null,
-            'payment_date' => $order->payments()->exists() ? $order->payments()->latest()->first()->updated_at : null,
-            'payment_id' => $order->payments()->exists() ? $order->payments()->latest()->first()->id : null,
-            'payment_amount' => $order->payments()->exists() ? $order->payments()->latest()->first()->amount : null,
-        ];
         
-        // Prepare messages for chat display
+        // Get messages related to this order
         $messages = Message::where('order_id', $order->id)
-            ->where(function ($query) use ($user, $order) {
+            ->where(function($query) use ($user) {
                 $query->where('sender_id', $user->id)
-                    ->orWhere('recipient_id', $user->id);
+                      ->orWhere('recipient_id', $user->id);
             })
-            ->with(['sender:id,name,profile_photo_url']) // Eager load sender untuk avatar dan nama
+            ->with(['sender', 'recipient'])
             ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(function ($message) use ($user, $order) {
-                $attachments = [];
-                // Jika pesan memiliki lampiran, ambil detailnya dari model File
-                if ($message->attachments) {
-                    foreach ($message->attachments as $filePath) {
-                        $file = \App\Models\File::where('file_path', $filePath)->first();
-                        if ($file) {
-                             $attachments[] = [
-                                'id' => $file->id,
-                                'original_name' => $file->original_name,
-                                'url' => route('files.download', $file->id),
-                                'file_extension' => pathinfo($file->original_name, PATHINFO_EXTENSION),
-                                'formatted_size' => $this->formatFileSize($file->file_size),
-                             ];
-                        }
-                    }
-                }
-
-                return [
-                    'id' => $message->id,
-                    'sender_id' => $message->sender_id,
-                    'recipient_id' => $message->recipient_id,
-                    'message' => $message->message,
-                    'created_at' => $message->created_at->format('Y-m-d H:i:s'),
-                    'is_mine' => $message->sender_id === $user->id,
-                    'sender_name' => $message->sender->name,
-                    'sender_avatar' => $message->sender->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($message->sender->name) . '&background=8b5cf6&color=fff',
-                    'attachments' => $attachments, // Sertakan attachments
-                ];
-            });
+            ->get();
             
-        // Tandai pesan yang diterima sebagai sudah dibaca
-        Message::where('order_id', $order->id)
-            ->where('sender_id', '!=', $user->id)
-            ->where('recipient_id', $user->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true, 'read_at' => now()]);
-
+        // Check if the client can leave a review (completed orders that don't have a review yet)
+        $canReview = $order->status === 'completed' && $order->reviews()->where('client_id', $user->id)->count() === 0;
+        
         return Inertia::render('Client/OrderDetail', [
             'order' => $order,
-            'files' => $orderFiles, // Mengirim file yang sudah diproses
-            'messages' => $messages, // Mengirim pesan yang sudah diproses
-            'user' => $user,
-            'timeRemaining' => $timeRemaining,
-            'paymentInfo' => $paymentInfo,
+            'messages' => $messages,
+            'canReview' => $canReview
         ]);
     }
-
+    
     /**
-     * Helper method to format file size.
-     *
+     * Debug helper for client orders (REMOVE IN PRODUCTION).
      */
-    private function formatFileSize($size)
+    public function debugOrders(Request $request)
     {
-        if ($size < 1024) {
-            return $size . ' B';
-        } elseif ($size < 1048576) {
-            return round($size / 1024, 2) . ' KB';
-        } elseif ($size < 1073741824) {
-            return round($size / 1048576, 2) . ' MB';
-        } else {
-            return round($size / 1073741824, 2) . ' GB';
+        $user = Auth::user();
+        
+        // Basic checks
+        $hasClientOrdersRelationship = method_exists($user, 'clientOrders');
+        
+        // Test the relationship
+        $orderCount = 0;
+        $firstOrder = null;
+        $error = null;
+        
+        try {
+            $orders = $user->clientOrders;
+            $orderCount = count($orders);
+            if ($orderCount > 0) {
+                $firstOrder = $orders->first();
+            }
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
         }
+        
+        // Check order counts by status
+        $orderCounts = [];
+        if (!$error) {
+            $orderCounts = [
+                'all' => $user->clientOrders()->count(),
+                'pending' => $user->clientOrders()->where('status', 'pending')->count(),
+                'in_progress' => $user->clientOrders()->where(function($q) {
+                    $q->where('status', 'in_progress')->orWhere('status', 'in-progress');
+                })->count(),
+                'delivered' => $user->clientOrders()->where('status', 'delivered')->count(),
+                'completed' => $user->clientOrders()->where('status', 'completed')->count(),
+                'revision' => $user->clientOrders()->where('status', 'revision')->count(),
+                'cancelled' => $user->clientOrders()->where('status', 'cancelled')->count(),
+            ];
+        }
+        
+        // Return the debug information
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role
+            ],
+            'relationship_checks' => [
+                'has_client_orders_method' => $hasClientOrdersRelationship,
+                'order_count' => $orderCount,
+                'error' => $error
+            ],
+            'first_order' => $firstOrder,
+            'order_counts' => $orderCounts,
+            'debug_info' => [
+                'controller_method' => __METHOD__,
+                'time' => now()->toDateTimeString()
+            ]
+        ]);
     }
-
-
 }

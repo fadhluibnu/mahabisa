@@ -43,9 +43,10 @@ class MidtransService
      * 
      * @param Order $order
      * @param array $customerDetails
+     * @param string|null $returnUrl URL to redirect back after payment completion
      * @return array
      */
-    public function createSnapToken(Order $order, array $customerDetails) 
+    public function createSnapToken(Order $order, array $customerDetails, $returnUrl = null) 
     {
         // Force refresh config to ensure we always use the latest settings
         $this->initConfig();
@@ -73,6 +74,15 @@ class MidtransService
                 ],
                 'customer_details' => $customerDetails,
             ];
+            
+            // Add return URLs for redirect mode if provided
+            if ($returnUrl) {
+                $params['callbacks'] = [
+                    'finish' => $returnUrl,
+                    'error' => $returnUrl . '?status=error',
+                    'pending' => $returnUrl . '?status=pending',
+                ];
+            }
 
             // Add tax item if applicable
             if ($order->tax > 0) {

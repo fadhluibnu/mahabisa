@@ -228,6 +228,32 @@ const Sidebar = ({ isOpen, closeSidebar, auth }) => {
                   Cari Freelancer
                 </Link>
               </li>
+              <li>
+                <Link
+                  href='/client/orders'
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive('orders')
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <svg
+                    className='mr-3 h-5 w-5'
+                    xmlns='http://www.w3.org/2000/svg'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'
+                    />
+                  </svg>
+                  Pesanan Saya
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -245,20 +271,24 @@ const Sidebar = ({ isOpen, closeSidebar, auth }) => {
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <svg
-                    className='mr-3 h-5 w-5'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'
-                    />
-                  </svg>
+                  <div className="relative">
+                    <svg
+                      className='mr-3 h-5 w-5'
+                      xmlns='http://www.w3.org/2000/svg'
+                      fill='none'
+                      viewBox='0 0 24 24'
+                      stroke='currentColor'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'
+                      />
+                    </svg>
+                    {/* Message notification badge */}
+                    <span id="message-badge-count" className="absolute -top-2 -right-1 bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 rounded-full hidden">0</span>
+                  </div>
                   Pesan
                 </Link>
               </li>

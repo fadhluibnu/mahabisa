@@ -1,57 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClientLayout from './Components/ClientLayout';
+import { router, usePage, router as Inertia } from '@inertiajs/react';
 
 const Settings = () => {
+  const { user, profile, notificationSettings, paymentMethods } =
+    usePage().props;
+
   // State for active tab
   const [activeTab, setActiveTab] = useState('account');
 
-  // State for notification settings
+  // State for notification settings - initialize with data from props or defaults
   const [notifications, setNotifications] = useState({
     email: {
-      projectUpdates: true,
-      messages: true,
-      promotions: false,
-      newsletter: true,
+      projectUpdates: notificationSettings?.email_project_updates ?? true,
+      messages: notificationSettings?.email_messages ?? true,
+      promotions: notificationSettings?.email_promotions ?? false,
+      newsletter: notificationSettings?.email_newsletter ?? true,
     },
     site: {
-      projectUpdates: true,
-      messages: true,
-      promotions: true,
-      newsletter: false,
+      projectUpdates: notificationSettings?.site_project_updates ?? true,
+      messages: notificationSettings?.site_messages ?? true,
+      promotions: notificationSettings?.site_promotions ?? true,
+      newsletter: notificationSettings?.site_newsletter ?? false,
     },
   });
 
-  // State for account form
+  // State for account form - initialize with user data from props
   const [accountForm, setAccountForm] = useState({
-    email: 'johndoe@example.com',
-    phone: '+62 812-3456-7890',
-    language: 'id',
-    timezone: 'Asia/Jakarta',
+    email: user?.email || '',
+    phone: profile?.phone || '',
+    language: profile?.language || 'id',
+    timezone: profile?.timezone || 'Asia/Jakarta',
   });
 
-  // State for security form
+  // State for security form - always start with empty fields for security
   const [securityForm, setSecurityForm] = useState({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: '',
+    newPassword_confirmation: '',
   });
 
   // State for privacy settings
   const [privacySettings, setPrivacySettings] = useState({
-    profileVisibility: 'public',
-    showOnlineStatus: true,
-    allowMessages: true,
+    profileVisibility: user?.privacy_settings?.profile_visibility || 'public',
+    showOnlineStatus: user?.privacy_settings?.show_online_status !== false,
+    allowMessages: user?.privacy_settings?.allow_messages !== false,
   });
 
   // State for billing information
   const [billingForm, setBillingForm] = useState({
-    name: 'John Doe',
-    company: 'ABC Company',
-    address: 'Jl. Sudirman No. 123',
-    city: 'Jakarta',
-    postalCode: '12930',
-    country: 'Indonesia',
-    taxId: '12.345.678.9-012.000',
+    name: user?.name || '',
+    company: profile?.company || '',
+    address: profile?.address || '',
+    city: profile?.city || '',
+    postalCode: profile?.postal_code || '',
+    country: profile?.country || 'Indonesia',
+    taxId: profile?.tax_id || '',
   });
 
   // Handle notification toggle
@@ -104,18 +108,47 @@ const Settings = () => {
   // Handle form submission
   const handleSubmit = (e, formType) => {
     e.preventDefault();
-    // In a real app, you would send this data to the server
-    console.log(
-      `Submitting ${formType} form:`,
-      formType === 'account'
-        ? accountForm
-        : formType === 'security'
-          ? securityForm
-          : formType === 'privacy'
-            ? privacySettings
-            : billingForm
-    );
-    // Show success message or handle response
+
+    if (formType === 'account') {
+      // Submit account settings to the server
+      router.post('/client/settings/account', accountForm, {
+        preserveScroll: true,
+        onSuccess: () => {
+          console.log('Account settings updated successfully');
+        },
+        onError: errors => {
+          console.error('Error updating account settings:', errors);
+        },
+      });
+    } else if (formType === 'security') {
+      // Submit security settings to the server
+      router.post('/client/settings/security', securityForm, {
+        preserveScroll: true,
+        onSuccess: () => {
+          // Reset password fields after successful update
+          setSecurityForm({
+            currentPassword: '',
+            newPassword: '',
+            newPassword_confirmation: '',
+          });
+        },
+      });
+    } else if (formType === 'notifications') {
+      // Submit notification settings to the server
+      router.post('/client/settings/notifications', notifications, {
+        preserveScroll: true,
+      });
+    } else if (formType === 'privacy') {
+      // Submit privacy settings to the server
+      router.post('/client/settings/privacy', privacySettings, {
+        preserveScroll: true,
+      });
+    } else if (formType === 'billing') {
+      // Submit billing information to the server
+      router.post('/client/settings/billing', billingForm, {
+        preserveScroll: true,
+      });
+    }
   };
 
   return (
@@ -260,6 +293,29 @@ const Settings = () => {
                   Pengaturan Akun
                 </h3>
                 <form onSubmit={e => handleSubmit(e, 'account')}>
+                  {/* Display success message if available */}
+                  {usePage().props.flash?.success && (
+                    <div className='mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md'>
+                      {usePage().props.flash.success}
+                    </div>
+                  )}
+
+                  {/* Display validation errors if any */}
+                  {Object.keys(usePage().props.errors || {}).length > 0 && (
+                    <div className='mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md'>
+                      <p className='font-medium'>
+                        Terdapat kesalahan dalam pengisian form:
+                      </p>
+                      <ul className='mt-2 list-disc list-inside text-sm'>
+                        {Object.entries(usePage().props.errors).map(
+                          ([key, value]) => (
+                            <li key={key}>{value}</li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className='space-y-6'>
                     <div>
                       <label
@@ -273,10 +329,15 @@ const Settings = () => {
                           type='email'
                           name='email'
                           id='email'
-                          className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
+                          className='shadow-sm bg-gray-50 block w-full sm:text-sm border-gray-300 rounded-md cursor-not-allowed'
                           value={accountForm.email}
-                          onChange={handleAccountChange}
+                          readOnly
+                          disabled
                         />
+                        <p className='mt-1 text-xs text-gray-500'>
+                          Email tidak dapat diubah. Hubungi administrator untuk
+                          perubahan email.
+                        </p>
                       </div>
                     </div>
 
@@ -413,7 +474,7 @@ const Settings = () => {
 
                     <div>
                       <label
-                        htmlFor='confirmPassword'
+                        htmlFor='newPassword_confirmation'
                         className='block text-sm font-medium text-gray-700'
                       >
                         Konfirmasi Password Baru
@@ -421,10 +482,10 @@ const Settings = () => {
                       <div className='mt-1'>
                         <input
                           type='password'
-                          name='confirmPassword'
-                          id='confirmPassword'
+                          name='newPassword_confirmation'
+                          id='newPassword_confirmation'
                           className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
-                          value={securityForm.confirmPassword}
+                          value={securityForm.newPassword_confirmation}
                           onChange={handleSecurityChange}
                         />
                       </div>
@@ -484,272 +545,285 @@ const Settings = () => {
                   Notifikasi
                 </h3>
 
-                <div className='space-y-6'>
-                  <div>
-                    <h4 className='text-sm font-medium text-gray-900 mb-3'>
-                      Notifikasi Email
-                    </h4>
-                    <div className='space-y-4'>
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Update Proyek
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan email saat ada perubahan pada proyek Anda
-                          </p>
-                        </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('email', 'projectUpdates')
-                          }
-                          className={`${
-                            notifications.email.projectUpdates
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+                {/* Display success message if available */}
+                {usePage().props.flash?.success && (
+                  <div className='mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md'>
+                    {usePage().props.flash.success}
+                  </div>
+                )}
+
+                <form onSubmit={e => handleSubmit(e, 'notifications')}>
+                  <div className='space-y-6'>
+                    <div>
+                      <h4 className='text-sm font-medium text-gray-900 mb-3'>
+                        Notifikasi Email
+                      </h4>
+                      <div className='space-y-4'>
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Update Proyek
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan email saat ada perubahan pada proyek Anda
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle(
+                                'email',
+                                'projectUpdates'
+                              )
+                            }
                             className={`${
                               notifications.email.projectUpdates
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Pesan Baru
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan email saat ada pesan baru
-                          </p>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.email.projectUpdates
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
                         </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('email', 'messages')
-                          }
-                          className={`${
-                            notifications.email.messages
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Pesan Baru
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan email saat ada pesan baru
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('email', 'messages')
+                            }
                             className={`${
                               notifications.email.messages
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Promo & Diskon
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan email tentang penawaran khusus
-                          </p>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.email.messages
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
                         </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('email', 'promotions')
-                          }
-                          className={`${
-                            notifications.email.promotions
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Promo & Diskon
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan email tentang penawaran khusus
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('email', 'promotions')
+                            }
                             className={`${
                               notifications.email.promotions
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Newsletter
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan berita terbaru dan tip freelancing
-                          </p>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.email.promotions
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
                         </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('email', 'newsletter')
-                          }
-                          className={`${
-                            notifications.email.newsletter
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Newsletter
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan berita terbaru dan tip freelancing
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('email', 'newsletter')
+                            }
                             className={`${
                               notifications.email.newsletter
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.email.newsletter
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className='pt-6 border-t border-gray-200'>
-                    <h4 className='text-sm font-medium text-gray-900 mb-3'>
-                      Notifikasi Website
-                    </h4>
-                    <div className='space-y-4'>
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Update Proyek
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan notifikasi di situs saat ada perubahan pada
-                            proyek Anda
-                          </p>
-                        </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('site', 'projectUpdates')
-                          }
-                          className={`${
-                            notifications.site.projectUpdates
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+                    <div className='pt-6 border-t border-gray-200'>
+                      <h4 className='text-sm font-medium text-gray-900 mb-3'>
+                        Notifikasi Website
+                      </h4>
+                      <div className='space-y-4'>
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Update Proyek
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan notifikasi di situs saat ada perubahan
+                              pada proyek Anda
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('site', 'projectUpdates')
+                            }
                             className={`${
                               notifications.site.projectUpdates
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Pesan Baru
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan notifikasi di situs saat ada pesan baru
-                          </p>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.site.projectUpdates
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
                         </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('site', 'messages')
-                          }
-                          className={`${
-                            notifications.site.messages
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Pesan Baru
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan notifikasi di situs saat ada pesan baru
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('site', 'messages')
+                            }
                             className={`${
                               notifications.site.messages
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Promo & Diskon
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan notifikasi di situs tentang penawaran
-                            khusus
-                          </p>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.site.messages
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
                         </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('site', 'promotions')
-                          }
-                          className={`${
-                            notifications.site.promotions
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Promo & Diskon
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan notifikasi di situs tentang penawaran
+                              khusus
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('site', 'promotions')
+                            }
                             className={`${
                               notifications.site.promotions
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            Newsletter
-                          </p>
-                          <p className='text-xs text-gray-500'>
-                            Dapatkan notifikasi di situs tentang berita terbaru
-                          </p>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.site.promotions
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
                         </div>
-                        <button
-                          type='button'
-                          onClick={() =>
-                            handleNotificationToggle('site', 'newsletter')
-                          }
-                          className={`${
-                            notifications.site.newsletter
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200'
-                          } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                        >
-                          <span
+
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <p className='text-sm font-medium text-gray-900'>
+                              Newsletter
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              Dapatkan notifikasi di situs tentang berita
+                              terbaru
+                            </p>
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() =>
+                              handleNotificationToggle('site', 'newsletter')
+                            }
                             className={`${
                               notifications.site.newsletter
-                                ? 'translate-x-5'
-                                : 'translate-x-0'
-                            } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                          ></span>
-                        </button>
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200'
+                            } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                          >
+                            <span
+                              className={`${
+                                notifications.site.newsletter
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              } pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
+                            ></span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className='mt-6'>
-                  <button
-                    type='button'
-                    className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  >
-                    Simpan Preferensi
-                  </button>
-                </div>
+                  <div className='mt-6'>
+                    <button
+                      type='submit'
+                      className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                    >
+                      Simpan Preferensi
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
 

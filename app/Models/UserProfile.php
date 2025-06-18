@@ -29,6 +29,11 @@ class UserProfile extends Model
         'website',
         'social_media_links',
         'is_verified',
+        'phone',
+        'title',
+        'location',
+        'company',
+        'position',
     ];
 
     /**

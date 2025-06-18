@@ -138,11 +138,27 @@ class Order extends Model
     }
     
     /**
+     * Get reviews associated with this order (plural relationship alias).
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+    
+    /**
      * Get messages associated with this order.
      */
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+    
+    /**
+     * Get deliveries associated with this order.
+     */
+    public function deliveries()
+    {
+        return $this->morphMany(File::class, 'fileable')->where('status', 'deliverable');
     }
     
     /**
@@ -210,5 +226,14 @@ class Order extends Model
     public function attachmentFiles()
     {
         return $this->files()->where('file_type', 'attachment');
+    }
+    
+    /**
+     * Get revisions associated with this order.
+     * This is an accessor for the revisions JSON field.
+     */
+    public function getRevisionsAttribute($value)
+    {
+        return $value ? json_decode($value) : [];
     }
 }

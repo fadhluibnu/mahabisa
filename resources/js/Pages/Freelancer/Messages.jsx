@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useForm, router } from '@inertiajs/react';
 import FreelancerLayout from './Components/FreelancerLayout';
 
@@ -12,6 +12,8 @@ const Messages = ({
   // State untuk pesan baru
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [messages, setMessages] = useState(active_chat_messages || []);
+  const messagesEndRef = useRef(null);
 
   // Filtered conversations berdasarkan pencarian
   const filteredConversations = conversations
@@ -37,8 +39,84 @@ const Messages = ({
   useEffect(() => {
     if (active_chat_other_user) {
       setData('recipient_id', active_chat_other_user.id);
+      setMessages(active_chat_messages || []);
     }
-  }, [active_chat_other_user]);
+  }, [active_chat_other_user, active_chat_messages]);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Request notification permission for browser notifications
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Set up Echo channel for real-time messaging
+  useEffect(() => {
+    if (active_chat_other_user && auth_user && window.Echo) {
+      console.log(`Subscribing to channel: chat.${auth_user.id}.${active_chat_other_user.id}`);
+      
+      // Create two channels for bidirectional communication
+      const channel1 = window.Echo.private(
+        `chat.${auth_user.id}.${active_chat_other_user.id}`
+      );
+      
+      const channel2 = window.Echo.private(
+        `chat.${active_chat_other_user.id}.${auth_user.id}`
+      );
+
+      // Listen on both channels
+      const messageHandler = (event) => {
+        console.log('Received new message event:', event);
+        
+        // Add the received message to the messages array
+        setMessages(currentMessages => {
+          // Check if we already have this message (avoid duplicates)
+          const messageExists = currentMessages.some(msg => msg.id === event.message.id);
+          if (messageExists) return currentMessages;
+          
+          return [
+            ...currentMessages, 
+            {
+              ...event.message,
+              is_mine: event.message.sender_id === auth_user.id,
+              content: event.message.message, // Ensure we have the right property name
+              sender_name: event.message.sender?.name
+            }
+          ];
+        });
+
+        // Mark message as read if it's directed to the current user
+        if (event.message.recipient_id === auth_user.id) {
+          // Mark as read using an API call
+          fetch('/api/messages/mark-read', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ 
+              conversation_user_id: active_chat_other_user.id 
+            })
+          });
+        }
+      };
+
+      channel1.listen('.new-message', messageHandler);
+      channel2.listen('.new-message', messageHandler);
+
+      // Cleanup function to disconnect from the channel when the component unmounts
+      return () => {
+        console.log('Unsubscribing from channels');
+        channel1.stopListening('.new-message');
+        channel2.stopListening('.new-message');
+      };
+    }
+  }, [active_chat_other_user, auth_user]);
 
   // Function untuk mengirim pesan
   const sendMessage = e => {
@@ -176,7 +254,7 @@ const Messages = ({
 
                 {/* Messages */}
                 <div className='flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50'>
-                  {active_chat_messages.map(message => (
+                  {messages.map(message => (
                     <div
                       key={message.id}
                       className={`flex ${message.is_mine ? 'justify-end' : 'justify-start'}`}
@@ -209,6 +287,7 @@ const Messages = ({
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Message input */}

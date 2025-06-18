@@ -13,6 +13,7 @@ use App\Http\Controllers\FreelancerWithdrawalController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AISearchController;
 
 // Route::get('/', function () {
 //     return view('welcome');
@@ -22,6 +23,11 @@ use App\Http\Controllers\PaymentController;
 
 // Public routes accessible by all users
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+// Broadcasting Authentication
+Broadcast::routes(['middleware' => ['web', 'auth']]);
+// AI Search endpoint
+Route::post('/search/ai', [AISearchController::class, 'search']);
 
 // Authentication Routes
 Route::get('/auth', function () {
@@ -218,6 +224,9 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     Route::get('/', [ClientController::class, 'dashboard'])->name('client.dashboard');
     Route::get('/dashboard', [ClientController::class, 'dashboard'])->name('client.dashboard');
     
+    // Debug routes - REMOVE IN PRODUCTION
+    Route::get('/debug/orders', [ClientController::class, 'debugOrders'])->name('client.debug.orders');
+    
     // Projects
     Route::get('/projects', [ClientController::class, 'projects'])->name('client.projects');
     Route::get('/projects/create', [ClientController::class, 'createProject'])->name('client.projects.create');
@@ -229,6 +238,7 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     
     // Profile management
     Route::get('/profile', [ClientController::class, 'profile'])->name('client.profile');
+    Route::get('/profile/edit', [ClientController::class, 'editProfile'])->name('client.profile.edit');
     Route::put('/profile', [ClientController::class, 'updateProfile'])->name('client.profile.update');
     
     // Messages
@@ -242,6 +252,11 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
     
     // Settings
     Route::get('/settings', [ClientController::class, 'settings'])->name('client.settings');
+    Route::post('/settings/account', [ClientController::class, 'updateAccountSettings'])->name('client.settings.update.account');
+    Route::post('/settings/security', [ClientController::class, 'updateSecuritySettings'])->name('client.settings.update.security');
+    Route::post('/settings/notifications', [ClientController::class, 'updateNotificationSettings'])->name('client.settings.update.notifications');
+    Route::post('/settings/privacy', [ClientController::class, 'updatePrivacySettings'])->name('client.settings.update.privacy');
+    Route::post('/settings/billing', [ClientController::class, 'updateBillingSettings'])->name('client.settings.update.billing');
     
     // Services
     Route::get('/services', [ClientController::class, 'browseServices'])->name('client.services');
@@ -269,6 +284,9 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
         ->name('client.payments.check-status');
     Route::get('/payments/{id}/simple-check', [App\Http\Controllers\OrderController::class, 'simpleCheckPaymentStatus'])
         ->name('client.payments.simple-check');
+    // Enhanced payment status check
+    Route::get('/payments/{id}/enhanced-check', [App\Http\Controllers\PaymentStatusController::class, 'checkStatus'])
+        ->name('client.payments.enhanced-check');
         
     // File downloads (only for client - after payment)
     Route::get('/files/{id}/download', [\App\Http\Controllers\FileController::class, 'download'])
@@ -277,8 +295,15 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
 
 // Message Routes
 Route::middleware(['auth'])->group(function () {
+    // Messaging routes
     Route::post('/messages/send', [App\Http\Controllers\MessageController::class, 'send'])->name('messages.send');
     Route::get('/messages/order/{orderId}', [App\Http\Controllers\MessageController::class, 'getOrderMessages'])->name('messages.order');
+    
+    // Message notification routes for real-time updates
+    Route::prefix('api/messages')->group(function() {
+        Route::get('/unread-count', [App\Http\Controllers\MessageNotificationController::class, 'getUnreadCount'])->name('messages.unread-count');
+        Route::post('/mark-as-read', [App\Http\Controllers\MessageNotificationController::class, 'markAsRead'])->name('messages.mark-as-read');
+    });
 });
 
 // Catch-all route for 404 errors

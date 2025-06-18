@@ -1,45 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClientLayout from './Components/ClientLayout';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
+// Import the route function that's globally available from Ziggy
 
-const EditProfile = () => {
-  // In a real app, you would fetch the profile data from the server
-  // For now, we'll use dummy data
+const EditProfile = ({ userProfile, skills }) => {
+  // Debug: Log the props to see what we're receiving
+  useEffect(() => {
+    console.log('UserProfile data:', userProfile);
+    console.log('Skills data:', skills);
+  }, [userProfile, skills]);
+
+  // Form state management
   const [formData, setFormData] = useState({
-    // Personal Info
-    name: 'Dian Prasetyo',
-    title: 'Marketing Manager',
-    email: 'dian.prasetyo@gmail.com',
-    phone: '+62 812-3456-7890',
-    location: 'Jakarta, Indonesia',
-    bio: 'Saya adalah seorang Marketing Manager dengan pengalaman lebih dari 5 tahun dalam pengembangan strategi pemasaran digital dan branding. Saya senang bekerja sama dengan freelancer kreatif untuk mengembangkan kampanye pemasaran yang efektif.',
-    imageUrl: 'https://ui-avatars.com/api/?name=Dian+Prasetyo&size=200',
-
-    // Company Info
-    company: 'PT Digital Solusi Indonesia',
-    position: 'Marketing Manager',
-    website: 'www.digitalsolusi.co.id',
+    name: userProfile.name || '',
+    title: userProfile.title || '',
+    email: userProfile.email || '',
+    phone: userProfile.phone || '',
+    location: userProfile.location || '',
+    bio: userProfile.bio || '',
+    company: userProfile.company || '',
+    position: userProfile.position || '',
+    website: userProfile.website || '',
+    profile_photo: null,
+    _method: 'put', // For method spoofing
   });
 
-  // State for managing the image upload
-  const [imagePreview, setImagePreview] = useState(formData.imageUrl);
-  const [imageFile, setImageFile] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [processing, setProcessing] = useState(false);
+
+  // State for managing the image preview
+  const [imagePreview, setImagePreview] = useState(
+    userProfile.profile_photo_url
+  );
 
   // Handle input changes
   const handleChange = e => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prevData => ({
+      ...prevData,
       [name]: value,
-    });
+    }));
   };
 
   // Handle image upload
   const handleImageChange = e => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
+
+      setFormData(prevData => ({
+        ...prevData,
+        profile_photo: file,
+      }));
 
       // Create a preview URL
       const reader = new FileReader();
@@ -53,13 +65,34 @@ const EditProfile = () => {
   // Handle form submission
   const handleSubmit = e => {
     e.preventDefault();
+    setProcessing(true);
 
-    // In a real app, you would send the form data to the server
-    console.log('Form submitted:', formData);
-    console.log('Image file:', imageFile);
+    // Create FormData to handle file uploads
+    const formDataToSend = new FormData();
 
-    // Redirect to profile page after successful submission
-    // window.location.href = '/client/profile';
+    // Append all form fields to FormData
+    Object.keys(formData).forEach(key => {
+      if (formData[key] !== null) {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
+
+    // Use Inertia router to submit the form with hardcoded URL
+    router.post('/client/profile', formDataToSend, {
+      forceFormData: true,
+      onSuccess: () => {
+        console.log('Profile updated successfully');
+        // This will happen after the redirect completes
+      },
+      onError: errors => {
+        setErrors(errors);
+        setProcessing(false);
+        console.error('Errors:', errors);
+      },
+      onFinish: () => {
+        setProcessing(false);
+      },
+    });
   };
 
   return (
@@ -87,10 +120,11 @@ const EditProfile = () => {
             <button
               type='button'
               onClick={handleSubmit}
-              className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              disabled={processing}
+              className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-75'
             >
               <FaSave className='mr-2' />
-              Simpan Perubahan
+              {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </div>
         </div>
@@ -127,6 +161,11 @@ const EditProfile = () => {
                   <p className='mt-2 text-sm text-gray-500'>
                     Ukuran maksimal 2MB. Format yang didukung: JPG, PNG, GIF.
                   </p>
+                  {errors.profile_photo && (
+                    <p className='mt-1 text-sm text-red-600'>
+                      {errors.profile_photo}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -154,6 +193,9 @@ const EditProfile = () => {
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                     required
                   />
+                  {errors.name && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -171,6 +213,9 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   />
+                  {errors.title && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.title}</p>
+                  )}
                 </div>
 
                 <div>
@@ -189,6 +234,9 @@ const EditProfile = () => {
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                     required
                   />
+                  {errors.email && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.email}</p>
+                  )}
                 </div>
 
                 <div>
@@ -206,6 +254,9 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   />
+                  {errors.phone && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.phone}</p>
+                  )}
                 </div>
 
                 <div>
@@ -223,6 +274,11 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   />
+                  {errors.location && (
+                    <p className='mt-1 text-sm text-red-600'>
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
 
                 <div className='md:col-span-2'>
@@ -240,6 +296,9 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   ></textarea>
+                  {errors.bio && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.bio}</p>
+                  )}
                   <p className='mt-1 text-sm text-gray-500'>
                     Jelaskan secara singkat tentang diri Anda dan pengalaman
                     profesional Anda.
@@ -270,6 +329,11 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   />
+                  {errors.company && (
+                    <p className='mt-1 text-sm text-red-600'>
+                      {errors.company}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -287,6 +351,11 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   />
+                  {errors.position && (
+                    <p className='mt-1 text-sm text-red-600'>
+                      {errors.position}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -304,6 +373,11 @@ const EditProfile = () => {
                     onChange={handleChange}
                     className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md'
                   />
+                  {errors.website && (
+                    <p className='mt-1 text-sm text-red-600'>
+                      {errors.website}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -312,10 +386,12 @@ const EditProfile = () => {
           {/* Submit button for small screens */}
           <div className='md:hidden mb-6'>
             <button
-              type='submit'
+              type='button'
+              onClick={handleSubmit}
               className='w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              disabled={processing}
             >
-              Simpan Perubahan
+              {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </div>
         </form>

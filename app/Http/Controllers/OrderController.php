@@ -325,6 +325,12 @@ class OrderController extends Controller
      */
     public function simpleCheckPaymentStatus($paymentId)
     {
+        \Illuminate\Support\Facades\Log::info('Checking payment status', [
+            'payment_id' => $paymentId,
+            'user' => Auth::id(),
+            'timestamp' => now()->toDateTimeString()
+        ]);
+        
         $user = Auth::user();
         $payment = \App\Models\Payment::with('order')->findOrFail($paymentId);
 
@@ -336,13 +342,24 @@ class OrderController extends Controller
             ], 403);
         }
 
-        // Check with Midtrans for latest status if transaction_id exists
+        // Get Midtrans service
+        $midtransService = app(\App\Services\MidtransService::class);
+        
+        // Check with Midtrans for latest status
         if ($payment->transaction_id) {
-            $midtransService = app(\App\Services\MidtransService::class);
+            // If we have a transaction_id, check using that
             $midtransStatus = $midtransService->checkTransactionStatus($payment->transaction_id);
+        } else {
+            // If no transaction_id yet, try using the order number
+            $midtransStatus = $midtransService->checkTransactionStatus($payment->order->order_number);
             
-            // Update payment status if needed
-            if ($midtransStatus && $midtransStatus['success']) {
+            // If successful and transaction_id was found, save it to the payment record
+            if ($midtransStatus && $midtransStatus['success'] && isset($midtransStatus['transaction_id'])) {
+                $payment->transaction_id = $midtransStatus['transaction_id'];
+                $payment->save();
+            }
+        }                // Update payment status if needed
+        if ($midtransStatus && $midtransStatus['success']) {
                 // Map Midtrans status to our status
                 $newStatus = $payment->status;
                 if (in_array($midtransStatus['status'], ['settlement', 'capture', 'success'])) {
@@ -356,9 +373,17 @@ class OrderController extends Controller
                 if ($payment->status !== $newStatus) {
                     $payment->status = $newStatus;
                     $payment->payment_details = array_merge($payment->payment_details ?? [], [
-                        'midtrans' => $midtransStatus
+                        'midtrans' => $midtransStatus,
+                        'last_checked' => now()->toDateTimeString()
                     ]);
                     $payment->save();
+                    
+                    \Illuminate\Support\Facades\Log::info('Payment status updated', [
+                        'payment_id' => $payment->id,
+                        'old_status' => $payment->getOriginal('status'),
+                        'new_status' => $newStatus,
+                        'midtrans_status' => $midtransStatus['status'] ?? null
+                    ]);
                     
                     // If payment is completed, update order status and activate files
                     if ($payment->status === 'completed') {
@@ -384,7 +409,6 @@ class OrderController extends Controller
                         ]);
                     }
                 }
-            }
         }
         
         $order = $payment->order;
@@ -657,7 +681,10 @@ class OrderController extends Controller
             'phone' => $user->profile->phone ?? '',
         ];
         
-        $midtransResult = $midtransService->createSnapToken($order, $customerDetails);
+        // Define the return URL for redirect-based payment
+        $returnUrl = route('client.order.simple-invoice', $orderId);
+        
+        $midtransResult = $midtransService->createSnapToken($order, $customerDetails, $returnUrl);
         
         if (!$midtransResult['success']) {
             \Illuminate\Support\Facades\Log::error('Failed to generate Midtrans token', [
