@@ -17,6 +17,7 @@ class Payment extends Model
      */
     protected $fillable = [
         'payment_id',
+        'transaction_id',
         'order_id',
         'client_id',
         'amount',
@@ -26,6 +27,7 @@ class Payment extends Model
         'receipt_url',
         'payment_details',
         'paid_at',
+        'completed_at',
     ];
     
     /**
@@ -37,6 +39,7 @@ class Payment extends Model
         'amount' => 'decimal:2',
         'payment_details' => 'json',
         'paid_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
     
     /**

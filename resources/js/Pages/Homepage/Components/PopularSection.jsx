@@ -9,7 +9,7 @@ const PopularSection = () => {
   const populerCards = featuredServices
     ? featuredServices.map(service => ({
         id: service.id,
-        image: service.thumbnail || '/assets/default-service.png',
+        image: '/storage/' + service.thumbnail,
         isBestSeller: service.view_count > 100,
         label:
           service.view_count > 100

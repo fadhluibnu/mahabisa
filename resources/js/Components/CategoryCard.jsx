@@ -2,6 +2,7 @@ import React from 'react';
 import { router } from '@inertiajs/react';
 
 const CategoryCard = ({ category }) => {
+  console.log('CategoryCard rendered with category:', category);
   const handleClick = () => {
     router.visit(`/eksplorasi?kategori=${encodeURIComponent(category.name)}`);
   };

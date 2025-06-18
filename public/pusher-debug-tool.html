@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusher Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4a5568;
+        }
+        .debug-section {
+            margin-top: 20px;
+        }
+        .logs {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #3182ce;
+        }
+        .info {
+            color: #63b3ed;
+        }
+        .success {
+            color: #68d391;
+        }
+        .warning {
+            color: #faf089;
+        }
+        .error {
+            color: #fc8181;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 4px 0;
+            border-bottom: 1px solid #4a5568;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .status.connected {
+            background-color: #48bb78;
+            color: white;
+        }
+        .status.connecting {
+            background-color: #ecc94b;
+            color: #2d3748;
+        }
+        .status.failed {
+            background-color: #f56565;
+            color: white;
+        }
+        .status.disconnected {
+            background-color: #a0aec0;
+            color: white;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+        }
+        .channel-list {
+            margin-bottom: 20px;
+        }
+        .channel-item {
+            padding: 6px 10px;
+            background-color: #edf2f7;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pusher Debug Tool</h1>
+        
+        <div class="debug-section">
+            <h2>Connection Status</h2>
+            <div id="connection-status"></div>
+            
+            <h2>Log Messages</h2>
+            <div class="logs" id="logs"></div>
+            
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <div class="debug-section">
+            <h2>Test Channel Subscription</h2>
+            <input type="text" id="channel-name" placeholder="Enter channel name (e.g., chat.1.2)" />
+            <button onclick="subscribeToChannel()">Subscribe</button>
+            
+            <h3>Active Subscriptions</h3>
+            <div id="channel-list" class="channel-list"></div>
+        </div>
+
+        <div class="debug-section">
+            <h2>Echo Configuration</h2>
+            <div id="echo-config"></div>
+        </div>
+    </div>
+
+    <!-- First load Echo and Pusher dependencies -->
+    <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+    <script>
+        // Log container
+        const logsContainer = document.getElementById('logs');
+        const connectionStatus = document.getElementById('connection-status');
+        const channelList = document.getElementById('channel-list');
+        const echoConfig = document.getElementById('echo-config');
+        
+        // Active channels
+        const activeChannels = {};
+        
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span>[${new Date().toLocaleTimeString()}]</span> ${message}`;
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+        
+        function clearLogs() {
+            logsContainer.innerHTML = '';
+            addLog('Logs cleared', 'info');
+        }
+        
+        function updateConnectionStatus(state) {
+            let statusClass = 'disconnected';
+            switch(state) {
+                case 'connected':
+                    statusClass = 'connected';
+                    break;
+                case 'connecting':
+                    statusClass = 'connecting';
+                    break;
+                case 'failed':
+                    statusClass = 'failed';
+                    break;
+            }
+            
+            connectionStatus.innerHTML = `<span class="status ${statusClass}">${state}</span>`;
+        }
+        
+        function updateChannelList() {
+            channelList.innerHTML = '';
+            
+            for (const channelName in activeChannels) {
+                const channelItem = document.createElement('div');
+                channelItem.className = 'channel-item';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = channelName;
+                
+                const unsubButton = document.createElement('button');
+                unsubButton.textContent = 'Unsubscribe';
+                unsubButton.onclick = function() {
+                    unsubscribeFromChannel(channelName);
+                };
+                
+                channelItem.appendChild(nameSpan);
+                channelItem.appendChild(unsubButton);
+                channelList.appendChild(channelItem);
+            }
+            
+            if (Object.keys(activeChannels).length === 0) {
+                channelList.innerHTML = '<p>No active subscriptions</p>';
+            }
+        }
+        
+        function subscribeToChannel() {
+            const channelName = document.getElementById('channel-name').value.trim();
+            if (!channelName) {
+                addLog('Please enter a channel name', 'error');
+                return;
+            }
+            
+            if (!window.Echo) {
+                addLog('Echo not initialized', 'error');
+                return;
+            }
+            
+            try {
+                // Check if it's a private channel
+                let channel;
+                if (channelName.startsWith('private-') || !channelName.includes('private-')) {
+                    const actualChannelName = channelName.replace('private-', '');
+                    channel = window.Echo.private(actualChannelName);
+                    addLog(`Subscribing to private channel: ${actualChannelName}`, 'info');
+                } else {
+                    channel = window.Echo.channel(channelName);
+                    addLog(`Subscribing to public channel: ${channelName}`, 'info');
+                }
+                
+                channel.listen('.new-message', (event) => {
+                    addLog(`Event received on ${channelName}: ${JSON.stringify(event)}`, 'success');
+                });
+                
+                activeChannels[channelName] = channel;
+                updateChannelList();
+                
+            } catch (error) {
+                addLog(`Error subscribing to channel: ${error.message}`, 'error');
+            }
+        }
+        
+        function unsubscribeFromChannel(channelName) {
+            if (activeChannels[channelName]) {
+                try {
+                    window.Echo.leave(channelName);
+                    delete activeChannels[channelName];
+                    addLog(`Unsubscribed from channel: ${channelName}`, 'info');
+                    updateChannelList();
+                } catch (error) {
+                    addLog(`Error unsubscribing from channel: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        function displayEchoConfig() {
+            if (window.Echo) {
+                const config = {
+                    'Broadcaster': window.Echo.connector.options.broadcaster,
+                    'Key': window.Echo.connector.options.key,
+                    'Cluster': window.Echo.connector.options.cluster,
+                };
+                
+                let configHTML = '<ul>';
+                for (const [key, value] of Object.entries(config)) {
+                    configHTML += `<li><strong>${key}:</strong> ${value}</li>`;
+                }
+                configHTML += '</ul>';
+                
+                echoConfig.innerHTML = configHTML;
+            } else {
+                echoConfig.innerHTML = '<p>Echo not initialized</p>';
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', function() {
+            addLog('Debug tool loaded', 'info');
+            
+            // Check if Pusher and Echo are available
+            if (!window.Pusher) {
+                addLog('Pusher not loaded', 'error');
+            } else {
+                addLog('Pusher loaded', 'success');
+            }
+            
+            // Wait a moment for potential Echo initialization
+            setTimeout(() => {
+                if (!window.Echo) {
+                    addLog('Echo not initialized', 'error');
+                    updateConnectionStatus('failed');
+                } else {
+                    addLog('Echo initialized', 'success');
+                    
+                    // Get Pusher instance from Echo
+                    const pusher = window.Echo.connector.pusher;
+                    
+                    // Update connection status
+                    updateConnectionStatus(pusher.connection.state);
+                    
+                    // Listen for connection events
+                    pusher.connection.bind('connected', () => {
+                        addLog('Pusher connected', 'success');
+                        updateConnectionStatus('connected');
+                    });
+                    
+                    pusher.connection.bind('connecting', () => {
+                        addLog('Pusher connecting...', 'warning');
+                        updateConnectionStatus('connecting');
+                    });
+                    
+                    pusher.connection.bind('disconnected', () => {
+                        addLog('Pusher disconnected', 'error');
+                        updateConnectionStatus('disconnected');
+                    });
+                    
+                    pusher.connection.bind('failed', () => {
+                        addLog('Pusher connection failed', 'error');
+                        updateConnectionStatus('failed');
+                    });
+                    
+                    // Display Echo configuration
+                    displayEchoConfig();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

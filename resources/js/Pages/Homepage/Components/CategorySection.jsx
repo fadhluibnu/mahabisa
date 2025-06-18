@@ -32,10 +32,7 @@ const CategorySection = () => {
                 id: category.id,
                 name: category.name,
                 jasa: `${category.services_count} Jasa`,
-                image:
-                  category.image_url ||
-                  defaultImages[category.name] ||
-                  'assets/default-category.png',
+                image: '/storage/' + category.image_url,
                 description: category.description,
               }}
             />

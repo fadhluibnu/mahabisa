@@ -14,6 +14,7 @@ use App\Models\Activity;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Models\Skill;
+use App\Events\MessageSent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -884,6 +885,12 @@ class ClientController extends Controller
             'is_read' => false,
         ]);
         
+        // Broadcast the message for real-time updates
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
+        
+        // Update unread message count for the recipient
+        \App\Http\Controllers\MessageNotificationController::updateUnreadCount($validated['recipient_id']);
+        
         $uploadedFilePaths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $attachmentFile) {
@@ -1356,8 +1363,25 @@ class ClientController extends Controller
         
         // Get the order and make sure it belongs to the current client
         $order = $user->clientOrders()
-            ->with(['freelancer', 'freelancer.profile', 'service', 'project', 'reviews', 'deliveries', 'revisions'])
+            ->with(['freelancer', 'freelancer.profile', 'service', 'project', 'reviews', 'deliveries', 'payments'])
             ->findOrFail($id);
+        
+        // Check if order has payments and needs status refresh (after payment redirection)
+        if ($order->payments()->exists()) {
+            // Get the latest payment
+            $payment = $order->payments()->latest()->first();
+            
+            // If the payment is in pending status, check with payment handler
+            if ($payment->status === 'pending') {
+                $paymentHandler = app(\App\Services\MidtransPaymentHandler::class);
+                $paymentHandler->processPaymentStatus($payment, $user);
+                
+                // Refresh the order data to get updated status
+                $order = $user->clientOrders()
+                    ->with(['freelancer', 'freelancer.profile', 'service', 'project', 'reviews', 'deliveries', 'payments'])
+                    ->findOrFail($id);
+            }
+        }
         
         // Get messages related to this order
         $messages = Message::where('order_id', $order->id)

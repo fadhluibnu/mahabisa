@@ -13,3 +13,6 @@ if (csrfToken) {
     'CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token'
   );
 }
+
+// Import Echo setup for real-time messaging
+import './echo-setup';

@@ -10,6 +10,46 @@ const OrderDetail = ({ order, user, files, messages }) => {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [messagesList, setMessagesList] = useState(messages || []);
+  const [currentOrder, setCurrentOrder] = useState(order);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Check for return from payment page on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPayment = urlParams.get('from_payment');
+
+    if (fromPayment === 'true' || localStorage.getItem('checkOrderStatus')) {
+      localStorage.removeItem('checkOrderStatus');
+      refreshOrderStatus();
+    }
+  }, []);
+
+  // Refresh order status
+  const refreshOrderStatus = async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    try {
+      // If there are pending payments, fetch the latest payment status
+      if (order.payments && order.payments.find(p => p.status === 'pending')) {
+        const pendingPayment = order.payments.find(p => p.status === 'pending');
+        const response = await axios.get(
+          `/client/payments/${pendingPayment.id}/enhanced-check`
+        );
+
+        if (response.data.success) {
+          // If payment status changed, reload the page to get updated order details
+          if (response.data.status !== pendingPayment.status) {
+            window.location.reload();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing order status:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const formatDate = dateString => {
     const date = new Date(dateString);

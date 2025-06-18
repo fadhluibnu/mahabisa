@@ -23,6 +23,9 @@ use App\Http\Controllers\PaymentController;
 // Public routes accessible by all users
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+// Broadcasting Authentication
+Broadcast::routes(['middleware' => ['web', 'auth']]);
+
 // Authentication Routes
 Route::get('/auth', function () {
     return Inertia::render('Auth/Auth', [
@@ -278,6 +281,9 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
         ->name('client.payments.check-status');
     Route::get('/payments/{id}/simple-check', [App\Http\Controllers\OrderController::class, 'simpleCheckPaymentStatus'])
         ->name('client.payments.simple-check');
+    // Enhanced payment status check
+    Route::get('/payments/{id}/enhanced-check', [App\Http\Controllers\PaymentStatusController::class, 'checkStatus'])
+        ->name('client.payments.enhanced-check');
         
     // File downloads (only for client - after payment)
     Route::get('/files/{id}/download', [\App\Http\Controllers\FileController::class, 'download'])
@@ -286,8 +292,15 @@ Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () 
 
 // Message Routes
 Route::middleware(['auth'])->group(function () {
+    // Messaging routes
     Route::post('/messages/send', [App\Http\Controllers\MessageController::class, 'send'])->name('messages.send');
     Route::get('/messages/order/{orderId}', [App\Http\Controllers\MessageController::class, 'getOrderMessages'])->name('messages.order');
+    
+    // Message notification routes for real-time updates
+    Route::prefix('api/messages')->group(function() {
+        Route::get('/unread-count', [App\Http\Controllers\MessageNotificationController::class, 'getUnreadCount'])->name('messages.unread-count');
+        Route::post('/mark-as-read', [App\Http\Controllers\MessageNotificationController::class, 'markAsRead'])->name('messages.mark-as-read');
+    });
 });
 
 // Catch-all route for 404 errors

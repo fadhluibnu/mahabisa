@@ -1,11 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { initializeMessageNotifications } from '../../../message-notifications';
 
 const ClientLayout = ({ children, title, subtitle }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { auth } = usePage().props;
+  const user = auth?.user;
+
+  // Initialize real-time message notifications
+  useEffect(() => {
+    if (user) {
+      // Request notification permission for browser notifications
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
+      
+      // Set up message notification listener
+      const cleanup = initializeMessageNotifications(user.id);
+      return cleanup;
+    }
+  }, [user]);
 
   return (
     <>

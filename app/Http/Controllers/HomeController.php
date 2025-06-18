@@ -434,7 +434,8 @@ class HomeController extends Controller
         
         return Inertia::render('Talenta/TalentDetail', [
             'freelancer' => $freelancer,
-            'reviewStats' => $reviewStats
+            'reviewStats' => $reviewStats,
+            'canMessage' => auth()->check() && auth()->user()->role === 'client'
         ]);
     }
     
